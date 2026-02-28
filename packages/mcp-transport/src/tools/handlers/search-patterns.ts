@@ -36,6 +36,10 @@ import type {
   SearchResultsPayload,
   ToolContext,
 } from "@/tools/tool-types.js";
+import { Effect } from "effect";
+import { MCPApiService } from "@/services/MCPApiService.js";
+import { MCPCacheService } from "@/services/MCPCacheService.js";
+import { MCPLoggerService } from "@/services/MCPLoggerService.js";
 
 export async function handleSearchPatterns(
   args: SearchPatternsArgs,
@@ -470,3 +474,43 @@ export async function handleSearchPatterns(
     };
   }
 }
+
+/**
+ * Effect.fn version of handleSearchPatterns with automatic OTEL tracing.
+ *
+ * Creates an "mcp.search_patterns" span per invocation.
+ * Delegates to the existing handleSearchPatterns implementation via
+ * a ToolContext built from Effect services.
+ */
+export const searchPatternsEffect = Effect.fn("mcp.search_patterns")(
+  function* (args: SearchPatternsArgs) {
+    const api = yield* MCPApiService;
+    const cache = yield* MCPCacheService;
+    const logger = yield* MCPLoggerService;
+
+    yield* Effect.annotateCurrentSpan({
+      "mcp.tool": "search_patterns",
+      "mcp.query": args.q ?? "",
+      "mcp.category": args.category ?? "",
+    });
+
+    // Build a ToolContext from Effect services and delegate to existing handler
+    const ctx: ToolContext = {
+      callApi: (endpoint, method, data) =>
+        Effect.runPromise(api.callApi(endpoint, method ?? "GET", data)),
+      log: (message, data) => logger.log(message, data),
+      cache: {
+        get: (key) => cache.get(key),
+        set: (key, value, ttl) => cache.set(key, value, ttl),
+      },
+    };
+
+    return yield* Effect.tryPromise({
+      try: () => handleSearchPatterns(args, ctx),
+      catch: (error) =>
+        new Error(
+          `search_patterns failed: ${error instanceof Error ? error.message : String(error)}`
+        ),
+    });
+  }
+);

@@ -16,10 +16,15 @@
  *   - PATTERN_API_KEY: Optional. API key passed to HTTP API (auth happens there)
  *   - EFFECT_PATTERNS_API_URL: Optional. Base URL for patterns API
  *   - MCP_DEBUG: Optional. Enable debug logging (default: false)
+ *   - OTEL_ENABLED: Optional. Enable OpenTelemetry tracing (default: true)
+ *   - OTLP_ENDPOINT: Optional. OTLP HTTP endpoint for traces
+ *   - SERVICE_NAME: Optional. Service name for OTEL (default: effect-patterns-mcp-transport)
  */
 
 import { getActiveMCPConfig } from "@/config/mcp-environments.js";
-import { registerTools } from "@/tools/tool-implementations.js";
+import { buildAppLayer } from "@/services/layers.js";
+import { initOtel } from "@/services/otel-init.js";
+import { registerToolsEffect } from "@/tools/tool-implementations.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { Agent } from "http";
@@ -29,12 +34,11 @@ import { Agent as HttpsAgent } from "https";
 // Configuration
 // ============================================================================
 
-// Get configuration from environment (local, staging, or production)
 const config = getActiveMCPConfig();
 const API_BASE_URL = config.apiUrl;
 const API_KEY = config.apiKey;
 const DEBUG = process.env.MCP_DEBUG === "true";
-const REQUEST_TIMEOUT_MS = 10000; // 10 seconds timeout
+const REQUEST_TIMEOUT_MS = 10000;
 
 // Extract API host for diagnostics (safe, no secrets)
 let API_HOST = "<invalid>";
@@ -49,7 +53,6 @@ try {
 // HTTP Connection Pooling
 // ============================================================================
 
-// Global agents with connection reuse and keep-alive
 const httpAgent = new Agent({
   keepAlive: true,
   keepAliveMsecs: 30000,
@@ -66,63 +69,6 @@ const httpsAgent = new HttpsAgent({
   timeout: REQUEST_TIMEOUT_MS,
 });
 
-/**
- * Bounded cache with LRU eviction to prevent memory leaks
- * Maintains both time-based expiration and size-based eviction
- */
-// BoundedCache and SimpleCache imported from shared utils
-import { BoundedCache, SimpleCache } from "@/utils/cache.js";
-
-/**
- * In-flight request deduping with time-based expiration
- * Key: request signature (endpoint + method + data hash)
- * Value: { promise, createdAt } to prevent stale dedup sharing
- *
- * CRITICAL: Promises older than DEDUP_TIMEOUT_MS are not shared to prevent
- * error cascade when one request fails and others share its error result.
- */
-const DEDUP_TIMEOUT_MS = 500; // Dedupe window (don't share promises older than this)
-const inFlightRequests = new Map<
-  string,
-  { promise: Promise<ApiResult<unknown>>; createdAt: number }
->();
-const patternsCache = new BoundedCache<ApiResult<unknown>>(100); // Max 100 pattern cache entries
-const PATTERNS_SEARCH_CACHE_TTL_MS = 5_000;
-const PATTERNS_DETAIL_CACHE_TTL_MS = 2_000;
-
-// Telemetry counters
-let dedupeHits = 0;
-let dedupeMisses = 0;
-let inFlightRequestCount = 0;
-let lastInFlightCleanup = Date.now();
-
-// ============================================================================
-// Handshake Metrics (debug only)
-// ============================================================================
-
-const handshakeCounters = {
-  api: 0,
-};
-
-function logHandshakeCounts(reason: string) {
-  if (!DEBUG) return;
-  log("Handshake counts", {
-    reason,
-    api: handshakeCounters.api,
-  });
-}
-
-function getRequestKey(
-  endpoint: string,
-  method: "GET" | "POST",
-  data?: unknown,
-): string {
-  // For GET requests, include query params in key
-  // For POST requests, include data hash (simplified: JSON stringify)
-  const dataStr = data ? JSON.stringify(data) : "";
-  return `${method}:${endpoint}:${dataStr}`;
-}
-
 // ============================================================================
 // Minimal Logging (stderr only - stdout is reserved for protocol)
 // ============================================================================
@@ -137,267 +83,24 @@ function log(message: string, data?: unknown) {
 }
 
 // ============================================================================
-// API Client
+// OTEL + Effect Layer
 // ============================================================================
 
-/**
- * API call result - either success data or error information.
- * Following Effect-style: errors as values, not exceptions.
- *
- * Details object captures diagnostic info for network errors.
- */
-type ApiResult<T> =
-  | { ok: true; data: T }
-  | {
-      ok: false;
-      error: string;
-      status?: number;
-      details?: {
-        errorName?: string;
-        errorType?: string;
-        errorMessage?: string;
-        cause?: string;
-        retryable?: boolean;
-        apiHost?: string;
-        hasApiKey?: boolean;
-      };
-    };
+const otelSdk = initOtel();
 
-async function callApi(
-  endpoint: string,
-  method: "GET" | "POST" = "GET",
-  data?: unknown,
-): Promise<ApiResult<unknown>> {
-  const url = `${API_BASE_URL}/api${endpoint}`;
-  const requestKey = getRequestKey(endpoint, method, data);
-  const isPatternsGet =
-    method === "GET" && endpoint.startsWith("/patterns");
-  const isPatternDetail = isPatternsGet && endpoint.startsWith("/patterns/");
-
-  if (isPatternsGet) {
-    const cached = patternsCache.get(requestKey);
-    if (cached) {
-      log(`Cache hit (patterns): ${requestKey}`);
-      return cached;
-    }
-  }
-
-  // Check for in-flight request (dedupe) - CRITICAL: only share if within time window
-  const inFlight = inFlightRequests.get(requestKey);
-  const now = Date.now();
-
-  if (inFlight && (now - inFlight.createdAt) < DEDUP_TIMEOUT_MS) {
-    dedupeHits++;
-    log(`API Dedupe Hit: ${requestKey} (age: ${now - inFlight.createdAt}ms)`);
-    return inFlight.promise;
-  } else if (inFlight) {
-    // Dedup timeout expired - clean up stale entry
-    log(`Dedup timeout expired (age: ${now - inFlight.createdAt}ms), removing stale entry`);
-    inFlightRequests.delete(requestKey);
-  }
-
-  dedupeMisses++;
-
-  // Build headers - only add API key if provided
-  // Auth validation happens at HTTP API level
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-  if (API_KEY) {
-    headers["x-api-key"] = API_KEY;
-  }
-
-  // Create AbortController for timeout
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => {
-    controller.abort();
-  }, REQUEST_TIMEOUT_MS);
-
-  // Select agent based on protocol
-  const isHttps = url.startsWith("https");
-  const agentOption = isHttps ? httpsAgent : httpAgent;
-
-  const options: RequestInit = {
-    method,
-    headers,
-    signal: controller.signal,
-    // @ts-expect-error - Node.js fetch (undici) supports agent option for connection pooling.
-    // This is a non-standard extension specific to Node.js runtime (not Web API compliant).
-    // Used for HTTP/HTTPS connection reuse with keep-alive and socket limits.
-    agent: agentOption,
-  };
-
-  if (data && method === "POST") {
-    options.body = JSON.stringify(data);
-  }
-
-  log(`API ${method} ${endpoint}`);
-
-  // Create promise for this request
-  const requestPromise = (async (): Promise<ApiResult<unknown>> => {
-    try {
-      const response = await fetch(url, options);
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        // Return error as value, not exception
-        const errorBody = await response.text();
-        log(`API Error: HTTP ${response.status}`);
-        return {
-          ok: false,
-          error: errorBody || `HTTP ${response.status}`,
-          status: response.status,
-        };
-      }
-
-      const result: unknown = await response.json();
-      const unwrapped = (result && typeof result === "object" && "data" in result)
-        ? (result as Record<string, unknown>).data
-        : result;
-      const apiResult: ApiResult<unknown> = { ok: true, data: unwrapped };
-      if (isPatternsGet) {
-        const ttl = isPatternDetail
-          ? PATTERNS_DETAIL_CACHE_TTL_MS
-          : PATTERNS_SEARCH_CACHE_TTL_MS;
-        patternsCache.set(requestKey, apiResult, ttl);
-      }
-      return apiResult;
-    } catch (error) {
-      clearTimeout(timeoutId);
-
-      // Capture detailed error information
-      const errorName = error instanceof Error ? error.name : "Unknown";
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      const cause =
-        error instanceof Error &&
-        "cause" in error &&
-        error.cause instanceof Error
-          ? error.cause.message
-          : undefined;
-
-      // Check if it was a timeout (AbortError)
-      if (errorName === "AbortError") {
-        const msg = `Request timeout after ${REQUEST_TIMEOUT_MS}ms`;
-        log(`API Error: ${msg}`);
-        return {
-          ok: false,
-          error: msg,
-          details: {
-            errorName: "AbortError",
-            errorType: "timeout",
-            errorMessage: msg,
-            retryable: true,
-            apiHost: API_HOST,
-            hasApiKey: !!API_KEY,
-          },
-        };
-      }
-
-      // Classify error type and retryability
-      let errorType = "network";
-      let retryable = true;
-
-      if (errorName === "TypeError" && errorMessage.includes("fetch")) {
-        errorType = "fetch_error";
-        retryable = true;
-      } else if (cause?.includes("ECONNREFUSED")) {
-        errorType = "connection_refused";
-        retryable = true;
-      } else if (cause?.includes("ENOTFOUND")) {
-        errorType = "dns_error";
-        retryable = true;
-      } else if (cause?.includes("ETIMEDOUT") || cause?.includes("timeout")) {
-        errorType = "timeout";
-        retryable = true;
-      } else if (cause?.includes("ECONNRESET")) {
-        errorType = "connection_reset";
-        retryable = true;
-      } else if (
-        cause?.includes("CERT") ||
-        cause?.includes("SSL") ||
-        cause?.includes("TLS")
-      ) {
-        errorType = "tls_error";
-        retryable = false; // TLS errors are not retryable
-      }
-
-      const msg = errorMessage;
-      log(`API Error: ${errorName}: ${msg}`, {
-        cause,
-        errorType,
-        retryable,
-        apiHost: API_HOST,
-        hasApiKey: !!API_KEY,
-      });
-
-      return {
-        ok: false,
-        error: msg,
-        details: {
-          errorName,
-          errorType,
-          errorMessage: msg,
-          cause,
-          retryable,
-          apiHost: API_HOST,
-          hasApiKey: !!API_KEY,
-        },
-      };
-    } finally {
-      // Clean up in-flight request
-      inFlightRequests.delete(requestKey);
-    }
-  })();
-
-  // Store in-flight request (only for GET requests to avoid side-effects)
-  // Include createdAt timestamp to prevent sharing promises across timeout window
-  if (method === "GET") {
-    // Enforce max in-flight requests to prevent memory leak
-    if (inFlightRequests.size >= 500) {
-      // Remove oldest in-flight request
-      const oldestKey = inFlightRequests.keys().next().value;
-      if (oldestKey) {
-        log(`In-flight limit reached (500), removing oldest: ${oldestKey}`);
-        inFlightRequests.delete(oldestKey);
-      }
-    }
-
-    inFlightRequests.set(requestKey, {
-      promise: requestPromise,
-      createdAt: Date.now(),
-    });
-    inFlightRequestCount = inFlightRequests.size;
-
-    // Clean up expired in-flight requests periodically (time-based + count-based)
-    const CLEANUP_INTERVAL_MS = 30_000;
-    const now = Date.now();
-    if (inFlightRequestCount % 100 === 0 || now - lastInFlightCleanup > CLEANUP_INTERVAL_MS) {
-      lastInFlightCleanup = now;
-      for (const [key, value] of inFlightRequests) {
-        if (now - value.createdAt > DEDUP_TIMEOUT_MS * 10) {
-          inFlightRequests.delete(key);
-        }
-      }
-    }
-  }
-
-  handshakeCounters.api++;
-  logHandshakeCounts("api");
-
-  return requestPromise;
-}
-
-// ============================================================================
-// Simple In-Memory Cache for Tool Results
-// ============================================================================
-
-const toolCache = new SimpleCache();
-const MCP_SERVER_VERSION = "2.0.0";
+const appLayer = buildAppLayer({
+  apiBaseUrl: API_BASE_URL,
+  apiKey: API_KEY,
+  requestTimeoutMs: REQUEST_TIMEOUT_MS,
+  httpAgent,
+  httpsAgent,
+});
 
 // ============================================================================
 // MCP Server Setup
 // ============================================================================
+
+const MCP_SERVER_VERSION = "2.0.0";
 
 const server = new McpServer(
   {
@@ -412,29 +115,21 @@ const server = new McpServer(
 );
 
 // ============================================================================
-// Tool Handlers
+// Tool Handlers (Effect-based with OTEL tracing)
 // ============================================================================
 
-// Register all tools using the shared implementation with cache support
-registerTools(server, callApi, log, {
-  get: (key: string) => toolCache.get(key),
-  set: (key: string, value: unknown, ttl: number) => toolCache.set(key, value, ttl),
-});
+registerToolsEffect(server, appLayer);
 
 // ============================================================================
 // Server Startup
 // ============================================================================
 
 async function main() {
-  // ============================================================================
   // DIAGNOSTIC LOG (always to stderr, no secrets)
-  // This is the critical startup diagnostic line for debugging env issues.
-  // ============================================================================
   console.error(
     `[DIAGNOSTIC] API_HOST=${API_HOST} HAS_API_KEY=${!!API_KEY}`,
   );
 
-  // Warn if no API key - auth happens at HTTP API level
   if (!API_KEY) {
     console.error(
       "[Effect Patterns MCP] No API key configured. " +
@@ -447,6 +142,7 @@ async function main() {
     apiUrl: API_BASE_URL,
     hasApiKey: !!API_KEY,
     debug: DEBUG,
+    otelEnabled: otelSdk !== null,
   });
 
   try {
@@ -490,9 +186,16 @@ process.on("SIGPIPE", () => {
 
 process.on("exit", (code) => {
   console.error(`[Effect Patterns MCP] Process exiting with code: ${code}`);
+  // Graceful OTEL shutdown
+  if (otelSdk) {
+    try {
+      otelSdk.shutdown();
+    } catch {
+      // Best-effort shutdown
+    }
+  }
 });
 
-// Handle signals gracefully
 process.on("SIGINT", () => {
   log("Received SIGINT, shutting down");
   process.exit(0);

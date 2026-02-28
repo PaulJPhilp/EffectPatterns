@@ -13,6 +13,10 @@ import type {
 import { toToolResult } from "@/tools/tool-result-builder.js";
 import { normalizeContentBlocks } from "@/tools/tool-shared.js";
 import type { CallToolResult, ToolContext } from "@/tools/tool-types.js";
+import { Effect } from "effect";
+import { MCPApiService } from "@/services/MCPApiService.js";
+import { MCPCacheService } from "@/services/MCPCacheService.js";
+import { MCPLoggerService } from "@/services/MCPLoggerService.js";
 
 export async function handleGetMcpConfig(
   args: GetMcpConfigArgs,
@@ -176,3 +180,80 @@ export async function handleGetSkill(
     structuredContent: data as Record<string, unknown>,
   };
 }
+
+// ============================================================================
+// Effect.fn versions with automatic OTEL tracing
+// ============================================================================
+
+/**
+ * Helper to build a ToolContext from Effect services.
+ */
+function* makeToolContext() {
+  const api = yield* MCPApiService;
+  const cache = yield* MCPCacheService;
+  const logger = yield* MCPLoggerService;
+
+  const ctx: ToolContext = {
+    callApi: (endpoint, method, data) =>
+      Effect.runPromise(api.callApi(endpoint, method ?? "GET", data)),
+    log: (message, data) => logger.log(message, data),
+    cache: {
+      get: (key) => cache.get(key),
+      set: (key, value, ttl) => cache.set(key, value, ttl),
+    },
+  };
+
+  return ctx;
+}
+
+export const listAnalysisRulesEffect = Effect.fn("mcp.list_analysis_rules")(
+  function* () {
+    yield* Effect.annotateCurrentSpan({ "mcp.tool": "list_analysis_rules" });
+    const ctx = yield* makeToolContext();
+
+    return yield* Effect.tryPromise({
+      try: () => handleListAnalysisRules(ctx),
+      catch: (error) =>
+        new Error(
+          `list_analysis_rules failed: ${error instanceof Error ? error.message : String(error)}`
+        ),
+    });
+  }
+);
+
+export const listSkillsEffect = Effect.fn("mcp.list_skills")(
+  function* (args: ListSkillsArgs) {
+    yield* Effect.annotateCurrentSpan({
+      "mcp.tool": "list_skills",
+      "mcp.query": args.q ?? "",
+      "mcp.category": args.category ?? "",
+    });
+    const ctx = yield* makeToolContext();
+
+    return yield* Effect.tryPromise({
+      try: () => handleListSkills(args, ctx),
+      catch: (error) =>
+        new Error(
+          `list_skills failed: ${error instanceof Error ? error.message : String(error)}`
+        ),
+    });
+  }
+);
+
+export const getSkillEffect = Effect.fn("mcp.get_skill")(
+  function* (args: GetSkillArgs) {
+    yield* Effect.annotateCurrentSpan({
+      "mcp.tool": "get_skill",
+      "mcp.skill.slug": args.slug ?? "",
+    });
+    const ctx = yield* makeToolContext();
+
+    return yield* Effect.tryPromise({
+      try: () => handleGetSkill(args, ctx),
+      catch: (error) =>
+        new Error(
+          `get_skill failed: ${error instanceof Error ? error.message : String(error)}`
+        ),
+    });
+  }
+);

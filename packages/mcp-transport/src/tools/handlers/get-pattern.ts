@@ -35,6 +35,10 @@ import type {
   SearchResultsPayload,
   ToolContext,
 } from "@/tools/tool-types.js";
+import { Effect } from "effect";
+import { MCPApiService } from "@/services/MCPApiService.js";
+import { MCPCacheService } from "@/services/MCPCacheService.js";
+import { MCPLoggerService } from "@/services/MCPLoggerService.js";
 
 export async function handleGetPattern(
   args: GetPatternArgs,
@@ -372,3 +376,39 @@ export async function handleGetPattern(
   // Fall back to JSON response if not a pattern or error
   return toToolResult(result, "get_pattern", log, undefined, format);
 }
+
+/**
+ * Effect.fn version of handleGetPattern with automatic OTEL tracing.
+ *
+ * Creates an "mcp.get_pattern" span per invocation.
+ */
+export const getPatternEffect = Effect.fn("mcp.get_pattern")(
+  function* (args: GetPatternArgs) {
+    const api = yield* MCPApiService;
+    const cache = yield* MCPCacheService;
+    const logger = yield* MCPLoggerService;
+
+    yield* Effect.annotateCurrentSpan({
+      "mcp.tool": "get_pattern",
+      "mcp.pattern.id": args.id ?? "",
+    });
+
+    const ctx: ToolContext = {
+      callApi: (endpoint, method, data) =>
+        Effect.runPromise(api.callApi(endpoint, method ?? "GET", data)),
+      log: (message, data) => logger.log(message, data),
+      cache: {
+        get: (key) => cache.get(key),
+        set: (key, value, ttl) => cache.set(key, value, ttl),
+      },
+    };
+
+    return yield* Effect.tryPromise({
+      try: () => handleGetPattern(args, ctx),
+      catch: (error) =>
+        new Error(
+          `get_pattern failed: ${error instanceof Error ? error.message : String(error)}`
+        ),
+    });
+  }
+);
