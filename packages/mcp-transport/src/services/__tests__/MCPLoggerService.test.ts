@@ -19,7 +19,7 @@ describe("MCPLoggerService", () => {
     await Effect.runPromise(
       Effect.gen(function* () {
         const logger = yield* MCPLoggerService;
-        logger.log("test message", { key: "value" });
+        yield* logger.log("test message", { key: "value" });
       }).pipe(Effect.provide(MCPLoggerService.Default))
     );
     expect(console.error).toHaveBeenCalledWith(
@@ -33,7 +33,7 @@ describe("MCPLoggerService", () => {
     await Effect.runPromise(
       Effect.gen(function* () {
         const logger = yield* MCPLoggerService;
-        logger.log("test message");
+        yield* logger.log("test message");
       }).pipe(Effect.provide(MCPLoggerService.Default))
     );
     expect(console.error).not.toHaveBeenCalled();
@@ -44,7 +44,7 @@ describe("MCPLoggerService", () => {
     const result = await Effect.runPromise(
       Effect.gen(function* () {
         const logger = yield* MCPLoggerService;
-        return logger.isDebug();
+        return yield* logger.isDebug();
       }).pipe(Effect.provide(MCPLoggerService.Default))
     );
     expect(result).toBe(true);

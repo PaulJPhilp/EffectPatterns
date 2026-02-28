@@ -5,8 +5,8 @@
  * Each callApi invocation creates an OTEL span automatically.
  */
 
-import { BoundedCache } from "@/utils/cache.js";
-import type { ApiResult } from "@/tools/tool-types.js";
+import { BoundedCache } from "../utils/cache.js";
+import type { ApiResult } from "../tools/tool-types.js";
 import { Effect, Layer } from "effect";
 import {
   type ApiCallConfig,
@@ -33,6 +33,7 @@ export interface MCPApiConfig {
 export class MCPApiService extends Effect.Service<MCPApiService>()(
   "MCPApiService",
   {
+    accessors: true,
     // Default implementation — overridden by makeMCPApiLayer
     effect: Effect.succeed({
       callApi: (

@@ -10,8 +10,9 @@ import type {
   PatternDetailsOutput,
   SearchResultsOutput,
   ToolError,
-} from "@/schemas/output-schemas.js";
-import type { TextContent } from "@/schemas/structured-output.js";
+} from "../schemas/output-schemas.js";
+import type { TextContent } from "../schemas/structured-output.js";
+import type { Effect } from "effect";
 
 /**
  * Result of a tool execution - supports MCP 2.0 rich content arrays
@@ -63,6 +64,16 @@ export type CallApiFn = (
   method?: "GET" | "POST",
   data?: unknown,
 ) => Promise<ApiResult<unknown>>;
+
+/**
+ * Effect-native function type for calling the internal API.
+ * Used by the active Effect-based MCP handler path.
+ */
+export type EffectCallApiFn = (
+  endpoint: string,
+  method?: "GET" | "POST",
+  data?: unknown,
+) => Effect.Effect<ApiResult<unknown>>;
 
 /**
  * Function type for logging.
@@ -121,5 +132,25 @@ export interface ToolContext {
   readonly cache?: {
     get: (key: string) => unknown;
     set: (key: string, value: unknown, ttl: number) => void;
+  };
+}
+
+/**
+ * Effect-native dependencies injected into each active MCP tool handler.
+ * Keeps the production registration path fully inside the Effect runtime.
+ */
+export interface EffectToolContext {
+  readonly callApi: EffectCallApiFn;
+  readonly log: (
+    message: string,
+    data?: unknown,
+  ) => Effect.Effect<void, never>;
+  readonly cache?: {
+    get: (key: string) => Effect.Effect<unknown, never>;
+    set: (
+      key: string,
+      value: unknown,
+      ttl: number,
+    ) => Effect.Effect<void, never>;
   };
 }

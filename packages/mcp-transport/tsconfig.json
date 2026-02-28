@@ -26,9 +26,6 @@
     "incremental": true,
     "isolatedModules": true,
     "types": ["node"],
-    "paths": {
-      "@/*": ["./src/*"]
-    },
     "noEmit": true,
     "resolveJsonModule": true
   },

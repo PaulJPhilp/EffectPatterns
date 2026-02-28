@@ -10,23 +10,23 @@ import { Effect } from "effect";
 export class MCPLoggerService extends Effect.Service<MCPLoggerService>()(
   "MCPLoggerService",
   {
-    effect: Effect.sync(() => {
+    accessors: true,
+    sync: () => {
       const debug = process.env.MCP_DEBUG === "true";
 
       return {
-        log(message: string, data?: unknown): void {
-          if (debug) {
-            console.error(
-              `[MCP] ${message}`,
-              data ? JSON.stringify(data, null, 2) : ""
-            );
-          }
-        },
+        log: (message: string, data?: unknown): Effect.Effect<void, never> =>
+          debug
+            ? Effect.sync(() => {
+                console.error(
+                  `[MCP] ${message}`,
+                  data ? JSON.stringify(data, null, 2) : ""
+                );
+              })
+            : Effect.void,
 
-        isDebug(): boolean {
-          return debug;
-        },
+        isDebug: (): Effect.Effect<boolean, never> => Effect.succeed(debug),
       };
-    }),
+    },
   }
 ) {}

@@ -21,10 +21,10 @@
  *   - SERVICE_NAME: Optional. Service name for OTEL (default: effect-patterns-mcp-transport)
  */
 
-import { getActiveMCPConfig } from "@/config/mcp-environments.js";
-import { buildAppLayer } from "@/services/layers.js";
-import { initOtel } from "@/services/otel-init.js";
-import { registerToolsEffect } from "@/tools/tool-implementations.js";
+import { getActiveMCPConfig } from "./config/mcp-environments.js";
+import { buildAppLayer } from "./services/layers.js";
+import { initOtel } from "./services/otel-init.js";
+import { registerToolsEffect } from "./tools/tool-implementations.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { Agent } from "http";

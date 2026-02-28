@@ -6,31 +6,36 @@
  */
 
 import { Effect } from "effect";
-import { SimpleCache } from "@/utils/cache.js";
+import { SimpleCache } from "../utils/cache.js";
 
 export class MCPCacheService extends Effect.Service<MCPCacheService>()(
   "MCPCacheService",
   {
-    effect: Effect.sync(() => {
+    accessors: true,
+    sync: () => {
       const cache = new SimpleCache(1000);
 
       return {
-        get<T>(key: string): T | null {
-          return cache.get<T>(key);
-        },
+        get: <T>(key: string): Effect.Effect<T | null, never> =>
+          Effect.sync(() => cache.get<T>(key)),
 
-        set<T>(key: string, value: T, ttlMs?: number): void {
-          cache.set(key, value, ttlMs);
-        },
+        set: <T>(
+          key: string,
+          value: T,
+          ttlMs?: number,
+        ): Effect.Effect<void, never> =>
+          Effect.sync(() => {
+            cache.set(key, value, ttlMs);
+          }),
 
-        clear(): void {
-          cache.clear();
-        },
+        clear: (): Effect.Effect<void, never> =>
+          Effect.sync(() => {
+            cache.clear();
+          }),
 
-        getStats() {
-          return cache.getStats();
-        },
+        getStats: (): Effect.Effect<{ size: number; maxEntries: number }, never> =>
+          Effect.sync(() => cache.getStats()),
       };
-    }),
+    },
   }
 ) {}

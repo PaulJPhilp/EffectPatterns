@@ -10,8 +10,8 @@ describe("MCPCacheService", () => {
     const result = await runWithCache(
       Effect.gen(function* () {
         const cache = yield* MCPCacheService;
-        cache.set("key1", { value: 42 }, 60_000);
-        return cache.get<{ value: number }>("key1");
+        yield* cache.set("key1", { value: 42 }, 60_000);
+        return yield* cache.get<{ value: number }>("key1");
       })
     );
     expect(result).toEqual({ value: 42 });
@@ -21,7 +21,7 @@ describe("MCPCacheService", () => {
     const result = await runWithCache(
       Effect.gen(function* () {
         const cache = yield* MCPCacheService;
-        return cache.get("nonexistent");
+        return yield* cache.get("nonexistent");
       })
     );
     expect(result).toBeNull();
@@ -31,13 +31,13 @@ describe("MCPCacheService", () => {
     const result = await runWithCache(
       Effect.gen(function* () {
         const cache = yield* MCPCacheService;
-        cache.set("a", 1, 60_000);
-        cache.set("b", 2, 60_000);
-        cache.clear();
+        yield* cache.set("a", 1, 60_000);
+        yield* cache.set("b", 2, 60_000);
+        yield* cache.clear();
         return {
-          a: cache.get("a"),
-          b: cache.get("b"),
-          stats: cache.getStats(),
+          a: yield* cache.get("a"),
+          b: yield* cache.get("b"),
+          stats: yield* cache.getStats(),
         };
       })
     );
@@ -50,9 +50,9 @@ describe("MCPCacheService", () => {
     const result = await runWithCache(
       Effect.gen(function* () {
         const cache = yield* MCPCacheService;
-        cache.set("x", 1, 60_000);
-        cache.set("y", 2, 60_000);
-        return cache.getStats();
+        yield* cache.set("x", 1, 60_000);
+        yield* cache.set("y", 2, 60_000);
+        return yield* cache.getStats();
       })
     );
     expect(result.size).toBe(2);

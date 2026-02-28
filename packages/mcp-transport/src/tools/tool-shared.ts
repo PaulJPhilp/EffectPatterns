@@ -5,7 +5,7 @@
  * Contains reusable helper functions for all MCP tools.
  */
 
-import type { TextContent } from "@/schemas/structured-output.js";
+import type { TextContent } from "../schemas/structured-output.js";
 
 /**
  * Telemetry counters for cache performance.

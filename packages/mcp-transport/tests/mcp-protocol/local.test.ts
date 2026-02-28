@@ -19,7 +19,7 @@
 import {
     MARKER_PATTERN_CARD_V1,
     MARKER_PATTERN_INDEX_V1,
-} from "@/constants/markers";
+} from "../../src/constants/markers";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { getMCPEnvironmentConfig } from "../../src/config/mcp-environments";
 import { MCPTestClient, createMCPTestClient } from "./helpers/mcp-test-client";

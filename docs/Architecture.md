@@ -12,7 +12,7 @@ This document consolidates architecture context and instructions from the projec
 
 1. **Pattern Content** (`content/published/patterns/`) - Markdown-based pattern library with examples and explanations
 2. **API Server** (`packages/api-server/`) - Next.js REST API with Effect services, database access, and Vercel deployment
-3. **MCP Transport** (`packages/mcp-transport/`) - MCP protocol transports (stdio + streamable-http) — pure HTTP clients to the API
+3. **MCP Transport** (`packages/mcp-transport/`) - MCP protocol transports (stdio + streamable-http) — HTTP-only transport binaries with internal Effect services for tool execution, caching, logging, and tracing
 4. **Admin CLI** (`packages/ep-admin/`) - Internal tooling for pattern publishing, QA, and migrations
 5. **End-user CLI** (`packages/ep-cli/`) - Public CLI for developers to search and generate code
 6. **Toolkit** (`packages/toolkit/`) - Type-safe Effect library for pattern operations
@@ -48,7 +48,7 @@ The system is split into two packages with clear ownership:
 - **`api-server`** owns HTTP + database — Next.js routes, Effect services, auth, tracing
 - **`mcp-transport`** owns MCP protocol + tool handlers — standalone Node.js binaries that call the API via `fetch`
 
-The MCP transports have **zero database access** and **zero Next.js imports**. They are pure HTTP clients.
+The MCP transports have **zero database access** and **zero Next.js imports**. They call the API exclusively over HTTP, but they use internal Effect services to structure tool execution, caching, logging, and tracing.
 
 ### API Server (`packages/api-server/`)
 
@@ -93,7 +93,7 @@ The MCP transports have **zero database access** and **zero Next.js imports**. T
 - `oauth-server.ts`, `oauth-config.ts`, `oauth-client.ts` — OAuth2 for MCP 2.0
 - `pkce.ts` — PKCE challenge generation
 
-**Dependencies**: `@modelcontextprotocol/sdk`, `zod` (no `effect`, no `next`, no `drizzle-orm`)
+**Dependencies**: `effect`, `@effect/opentelemetry`, `@modelcontextprotocol/sdk`, `zod` (no `next`, no `drizzle-orm`, no workspace package deps)
 
 ### Database (`packages/toolkit/src/db/`)
 - PostgreSQL with Drizzle ORM
@@ -339,7 +339,7 @@ This ensures:
 - Each package has independent `tsconfig.json`
 - Proper module resolution across environments (Node, browser, serverless)
 
-Note: `api-server` depends on `toolkit` and `analysis-core`. `mcp-transport` has no workspace dependencies — it communicates with the API server purely via HTTP.
+Note: `api-server` depends on `toolkit` and `analysis-core`. `mcp-transport` has no workspace dependencies — it communicates with the API server purely via HTTP even though its internal execution model uses Effect services.
 
 ---
 
@@ -354,11 +354,11 @@ Note: `api-server` depends on `toolkit` and `analysis-core`. `mcp-transport` has
 
 **2. API Server + MCP Transport**
 - **API Server** (`packages/api-server/`): REST API with database access, Effect services, authentication, and Vercel deployment.
-- **MCP Transport** (`packages/mcp-transport/`): Standalone MCP protocol transports (stdio + streamable-http) that call the API via fetch.
+- **MCP Transport** (`packages/mcp-transport/`): Standalone MCP protocol transports (stdio + streamable-http) that call the API via HTTP and compose handlers with internal Effect services.
 - **Features**: Serves patterns to Claude Code IDE; real-time pattern search and retrieval; context-aware suggestions; pattern generation with AI assistance; API key authentication.
 - **Deployment**: API server deployed to Vercel (staging + production). MCP transports run locally as Node.js binaries.
 - **API Dependencies**: `@effect-patterns/toolkit` (workspace:*), Next.js, Effect-TS, Drizzle ORM.
-- **Transport Dependencies**: `@modelcontextprotocol/sdk`, `zod` (no Effect, no Next.js, no DB).
+- **Transport Dependencies**: `effect`, `@effect/opentelemetry`, `@modelcontextprotocol/sdk`, `zod` (no Next.js, no DB, no workspace package deps).
 
 ### Patterns and Structure
 

@@ -6,8 +6,8 @@
  * this module deduplicates that logic.
  */
 
-import { BoundedCache } from "@/utils/cache.js";
-import type { ApiResult } from "@/tools/tool-types.js";
+import { BoundedCache } from "../utils/cache.js";
+import type { ApiResult } from "../tools/tool-types.js";
 
 /**
  * Configuration for API calls

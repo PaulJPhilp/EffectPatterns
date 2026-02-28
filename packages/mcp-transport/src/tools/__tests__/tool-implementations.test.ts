@@ -6,7 +6,8 @@
 
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { registerTools } from "../tool-implementations";
+import { Layer } from "effect";
+import { registerTools, registerToolsEffect } from "../tool-implementations";
 import { isMcpDebugOrLocal } from "../../config/mcp-environments";
 
 /**
@@ -48,6 +49,18 @@ function createMockCache() {
 			});
 		},
 	};
+}
+
+class ToolCapture {
+	tools = new Map<string, unknown>();
+
+	tool(name: string, _desc: string, _schema: unknown, handler: unknown) {
+		this.tools.set(name, handler);
+	}
+
+	getNames() {
+		return [...this.tools.keys()].sort();
+	}
 }
 
 describe("Tool Implementations", () => {
@@ -174,6 +187,48 @@ describe("Tool Implementations", () => {
 
 			delete process.env.MCP_ENV;
 			expect(isMcpDebugOrLocal()).toBe(false);
+		});
+
+		it("should register the same tool surface as registerToolsEffect in production mode", () => {
+			process.env.MCP_ENV = "production";
+			delete process.env.MCP_DEBUG;
+
+			const legacyCapture = new ToolCapture();
+			const effectCapture = new ToolCapture();
+
+			registerTools(
+				legacyCapture as unknown as McpServer,
+				createMockCallApi({}),
+				createMockLog(),
+				createMockCache()
+			);
+			registerToolsEffect(
+				effectCapture as unknown as McpServer,
+				Layer.empty as unknown as Layer.Layer<any>
+			);
+
+			expect(legacyCapture.getNames()).toEqual(effectCapture.getNames());
+		});
+
+		it("should register the same tool surface as registerToolsEffect in local mode", () => {
+			process.env.MCP_ENV = "local";
+			delete process.env.MCP_DEBUG;
+
+			const legacyCapture = new ToolCapture();
+			const effectCapture = new ToolCapture();
+
+			registerTools(
+				legacyCapture as unknown as McpServer,
+				createMockCallApi({}),
+				createMockLog(),
+				createMockCache()
+			);
+			registerToolsEffect(
+				effectCapture as unknown as McpServer,
+				Layer.empty as unknown as Layer.Layer<any>
+			);
+
+			expect(legacyCapture.getNames()).toEqual(effectCapture.getNames());
 		});
 	});
 });

@@ -9,22 +9,24 @@
 
 import {
   buildFullPatternCard,
-} from "@/mcp-content-builders.js";
-import { MARKER_PATTERN_INDEX_V1 } from "@/constants/markers.js";
+} from "../mcp-content-builders.js";
+import { MARKER_PATTERN_INDEX_V1 } from "../constants/markers.js";
 import type {
   SearchResultsOutput,
   ToolError,
-} from "@/schemas/output-schemas.js";
-import type { TextContent } from "@/schemas/structured-output.js";
-import { extractApiNames } from "@/tools/tool-shared.js";
+} from "../schemas/output-schemas.js";
+import type { TextContent } from "../schemas/structured-output.js";
+import { extractApiNames } from "./tool-shared.js";
 import type {
   ApiResult,
   CallApiFn,
   CallToolResult,
+  EffectCallApiFn,
   LogFn,
   SearchResultsPayload,
-} from "@/tools/tool-types.js";
-import type { SearchPatternsArgs } from "@/schemas/tool-schemas.js";
+} from "./tool-types.js";
+import type { SearchPatternsArgs } from "../schemas/tool-schemas.js";
+import { Effect } from "effect";
 
 /**
  * Build rich search content from search summaries.
@@ -125,6 +127,114 @@ export async function buildFullSearchContent(
 }
 
 /**
+ * Effect-native version of buildFullSearchContent for the active MCP path.
+ */
+export function buildFullSearchContentEffect(
+  data: SearchResultsPayload,
+  args: SearchPatternsArgs,
+  callApi: EffectCallApiFn,
+  renderedCards: number,
+): Effect.Effect<TextContent[]> {
+  return Effect.gen(function* () {
+    const content: TextContent[] = [];
+    const queryInfo = args.q ? ` for "${args.q}"` : "";
+
+    content.push({
+      type: "text",
+      text: `## Effect Pattern Search${queryInfo}\nFound **${data.count}** patterns.\n\n`,
+      annotations: { priority: 1, audience: ["user"] },
+    });
+    content.push({
+      type: "text",
+      text: `\n\n${MARKER_PATTERN_INDEX_V1}\n\n`,
+      annotations: { priority: 1, audience: ["user"] },
+    });
+
+    if (data.patterns.length === 0 || renderedCards === 0) {
+      return content;
+    }
+
+    const canRenderFromSummary = (
+      summary: SearchResultsPayload["patterns"][number],
+    ) => Boolean(summary.examples && summary.examples.length > 0 && summary.examples[0]?.code);
+
+    const buildCardFromSummary = (
+      summary: SearchResultsPayload["patterns"][number],
+    ): TextContent[] => {
+      const summaryText = summary.description || "No summary available.";
+      const useWhenText =
+        summary.useCases && summary.useCases.length > 0
+          ? summary.useCases[0]
+          : summaryText;
+      const example =
+        summary.examples && summary.examples.length > 0
+          ? summary.examples[0]
+          : undefined;
+      const exampleCode = example?.code || "// No example available for this pattern.";
+      const apiNames = extractApiNames(exampleCode);
+
+      return buildFullPatternCard({
+        title: summary.title,
+        summary: summaryText,
+        rationale: summaryText,
+        useWhen: useWhenText,
+        apiNames,
+        exampleCode,
+        exampleLanguage: example?.language || "typescript",
+      });
+    };
+
+    for (let i = 0; i < renderedCards; i++) {
+      const summary = data.patterns[i]!;
+      if (canRenderFromSummary(summary)) {
+        content.push(...buildCardFromSummary(summary));
+      } else {
+        const detailResult = yield* callApi(
+          `/patterns/${encodeURIComponent(summary.id)}`,
+        );
+
+      if (detailResult.ok && detailResult.data) {
+        const detailEnvelope = detailResult.data as { pattern?: Record<string, unknown> };
+        const detail = (detailEnvelope.pattern ?? detailEnvelope) as Record<string, unknown>;
+        const mergedSummary = {
+          ...summary,
+          title:
+              typeof detail.title === "string" ? detail.title : summary.title,
+            description:
+              typeof detail.summary === "string"
+                ? detail.summary
+                : typeof detail.description === "string"
+                  ? detail.description
+                  : summary.description,
+            useCases:
+              Array.isArray(detail.useCases) && detail.useCases.length > 0
+                ? (detail.useCases as string[])
+                : summary.useCases,
+            examples:
+              Array.isArray(detail.examples) && detail.examples.length > 0
+                ? (detail.examples as SearchResultsPayload["patterns"][number]["examples"])
+                : summary.examples,
+          };
+          content.push(...buildCardFromSummary(mergedSummary));
+        } else {
+          content.push(...buildCardFromSummary(summary));
+        }
+      }
+
+      if (i < renderedCards - 1) {
+        content.push({
+          type: "text",
+          text: "\n\n---\n\n",
+          annotations: { priority: 1, audience: ["user"] },
+        });
+      }
+    }
+
+    return content;
+  });
+}
+
+/**
  * Helper to convert API result to tool result - supports both plain text and rich content.
  *
  * NETWORK_ERROR classification:
@@ -134,7 +244,7 @@ export async function buildFullSearchContent(
 export function toToolResult(
   result: ApiResult<unknown>,
   toolName: string,
-  log: LogFn,
+  log?: LogFn,
   richContent?: (TextContent | { type: "text"; text: string })[],
   format: "markdown" | "json" | "both" = "markdown",
 ): CallToolResult {
@@ -254,7 +364,7 @@ export function toToolResult(
     retryable = true;
   }
 
-  log(`Tool error: ${toolName}`, {
+  log?.(`Tool error: ${toolName}`, {
     error: errorMessage,
     code: errorCode,
     status: statusCode,
@@ -309,6 +419,30 @@ export function toToolResult(
     structuredContent: serializableError,
     isError: true,
   };
+}
+
+export function toToolResultEffect(
+  result: ApiResult<unknown>,
+  toolName: string,
+  log: (message: string, data?: unknown) => Effect.Effect<void, never>,
+  richContent?: (TextContent | { type: "text"; text: string })[],
+  format: "markdown" | "json" | "both" = "markdown",
+): Effect.Effect<CallToolResult> {
+  if (result.ok) {
+    return Effect.succeed(
+      toToolResult(result, toolName, undefined, richContent, format),
+    );
+  }
+
+  return Effect.gen(function* () {
+    yield* log(`Tool error: ${toolName}`, {
+      error: result.error,
+      status: result.status,
+      details: result.details,
+    });
+
+    return toToolResult(result, toolName, undefined, richContent, format);
+  });
 }
 
 /**
@@ -414,4 +548,105 @@ export async function buildZeroResultsResponse(
     content,
     structuredContent,
   };
+}
+
+/**
+ * Effect-native zero-results response builder for the active MCP path.
+ */
+export function buildZeroResultsResponseEffect(
+  query: string,
+  format: "markdown" | "json" | "both",
+  callApi: EffectCallApiFn,
+): Effect.Effect<CallToolResult> {
+  return Effect.gen(function* () {
+    const allPatternsResult = yield* callApi("/patterns?limit=1000");
+
+    let categories: string[] = [];
+    let suggestedPatterns: Array<{ id: string; title: string }> = [];
+    let firstTenPatternIds: string[] = [];
+
+    if (allPatternsResult.ok && allPatternsResult.data) {
+      const data = allPatternsResult.data as SearchResultsPayload;
+      categories = Array.from(
+        new Set(data.patterns.map((p) => p.category).filter(Boolean)),
+      );
+      firstTenPatternIds = data.patterns.slice(0, 10).map((p) => p.id);
+      suggestedPatterns = data.patterns
+        .slice(0, 5)
+        .map((p) => ({ id: p.id, title: p.title }));
+    }
+
+    if (categories.length === 0) {
+      categories = [
+        "error-handling",
+        "validation",
+        "service",
+        "composition",
+        "concurrency",
+        "streams",
+        "resource",
+        "scheduling",
+      ];
+    }
+
+    if (suggestedPatterns.length === 0) {
+      suggestedPatterns = [
+        { id: "effect-service", title: "Effect Service" },
+        { id: "error-handling-match", title: "Error Handling with Match" },
+        { id: "layer-composition", title: "Layer Composition" },
+        { id: "retry-schedule", title: "Retry with Schedule" },
+        { id: "stream-processing", title: "Stream Processing" },
+      ];
+    }
+
+    const systemCatalogSection =
+      firstTenPatternIds.length > 0
+        ? `╔════════ OFFICIAL SYSTEM CATALOG ════════╗\nNO EXACT MATCHES FOUND FOR '${query}'.\nHERE ARE THE TOP 10 AVAILABLE PATTERN IDs:\n${firstTenPatternIds.map((id) => `- \`${id}\``).join("\n")}\n╚════════════════════════════════════════╝\n\n`
+        : "";
+
+    const discoveryCard = `\n\n╔═══════════════════════════════════════════════════════════════╗\n║                    OFFICIAL EFFECT PATTERN                      ║\n╚═══════════════════════════════════════════════════════════════╝\n\n## No Patterns Found\n\nNo patterns found for "${query}".\n\n${systemCatalogSection}### Discovery Card\n\n**Available Categories:**\n\n${categories.map((cat) => `- \`${cat}\``).join("\n")}\n\n**Suggested Patterns:**\n\n${suggestedPatterns.map((p) => `- \`${p.id}\` - ${p.title}`).join("\n")}\n\n**Tips:**\n- Try searching by category (e.g., \`category: error-handling\`)\n- Use broader terms (e.g., "error" instead of "error-handling-v3")\n- Check spelling\n- Try related concepts (e.g., "retry" instead of "resilience")\n\n╔═══════════════════════════════════════════════════════════════╗\n║              END OF OFFICIAL EFFECT PATTERN                    ║\n╚═══════════════════════════════════════════════════════════════╝\n`;
+
+    const structuredContent: SearchResultsOutput = {
+      kind: "patternSearchResults:v1",
+      query: { q: query, format },
+      metadata: {
+        totalCount: 0,
+        renderedCards: 0,
+        renderedCardIds: [],
+        contractMarkers: {
+          index: 0,
+          cards: 0,
+          version: "v1",
+        },
+        categories: categories.reduce<Record<string, number>>(
+          (acc, cat) => ({ ...acc, [cat]: 0 }),
+          {},
+        ),
+      },
+      patterns: [],
+    };
+
+    const content: CallToolResult["content"] = [];
+
+    if (format === "markdown" || format === "both") {
+      content.push({
+        type: "text" as const,
+        text: discoveryCard,
+        mimeType: "text/markdown" as const,
+      });
+    }
+
+    if (format === "json" || format === "both") {
+      content.push({
+        type: "text" as const,
+        text: JSON.stringify(structuredContent, null, 2),
+        mimeType: "application/json" as const,
+      });
+    }
+
+    return {
+      content,
+      structuredContent,
+    };
+  });
 }

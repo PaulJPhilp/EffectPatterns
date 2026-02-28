@@ -6,7 +6,7 @@
  * with different argument orders produce the same cache key.
  */
 
-import type { SearchPatternsArgs } from "@/schemas/tool-schemas.js";
+import type { SearchPatternsArgs } from "../schemas/tool-schemas.js";
 
 /**
  * Generate a stable cache key from search arguments
@@ -46,4 +46,3 @@ export function generateSearchCacheKey(args: SearchPatternsArgs): string {
 export function generatePatternCacheKey(patternId: string): string {
   return `pattern:v1:${patternId}`;
 }
-

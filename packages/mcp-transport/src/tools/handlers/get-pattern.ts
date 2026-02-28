@@ -7,38 +7,42 @@
 
 import {
   MARKER_PATTERN_CARD_V1,
-} from "@/constants/markers.js";
+} from "../../constants/markers.js";
 import {
   buildFullPatternCard,
-} from "@/mcp-content-builders.js";
+} from "../../mcp-content-builders.js";
 import type {
   PatternDetailsOutput,
-} from "@/schemas/output-schemas.js";
-import type { GetPatternArgs } from "@/schemas/tool-schemas.js";
-import { generatePatternCacheKey } from "@/tools/cache-keys.js";
-import { elicitPatternId } from "@/tools/elicitation-helpers.js";
+} from "../../schemas/output-schemas.js";
+import type { GetPatternArgs } from "../../schemas/tool-schemas.js";
+import { generatePatternCacheKey } from "../cache-keys.js";
+import { elicitPatternId } from "../elicitation-helpers.js";
 import {
   generateMigrationDiff,
   isMigrationPattern,
-} from "@/services/pattern-diff-generator/api.js";
-import { toToolResult } from "@/tools/tool-result-builder.js";
+} from "../../services/pattern-diff-generator/api.js";
+import {
+  toToolResult,
+  toToolResultEffect,
+} from "../tool-result-builder.js";
 import {
   extractApiNames,
   normalizeContentBlocks,
   recordPatternHit,
   recordPatternMiss,
   truncateAtWordBoundary,
-} from "@/tools/tool-shared.js";
+} from "../tool-shared.js";
 import type {
   ApiPattern,
   CallToolResult,
+  EffectToolContext,
   SearchResultsPayload,
   ToolContext,
-} from "@/tools/tool-types.js";
+} from "../tool-types.js";
 import { Effect } from "effect";
-import { MCPApiService } from "@/services/MCPApiService.js";
-import { MCPCacheService } from "@/services/MCPCacheService.js";
-import { MCPLoggerService } from "@/services/MCPLoggerService.js";
+import { MCPApiService } from "../../services/MCPApiService.js";
+import { MCPCacheService } from "../../services/MCPCacheService.js";
+import { MCPLoggerService } from "../../services/MCPLoggerService.js";
 
 export async function handleGetPattern(
   args: GetPatternArgs,
@@ -377,6 +381,338 @@ export async function handleGetPattern(
   return toToolResult(result, "get_pattern", log, undefined, format);
 }
 
+function getPatternProgram(
+  args: GetPatternArgs,
+  ctx: EffectToolContext,
+): Effect.Effect<CallToolResult> {
+  const { callApi, log, cache } = ctx;
+
+  return Effect.gen(function* () {
+    yield* log("Tool called: get_pattern", args);
+
+    const format = args.format || "markdown";
+    const includeStructuredDetails =
+      args.includeStructuredDetails ?? true;
+
+    if (!args.id || args.id.trim().length === 0) {
+      const elicitation = elicitPatternId("");
+      const content: CallToolResult["content"] = [];
+
+      if (format === "markdown" || format === "both") {
+        content.push(...elicitation.content);
+      }
+
+      if (format === "json" || format === "both") {
+        content.push({
+          type: "text" as const,
+          text: JSON.stringify(elicitation.structuredContent, null, 2),
+          mimeType: "application/json" as const,
+        });
+      }
+
+      return {
+        content: normalizeContentBlocks(content),
+        structuredContent: elicitation.structuredContent,
+      };
+    }
+
+    const baseCacheKey = generatePatternCacheKey(args.id);
+    const cacheKey = `${baseCacheKey}:format=${format}:details=${includeStructuredDetails}`;
+
+    if (cache) {
+      const cached = (yield* cache.get(cacheKey)) as CallToolResult | null;
+      if (cached) {
+        recordPatternHit();
+        yield* log(`Cache hit: ${cacheKey}`);
+        return {
+          ...cached,
+          content: normalizeContentBlocks(cached.content || []),
+        };
+      }
+      recordPatternMiss();
+    }
+
+    const result = yield* callApi(`/patterns/${encodeURIComponent(args.id)}`);
+
+    if (!result.ok && "status" in result && result.status === 404) {
+      const searchResult = yield* callApi(
+        `/patterns?q=${encodeURIComponent(args.id)}&limit=5`,
+      );
+      const suggestions: string[] = [];
+      if (searchResult.ok && searchResult.data) {
+        const searchData = searchResult.data as SearchResultsPayload;
+        suggestions.push(...searchData.patterns.slice(0, 5).map((p) => p.id));
+      }
+
+      const elicitation = elicitPatternId(
+        args.id,
+        suggestions.length > 0 ? suggestions : undefined,
+      );
+
+      const content: CallToolResult["content"] = [];
+
+      if (format === "markdown" || format === "both") {
+        content.push(...elicitation.content);
+      }
+
+      if (format === "json" || format === "both") {
+        content.push({
+          type: "text" as const,
+          text: JSON.stringify(elicitation.structuredContent, null, 2),
+          mimeType: "application/json" as const,
+        });
+      }
+
+      return {
+        content: normalizeContentBlocks(content),
+        structuredContent: elicitation.structuredContent,
+      };
+    }
+
+    if (result.ok && isMigrationPattern(args.id)) {
+      const diffContent = generateMigrationDiff(args.id);
+      const structuredContent: PatternDetailsOutput = {
+        kind: "patternDetails:v1",
+        id: args.id,
+        title: "Migration Pattern",
+        category: "migration",
+        difficulty: "intermediate" as const,
+        summary: "Migration guide pattern",
+        description: "This pattern shows migration from v3 to v4",
+        provenance: {
+          source: "Effect Patterns API",
+          timestamp: new Date().toISOString(),
+          version: "pps-v2",
+          marker: "v1",
+        },
+      };
+      const jsonContent = JSON.parse(JSON.stringify(structuredContent));
+
+      const content: CallToolResult["content"] = [];
+
+      if (format === "markdown" || format === "both") {
+        content.push(
+          ...diffContent.map((block) => ({
+            ...block,
+            mimeType: "text/markdown" as const,
+          })),
+        );
+      }
+
+      if (format === "json" || format === "both") {
+        content.push({
+          type: "text" as const,
+          text: JSON.stringify(jsonContent, null, 2),
+          mimeType: "application/json" as const,
+        });
+      }
+
+      const toolResult: CallToolResult = {
+        content: normalizeContentBlocks(content),
+        structuredContent: jsonContent,
+      };
+      if (cache) {
+        yield* cache.set(cacheKey, toolResult, 60 * 60 * 1000);
+      }
+      return toolResult;
+    }
+
+    if (result.ok && result.data) {
+      const patternEnvelope = result.data as { pattern?: ApiPattern } | ApiPattern;
+      const pattern = (
+        "pattern" in patternEnvelope && patternEnvelope.pattern
+          ? patternEnvelope.pattern
+          : patternEnvelope
+      ) as ApiPattern;
+      const summaryText = pattern.summary || pattern.description;
+      const rationaleText = pattern.description;
+      const useWhenText =
+        pattern.useCases && pattern.useCases.length > 0
+          ? pattern.useCases[0]
+          : summaryText;
+      const example =
+        pattern.examples && pattern.examples.length > 0
+          ? pattern.examples[0]
+          : undefined;
+      const exampleCode =
+        example?.code || "// No example available for this pattern.";
+      const apiNames = extractApiNames(exampleCode);
+
+      const cardBlock = buildFullPatternCard({
+        title: pattern.title,
+        summary: summaryText,
+        rationale: rationaleText,
+        useWhen: useWhenText,
+        apiNames,
+        exampleCode,
+        exampleLanguage: example?.language || "typescript",
+        headingLevel: 1,
+      });
+
+      const wantsDetailedStructured =
+        includeStructuredDetails && (format === "json" || format === "both");
+
+      const useWhen = wantsDetailedStructured
+        ? pattern.useCases && pattern.useCases.length > 0
+          ? pattern.useCases[0]
+          : pattern.description?.split(/[.!?]+/)[0]?.trim() ?? ""
+        : undefined;
+
+      const avoidWhen = wantsDetailedStructured
+        ? pattern.useCases?.find(
+            (uc: string) =>
+              uc.toLowerCase().includes("avoid") ||
+              uc.toLowerCase().includes("not"),
+          ) || pattern.description?.match(/avoid[^.!?]*[.!?]/i)?.[0]?.trim()
+        : undefined;
+
+      const sections: PatternDetailsOutput["sections"] | undefined =
+        wantsDetailedStructured ? [] : undefined;
+      if (sections && pattern.description) {
+        sections.push({
+          title: "Description",
+          content: pattern.description,
+          type: "description",
+        });
+      }
+      if (sections && pattern.examples && pattern.examples.length > 0) {
+        for (const ex of pattern.examples) {
+          sections.push({
+            title: ex.description || "Example",
+            content: ex.code,
+            type: "example",
+          });
+        }
+      }
+      if (sections && pattern.useCases && pattern.useCases.length > 0) {
+        for (const useCase of pattern.useCases) {
+          sections.push({
+            title: "Use Case",
+            content: useCase,
+            type: "useCase",
+          });
+        }
+      }
+      if (
+        sections &&
+        pattern.relatedPatterns &&
+        pattern.relatedPatterns.length > 0
+      ) {
+        sections.push({
+          title: "Related Patterns",
+          content: pattern.relatedPatterns.join(", "),
+          type: "related",
+        });
+      }
+
+      const markdownText = cardBlock.map((b) => b.text).join("\n");
+      const cardMarkerCount = (
+        markdownText.match(
+          new RegExp(
+            MARKER_PATTERN_CARD_V1.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+            "g",
+          ),
+        ) || []
+      ).length;
+
+      const descriptionText = includeStructuredDetails
+        ? pattern.description
+        : truncateAtWordBoundary(pattern.description, 400);
+
+      const structuredContent: PatternDetailsOutput = {
+        kind: "patternDetails:v1",
+        id: pattern.id || args.id,
+        title: pattern.title,
+        category: pattern.category,
+        difficulty: pattern.difficulty as
+          | "beginner"
+          | "intermediate"
+          | "advanced",
+        summary: truncateAtWordBoundary(pattern.description, 200),
+        description: descriptionText,
+        tags: includeStructuredDetails ? pattern.tags : undefined,
+        useGuidance: wantsDetailedStructured
+          ? {
+              useWhen,
+              avoidWhen,
+            }
+          : undefined,
+        sections: wantsDetailedStructured ? sections : undefined,
+        examples: wantsDetailedStructured
+          ? pattern.examples?.map((ex) => ({
+              code: ex.code,
+              language: ex.language || "typescript",
+              description: ex.description,
+            }))
+          : undefined,
+        provenance: wantsDetailedStructured
+          ? {
+              source: "Effect Patterns API",
+              timestamp: new Date().toISOString(),
+              version: "pps-v2",
+              marker: cardMarkerCount > 0 ? "v1" : undefined,
+            }
+          : undefined,
+      };
+
+      const serializableStructuredContent = JSON.parse(
+        JSON.stringify(structuredContent),
+      );
+
+      if (process.env.MCP_DEBUG === "true") {
+        const structuredSize = JSON.stringify(serializableStructuredContent).length;
+        yield* log("[DIAGNOSTIC] structuredContent size (chars)", {
+          structuredSize,
+          includeStructuredDetails,
+          format,
+        });
+      }
+
+      const content: CallToolResult["content"] = [];
+
+      if (format === "markdown" || format === "both") {
+        content.push(
+          ...cardBlock.map((block) => ({
+            ...block,
+            mimeType: "text/markdown" as const,
+            annotations: block.annotations || {
+              priority: 1,
+              audience: ["user"],
+            },
+          })),
+        );
+      }
+
+      if (format === "json" || format === "both") {
+        content.push({
+          type: "text" as const,
+          text: JSON.stringify(serializableStructuredContent, null, 2),
+          mimeType: "application/json" as const,
+        });
+      }
+
+      const toolResult: CallToolResult = {
+        content: normalizeContentBlocks(content),
+        structuredContent: serializableStructuredContent,
+      };
+
+      if (cache) {
+        yield* cache.set(cacheKey, toolResult, 30 * 60 * 1000);
+      }
+
+      return toolResult;
+    }
+
+    return yield* toToolResultEffect(
+      result,
+      "get_pattern",
+      log,
+      undefined,
+      format,
+    );
+  });
+}
+
 /**
  * Effect.fn version of handleGetPattern with automatic OTEL tracing.
  *
@@ -393,9 +729,9 @@ export const getPatternEffect = Effect.fn("mcp.get_pattern")(
       "mcp.pattern.id": args.id ?? "",
     });
 
-    const ctx: ToolContext = {
+    const ctx: EffectToolContext = {
       callApi: (endpoint, method, data) =>
-        Effect.runPromise(api.callApi(endpoint, method ?? "GET", data)),
+        api.callApi(endpoint, method ?? "GET", data),
       log: (message, data) => logger.log(message, data),
       cache: {
         get: (key) => cache.get(key),
@@ -403,12 +739,6 @@ export const getPatternEffect = Effect.fn("mcp.get_pattern")(
       },
     };
 
-    return yield* Effect.tryPromise({
-      try: () => handleGetPattern(args, ctx),
-      catch: (error) =>
-        new Error(
-          `get_pattern failed: ${error instanceof Error ? error.message : String(error)}`
-        ),
-    });
+    return yield* getPatternProgram(args, ctx);
   }
 );

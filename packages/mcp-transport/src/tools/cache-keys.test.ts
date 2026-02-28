@@ -6,7 +6,7 @@
  * the same cache key and hit the cache correctly.
  */
 
-import type { SearchPatternsArgs } from "@/schemas/tool-schemas";
+import type { SearchPatternsArgs } from "../schemas/tool-schemas";
 import { describe, expect, it } from "vitest";
 import {
     generatePatternCacheKey,

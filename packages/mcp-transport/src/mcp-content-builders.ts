@@ -19,8 +19,8 @@
 import {
   MARKER_PATTERN_CARD_V1,
   MARKER_PATTERN_INDEX_V1
-} from "@/constants/markers.js";
-import type { TextContent } from "@/schemas/structured-output.js";
+} from "./constants/markers.js";
+import type { TextContent } from "./schemas/structured-output.js";
 
 /**
  * MCP 2.0 Annotation structure
