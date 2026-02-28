@@ -180,7 +180,10 @@ export class OAuth2Server {
             return null;
         }
 
-        const token = authHeader.substring(7);
+        const token = authHeader.substring(7).trim();
+        if (!token) {
+            return null;
+        }
         const session = this.sessions.get(token);
         const now = this.now();
 

@@ -91,7 +91,7 @@ export async function handleSearchPatterns(
         log(
           `[${requestId}] Tool handler COMPLETED: search_patterns (cached)`,
         );
-        return cached;
+        return cached as CallToolResult;
       }
       recordSearchMiss();
     }
@@ -462,6 +462,11 @@ export async function handleSearchPatterns(
     if (error instanceof Error) {
       log(`[${requestId}] Error stack:`, error.stack);
     }
-    throw error; // Re-throw to let MCP SDK handle it
+    // Return error as value for consistent handling
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      content: [{ type: "text" as const, text: `Error searching patterns: ${message}` }],
+      isError: true,
+    };
   }
 }

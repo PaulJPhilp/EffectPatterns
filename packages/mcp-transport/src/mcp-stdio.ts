@@ -70,65 +70,8 @@ const httpsAgent = new HttpsAgent({
  * Bounded cache with LRU eviction to prevent memory leaks
  * Maintains both time-based expiration and size-based eviction
  */
-class BoundedCache<T> {
-  private cache = new Map<string, { expiresAt: number; value: T; accessTime: number }>();
-  private readonly maxEntries: number;
-
-  constructor(maxEntries: number) {
-    this.maxEntries = maxEntries;
-  }
-
-  get(key: string): T | null {
-    const entry = this.cache.get(key);
-    if (!entry) return null;
-
-    // Check expiration
-    if (Date.now() > entry.expiresAt) {
-      this.cache.delete(key);
-      return null;
-    }
-
-    // Update access time for LRU tracking
-    entry.accessTime = Date.now();
-    return entry.value;
-  }
-
-  set(key: string, value: T, ttlMs: number): void {
-    // Evict oldest entry if cache is full (LRU)
-    if (this.cache.size >= this.maxEntries && !this.cache.has(key)) {
-      let oldestKey = "";
-      let oldestAccessTime = Infinity;
-
-      for (const [k, v] of this.cache) {
-        if (v.accessTime < oldestAccessTime) {
-          oldestAccessTime = v.accessTime;
-          oldestKey = k;
-        }
-      }
-
-      if (oldestKey) {
-        this.cache.delete(oldestKey);
-      }
-    }
-
-    this.cache.set(key, {
-      value,
-      expiresAt: Date.now() + ttlMs,
-      accessTime: Date.now(),
-    });
-  }
-
-  clear(): void {
-    this.cache.clear();
-  }
-
-  getStats() {
-    return {
-      size: this.cache.size,
-      maxEntries: this.maxEntries,
-    };
-  }
-}
+// BoundedCache and SimpleCache imported from shared utils
+import { BoundedCache, SimpleCache } from "@/utils/cache.js";
 
 /**
  * In-flight request deduping with time-based expiration
@@ -151,6 +94,7 @@ const PATTERNS_DETAIL_CACHE_TTL_MS = 2_000;
 let dedupeHits = 0;
 let dedupeMisses = 0;
 let inFlightRequestCount = 0;
+let lastInFlightCleanup = Date.now();
 
 // ============================================================================
 // Handshake Metrics (debug only)
@@ -306,11 +250,11 @@ async function callApi(
         };
       }
 
-      const result = await response.json() as any;
-      const apiResult: ApiResult<unknown> = { 
-        ok: true, 
-        data: (result && typeof result === "object" && result.data !== undefined) ? result.data : result 
-      };
+      const result: unknown = await response.json();
+      const unwrapped = (result && typeof result === "object" && "data" in result)
+        ? (result as Record<string, unknown>).data
+        : result;
+      const apiResult: ApiResult<unknown> = { ok: true, data: unwrapped };
       if (isPatternsGet) {
         const ttl = isPatternDetail
           ? PATTERNS_DETAIL_CACHE_TTL_MS
@@ -425,9 +369,11 @@ async function callApi(
     });
     inFlightRequestCount = inFlightRequests.size;
 
-    // Clean up expired in-flight requests periodically (every 100 requests)
-    if (inFlightRequestCount % 100 === 0) {
-      const now = Date.now();
+    // Clean up expired in-flight requests periodically (time-based + count-based)
+    const CLEANUP_INTERVAL_MS = 30_000;
+    const now = Date.now();
+    if (inFlightRequestCount % 100 === 0 || now - lastInFlightCleanup > CLEANUP_INTERVAL_MS) {
+      lastInFlightCleanup = now;
       for (const [key, value] of inFlightRequests) {
         if (now - value.createdAt > DEDUP_TIMEOUT_MS * 10) {
           inFlightRequests.delete(key);
@@ -445,54 +391,6 @@ async function callApi(
 // ============================================================================
 // Simple In-Memory Cache for Tool Results
 // ============================================================================
-
-interface CacheEntry<T> {
-  value: T;
-  expiresAt: number;
-}
-
-class SimpleCache {
-  private cache = new Map<string, CacheEntry<unknown>>();
-  private readonly maxEntries = 1000;
-
-  get<T>(key: string): T | null {
-    const entry = this.cache.get(key);
-    if (!entry) return null;
-
-    if (Date.now() > entry.expiresAt) {
-      this.cache.delete(key);
-      return null;
-    }
-
-    return entry.value as T;
-  }
-
-  set<T>(key: string, value: T, ttlMs: number = 5 * 60 * 1000): void {
-    // Evict oldest entry if cache is full (simple FIFO)
-    if (this.cache.size >= this.maxEntries) {
-      const firstKey = this.cache.keys().next().value;
-      if (firstKey) {
-        this.cache.delete(firstKey);
-      }
-    }
-
-    this.cache.set(key, {
-      value,
-      expiresAt: Date.now() + ttlMs,
-    });
-  }
-
-  clear(): void {
-    this.cache.clear();
-  }
-
-  getStats() {
-    return {
-      size: this.cache.size,
-      maxEntries: this.maxEntries,
-    };
-  }
-}
 
 const toolCache = new SimpleCache();
 const MCP_SERVER_VERSION = "2.0.0";
@@ -520,7 +418,7 @@ const server = new McpServer(
 // Register all tools using the shared implementation with cache support
 registerTools(server, callApi, log, {
   get: (key: string) => toolCache.get(key),
-  set: (key: string, value: any, ttl: number) => toolCache.set(key, value, ttl),
+  set: (key: string, value: unknown, ttl: number) => toolCache.set(key, value, ttl),
 });
 
 // ============================================================================

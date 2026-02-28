@@ -8,17 +8,18 @@
 import type { TextContent } from "@/schemas/structured-output.js";
 
 /**
- * Telemetry counters for cache performance
+ * Telemetry counters for cache performance.
+ * Internal mutable state — external consumers should use getCacheMetrics().
  */
-export let cacheMetrics = {
+const _cacheMetrics = {
   searchHits: 0,
   searchMisses: 0,
   patternHits: 0,
   patternMisses: 0,
 };
 
-export function getCacheMetrics() {
-  return { ...cacheMetrics };
+export function getCacheMetrics(): Readonly<typeof _cacheMetrics> {
+  return Object.freeze({ ..._cacheMetrics });
 }
 
 /**
@@ -93,17 +94,17 @@ export function truncateAtWordBoundary(text: string, maxLength: number): string 
  * Track cache metrics
  */
 export function recordSearchHit() {
-  cacheMetrics.searchHits++;
+  _cacheMetrics.searchHits++;
 }
 
 export function recordSearchMiss() {
-  cacheMetrics.searchMisses++;
+  _cacheMetrics.searchMisses++;
 }
 
 export function recordPatternHit() {
-  cacheMetrics.patternHits++;
+  _cacheMetrics.patternHits++;
 }
 
 export function recordPatternMiss() {
-  cacheMetrics.patternMisses++;
+  _cacheMetrics.patternMisses++;
 }

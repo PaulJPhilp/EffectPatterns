@@ -111,12 +111,12 @@ const oauthConfig: OAuthConfig = {
     tokenEndpoint: `${SERVER_BASE_URL}/token`,
     clientId: OAUTH_CLIENT_ID,
     clientSecret: OAUTH_CLIENT_SECRET,
-    redirectUris: [
+    redirectUris: (process.env.OAUTH_REDIRECT_URIS || [
         "http://localhost:3000/callback",
         "http://localhost:3001/callback",
         "https://effect-patterns.com/callback",
         "https://effect-patterns-mcp-staging.vercel.app/callback",
-    ],
+    ].join(",")).split(",").map(s => s.trim()).filter(Boolean),
     defaultScopes: ["mcp:access", "patterns:read"],
     supportedScopes: [
         "mcp:access",
@@ -240,65 +240,8 @@ const httpsAgent = new HttpsAgent({
  * Bounded cache with LRU eviction to prevent memory leaks
  * Maintains both time-based expiration and size-based eviction
  */
-class BoundedCache<T> {
-  private cache = new Map<string, { expiresAt: number; value: T; accessTime: number }>();
-  private readonly maxEntries: number;
-
-  constructor(maxEntries: number) {
-    this.maxEntries = maxEntries;
-  }
-
-  get(key: string): T | null {
-    const entry = this.cache.get(key);
-    if (!entry) return null;
-
-    // Check expiration
-    if (Date.now() > entry.expiresAt) {
-      this.cache.delete(key);
-      return null;
-    }
-
-    // Update access time for LRU tracking
-    entry.accessTime = Date.now();
-    return entry.value;
-  }
-
-  set(key: string, value: T, ttlMs: number): void {
-    // Evict oldest entry if cache is full (LRU)
-    if (this.cache.size >= this.maxEntries && !this.cache.has(key)) {
-      let oldestKey = "";
-      let oldestAccessTime = Infinity;
-
-      for (const [k, v] of this.cache) {
-        if (v.accessTime < oldestAccessTime) {
-          oldestAccessTime = v.accessTime;
-          oldestKey = k;
-        }
-      }
-
-      if (oldestKey) {
-        this.cache.delete(oldestKey);
-      }
-    }
-
-    this.cache.set(key, {
-      value,
-      expiresAt: Date.now() + ttlMs,
-      accessTime: Date.now(),
-    });
-  }
-
-  clear(): void {
-    this.cache.clear();
-  }
-
-  getStats() {
-    return {
-      size: this.cache.size,
-      maxEntries: this.maxEntries,
-    };
-  }
-}
+// BoundedCache and SimpleCache imported from shared utils
+import { BoundedCache, SimpleCache } from "@/utils/cache.js";
 
 /**
  * In-flight request deduping with time-based expiration
@@ -692,12 +635,12 @@ async function callApi(
                 };
             }
 
-            const result = await response.json() as any;
+            const result: unknown = await response.json();
             log(`API Response`, result);
-            const apiResult: ApiResult<unknown> = {
-                ok: true,
-                data: (result && typeof result === "object" && result.data !== undefined) ? result.data : result
-            };
+            const unwrapped = (result && typeof result === "object" && "data" in result)
+                ? (result as Record<string, unknown>).data
+                : result;
+            const apiResult: ApiResult<unknown> = { ok: true, data: unwrapped };
             if (isPatternsGet) {
                 const ttl = isPatternDetail
                     ? PATTERNS_DETAIL_CACHE_TTL_MS
@@ -838,44 +781,11 @@ const server = new McpServer(
 // Tool Registrations (using same pattern as stdio version)
 // ============================================================================
 
-class SimpleCache {
-    private cache = new Map<string, { value: any; expiresAt: number }>();
-    private maxEntries: number;
-
-    constructor(maxEntries = 500) {
-        this.maxEntries = maxEntries;
-    }
-
-    get(key: string) {
-        const entry = this.cache.get(key);
-        if (!entry) return null;
-
-        if (Date.now() > entry.expiresAt) {
-            this.cache.delete(key);
-            return null;
-        }
-
-        return entry.value;
-    }
-
-    set(key: string, value: any, ttlMs: number) {
-        if (this.cache.size >= this.maxEntries) {
-            const firstKey = this.cache.keys().next().value;
-            if (firstKey) this.cache.delete(firstKey);
-        }
-
-        this.cache.set(key, {
-            value,
-            expiresAt: Date.now() + ttlMs,
-        });
-    }
-}
-
-const toolCache = new SimpleCache();
+const toolCache = new SimpleCache(500);
 
 registerTools(server, callApi, log, {
     get: (key: string) => toolCache.get(key),
-    set: (key: string, value: any, ttl: number) => toolCache.set(key, value, ttl),
+    set: (key: string, value: unknown, ttl: number) => toolCache.set(key, value, ttl),
 });
 
 // Server Startup

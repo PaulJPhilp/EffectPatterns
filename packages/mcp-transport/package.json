@@ -17,6 +17,8 @@
     "test": "bunx vitest run",
     "test:watch": "bunx vitest",
     "test:coverage": "bunx vitest run --coverage",
+    "test:ci": "bunx vitest run --coverage && bun run test:policy",
+    "test:policy": "bun run scripts/check-test-policy.ts",
     "test:mcp": "bunx vitest run --config vitest.mcp.config.ts",
     "test:mcp:watch": "bunx vitest --config vitest.mcp.config.ts",
     "test:mcp:local": "MCP_ENV=local bunx vitest run --config vitest.mcp.config.ts tests/mcp-protocol/local.test.ts tests/mcp-protocol/structured-output.test.ts tests/mcp-protocol/stdio-discipline.test.ts",
@@ -24,6 +26,10 @@
     "test:mcp:staging": "bash scripts/test-mcp-staging.sh",
     "test:mcp:production": "bash scripts/test-mcp-production.sh",
     "test:mcp:all": "bash scripts/test-mcp-all.sh",
+    "test:smoke": "bunx vitest run --config vitest.smoke.config.ts",
+    "test:smoke:staging": "MCP_ENV=staging bunx vitest run --config vitest.smoke.config.ts",
+    "test:smoke:production": "MCP_ENV=production bunx vitest run --config vitest.smoke.config.ts",
+    "env:check": "bun run scripts/check-env-for-deploy.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

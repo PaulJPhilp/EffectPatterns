@@ -30,6 +30,7 @@ import {
   truncateAtWordBoundary,
 } from "@/tools/tool-shared.js";
 import type {
+  ApiPattern,
   CallToolResult,
   SearchResultsPayload,
   ToolContext,
@@ -76,7 +77,7 @@ export async function handleGetPattern(
 
   // Try cache first (30 min TTL for individual patterns)
   if (cache) {
-    const cached = cache.get(cacheKey);
+    const cached = cache.get(cacheKey) as CallToolResult | null;
     if (cached) {
       recordPatternHit();
       log(`Cache hit: ${cacheKey}`);
@@ -181,8 +182,10 @@ export async function handleGetPattern(
 
   // For regular patterns, build scan-first content optimized for quick scanning
   if (result.ok && result.data) {
-    const patternEnvelope = result.data as any;
-    const pattern = patternEnvelope.pattern ?? patternEnvelope;
+    const patternEnvelope = result.data as { pattern?: ApiPattern } | ApiPattern;
+    const pattern: ApiPattern = "pattern" in patternEnvelope && patternEnvelope.pattern
+      ? patternEnvelope.pattern
+      : patternEnvelope as ApiPattern;
     // buildScanFirstPatternContent now returns a SINGLE TextContent block
     const summaryText = pattern.summary || pattern.description;
     const rationaleText = pattern.description;
@@ -298,7 +301,7 @@ export async function handleGetPattern(
         : undefined,
       sections: wantsDetailedStructured ? sections : undefined,
       examples: wantsDetailedStructured
-        ? pattern.examples?.map((ex: any) => ({
+        ? pattern.examples?.map((ex) => ({
             code: ex.code,
             language: ex.language || "typescript",
             description: ex.description,

@@ -58,14 +58,16 @@ describe("Tool Shared Utilities", () => {
       expect(updatedMetrics.patternMisses).toBe(initialMetrics.patternMisses + 1);
     });
 
-    it("should return independent copies of metrics", () => {
+    it("should return frozen, independent copies of metrics", () => {
       const metrics1 = getCacheMetrics();
       const metrics2 = getCacheMetrics();
 
-      // Modifying one shouldn't affect the other (they're copies)
-      (metrics1 as any).searchHits = 999;
+      // Returned metrics should be frozen (immutable)
+      expect(Object.isFrozen(metrics1)).toBe(true);
 
-      expect(metrics2.searchHits).not.toBe(999);
+      // Each call returns an independent snapshot
+      expect(metrics1).toEqual(metrics2);
+      expect(metrics1).not.toBe(metrics2);
     });
   });
 

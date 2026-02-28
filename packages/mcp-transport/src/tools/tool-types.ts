@@ -69,6 +69,27 @@ export type CallApiFn = (
  */
 export type LogFn = (message: string, data?: unknown) => void;
 
+/**
+ * Shape of a pattern returned by the API's get-pattern endpoint.
+ * Used to replace `as any` casts on API response data.
+ */
+export interface ApiPattern {
+  readonly id: string;
+  readonly title: string;
+  readonly category: string;
+  readonly difficulty: string;
+  readonly summary?: string;
+  readonly description: string;
+  readonly examples?: Array<{
+    readonly code: string;
+    readonly language?: string;
+    readonly description?: string;
+  }>;
+  readonly useCases?: string[];
+  readonly tags?: string[];
+  readonly relatedPatterns?: string[];
+}
+
 export interface SearchPatternSummary {
   readonly id: string;
   readonly title: string;
@@ -98,7 +119,7 @@ export interface ToolContext {
   readonly callApi: CallApiFn;
   readonly log: LogFn;
   readonly cache?: {
-    get: (key: string) => any;
-    set: (key: string, value: any, ttl: number) => void;
+    get: (key: string) => unknown;
+    set: (key: string, value: unknown, ttl: number) => void;
   };
 }

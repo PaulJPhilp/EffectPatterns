@@ -86,7 +86,8 @@ export async function handleListSkills(
     return toToolResult(result, "list_skills", log, undefined, format);
   }
 
-  const data = result.data as { count: number; skills: Array<{ slug: string; name: string; description: string; category: string; patternCount: number; version: number }> };
+  interface SkillSummary { slug: string; name: string; description: string; category: string; patternCount: number; version: number }
+  const data = result.data as { count: number; skills: SkillSummary[] };
 
   const content: CallToolResult["content"] = [];
 
@@ -137,7 +138,8 @@ export async function handleGetSkill(
     return toToolResult(result, "get_skill", log, undefined, format);
   }
 
-  const data = result.data as { skill: { slug: string; name: string; description: string; category: string; patternCount: number; version: number; content?: string } };
+  interface SkillDetail { slug: string; name: string; description: string; category: string; patternCount: number; version: number; content?: string }
+  const data = result.data as { skill: SkillDetail };
 
   const content: CallToolResult["content"] = [];
 
