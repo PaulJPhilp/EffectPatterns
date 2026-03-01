@@ -121,7 +121,7 @@ jobs:
           fail_ci_if_error: false
 
       - name: Upload coverage artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: toolkit-coverage
           path: packages/toolkit/coverage/
@@ -157,7 +157,7 @@ jobs:
           fi
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: toolkit-dist
           path: packages/toolkit/dist/
@@ -191,7 +191,7 @@ jobs:
           SKIP_ENV_VALIDATION: true
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: mcp-server-dist
           path: packages/api-server/.next/
@@ -360,7 +360,7 @@ jobs:
           rm -rf "$tmpdir"
 
       - name: Upload ep-admin coverage artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ep-admin-coverage
           path: packages/ep-admin/coverage/
