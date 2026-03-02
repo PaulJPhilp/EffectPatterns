@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.14.0] - 2026-03-02
+
+### ep-cli 0.4.0
+- **Category-based install for all tools**: `install add` now writes one file per pattern category for Cursor, Windsurf, and Claude (up to 16 files each)
+- Cursor and Windsurf output `.mdc` files with YAML frontmatter in `.cursor/rules/` and `.windsurf/rules/`
+- VS Code writes a single `.github/copilot-instructions.md` (Copilot convention)
+- Claude writes `.md` skill files to `.claude/skills/`
+- Added 14 new integration tests covering file output for all tools
+- Updated CLI documentation (README, QUICK_START, CHANGELOG)
+
+### mcp-transport
+- Added Effect.fn + OpenTelemetry instrumentation
+- Added test harness, smoke tests, and launch-readiness fixes
+- Refined MCP transport service boundaries
+
+### CI & Dependencies
+- Bumped `actions/upload-artifact` from 6 to 7
+- Bumped `actions/download-artifact` from 7 to 8
+- Updated dev dependencies
+
 ## [0.5.0] - 2026-02-27
 
 ### 📦 Version
