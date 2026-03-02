@@ -31,6 +31,7 @@ const apiPatternToRule = (p: {
   readonly title: string;
   readonly description: string;
   readonly difficulty: string;
+  readonly category: string;
   readonly useCases?: readonly string[];
 }): Rule => ({
   id: p.id,
@@ -39,6 +40,7 @@ const apiPatternToRule = (p: {
   skillLevel: p.difficulty,
   useCase: p.useCases ? [...p.useCases] : [],
   content: p.description,
+  category: p.category,
 });
 
 /**

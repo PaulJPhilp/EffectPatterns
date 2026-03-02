@@ -14,6 +14,7 @@ export const RuleSchema = Schema.Struct({
   skillLevel: Schema.optional(Schema.String),
   useCase: Schema.optional(Schema.Array(Schema.String)),
   content: Schema.String,
+  category: Schema.optional(Schema.String),
 });
 
 export interface Rule extends Schema.Schema.Type<typeof RuleSchema> {}

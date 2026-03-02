@@ -288,10 +288,10 @@ Supported tool values:
 Target files:
 
 - `agent` -> `AGENTS.md` (in cwd), managed Effect section is upserted in place
-- `claude` -> `CLAUDE.md` (in cwd), managed Effect section is upserted in place
-- `cursor` -> `.cursor/rules.md`
-- `vscode` -> `.vscode/rules.md`
-- `windsurf` -> `.windsurf/rules.md`
+- `claude` -> `.claude/skills/effect-*.md` (one file per category, no frontmatter)
+- `cursor` -> `.cursor/rules/effect-*.mdc` (one file per category, YAML frontmatter)
+- `vscode` -> `.github/copilot-instructions.md` (single aggregated file with category sections)
+- `windsurf` -> `.windsurf/rules/effect-*.mdc` (one file per category, YAML frontmatter)
 
 Examples:
 
@@ -309,7 +309,10 @@ Notes:
 - `--interactive` opens multi-select prompt.
 - `--skill-level` maps to pattern difficulty filter.
 - `--use-case` filters results client-side by use case tag.
-- `agent` and `claude` use managed sections in `AGENTS.md` / `CLAUDE.md` and update only those sections when rerun.
+- `agent` uses a managed section in `AGENTS.md` and updates only that section when rerun.
+- `claude`, `cursor`, and `windsurf` write one file per pattern category (up to 16 files). Rerunning overwrites existing files.
+- `cursor` and `windsurf` files use `.mdc` format with YAML frontmatter (`description`, `globs`, `alwaysApply`).
+- `vscode` writes a single `.github/copilot-instructions.md` with all categories as markdown sections (Copilot convention).
 - Legacy alias `agents` is accepted and maps to `agent`.
 - State is recorded in installed-rules state JSON file.
 
@@ -572,9 +575,10 @@ Defaults:
 
 Other install targets:
 
-- `.cursor/rules.md`
-- `.vscode/rules.md`
-- `.windsurf/rules.md`
+- `claude` -> `.claude/skills/effect-*.md` (one `.md` per category)
+- `cursor` -> `.cursor/rules/effect-*.mdc` (one `.mdc` per category, YAML frontmatter)
+- `windsurf` -> `.windsurf/rules/effect-*.mdc` (one `.mdc` per category, YAML frontmatter)
+- `vscode` -> `.github/copilot-instructions.md` (single aggregated file)
 
 ## Troubleshooting
 
@@ -647,7 +651,7 @@ Expected when non-TTY or when `NO_COLOR`, `CI`, or `TERM=dumb` is set.
 This document tracks behavior for:
 
 - CLI name: `ep`
-- Version: `0.3.2`
+- Version: `0.4.0`
 
 When command surface or behavior changes, update this file first, then derivative docs.
 

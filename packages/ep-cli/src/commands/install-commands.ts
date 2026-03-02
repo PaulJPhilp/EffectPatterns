@@ -7,7 +7,7 @@ import { FileSystem } from "@effect/platform";
 import { Console, Effect, Option } from "effect";
 import path from "node:path";
 import { Display } from "../services/display/index.js";
-import { Install, InstalledRule } from "../services/install/index.js";
+import { Install, InstalledRule, Rule } from "../services/install/index.js";
 import { colorize } from "../utils.js";
 import { UnsupportedToolError } from "../errors.js";
 
@@ -15,8 +15,6 @@ type InstallTool = "agent" | "claude" | "cursor" | "vscode" | "windsurf";
 
 const EFFECT_AGENT_START = "<!-- EFFECT_SKILLS_AGENT_START -->";
 const EFFECT_AGENT_END = "<!-- EFFECT_SKILLS_AGENT_END -->";
-const EFFECT_CLAUDE_START = "<!-- EFFECT_SKILLS_CLAUDE_START -->";
-const EFFECT_CLAUDE_END = "<!-- EFFECT_SKILLS_CLAUDE_END -->";
 
 const normalizeTool = (tool: string): InstallTool | null => {
   if (tool === "agents") return "agent";
@@ -28,15 +26,94 @@ const normalizeTool = (tool: string): InstallTool | null => {
 
 const installTargetByTool: Record<InstallTool, string> = {
   agent: "AGENTS.md",
-  claude: "CLAUDE.md",
-  cursor: ".cursor/rules.md",
-  vscode: ".vscode/rules.md",
-  windsurf: ".windsurf/rules.md",
+  claude: ".claude/skills/",
+  cursor: ".cursor/rules/",
+  vscode: ".github/copilot-instructions.md",
+  windsurf: ".windsurf/rules/",
+};
+
+const categoryConfigs: Record<string, { slug: string; description: string }> = {
+  "building-apis": {
+    slug: "effect-building-apis",
+    description: "Building HTTP APIs, routing, middleware, authentication, CORS, rate limiting",
+  },
+  "building-data-pipelines": {
+    slug: "effect-data-pipelines",
+    description: "Data pipelines, backpressure, batching, fan-out, pagination, dead letter queues",
+  },
+  "concurrency": {
+    slug: "effect-concurrency",
+    description: "Parallel execution, fibers, Deferred, Semaphore, Latch, Queue, PubSub, race conditions",
+  },
+  "core-concepts": {
+    slug: "effect-core-concepts",
+    description: "Fundamentals: Effect.gen, pipe, map, flatMap, Option, Either, Ref, Config, Layer",
+  },
+  "domain-modeling": {
+    slug: "effect-domain-modeling",
+    description: "Brand, Schema contracts, TaggedError, Option/Either for domain types",
+  },
+  "error-management": {
+    slug: "effect-error-management",
+    description: "catchTag/catchAll, pattern matching on failures, mapError, retry, Cause",
+  },
+  "getting-started": {
+    slug: "effect-getting-started",
+    description: "New Effect projects, first programs, Effect vs Promise migration",
+  },
+  "making-http-requests": {
+    slug: "effect-http-requests",
+    description: "HttpClient, timeouts, caching, retries, logging HTTP requests",
+  },
+  "observability": {
+    slug: "effect-observability",
+    description: "Logging, metrics, tracing, OpenTelemetry, Prometheus, dashboards",
+  },
+  "platform": {
+    slug: "effect-platform",
+    description: "Filesystem, shell commands, environment variables, key-value storage, terminal I/O",
+  },
+  "resource-management": {
+    slug: "effect-resource-management",
+    description: "acquireRelease, Scope, Layer.scoped, pools, hierarchical resources",
+  },
+  "scheduling": {
+    slug: "effect-scheduling",
+    description: "Repeated tasks, cron, debounce, throttle, backoff, circuit breakers",
+  },
+  "schema": {
+    slug: "effect-schema",
+    description: "Schema validation, parsing, transforms, unions, recursive schemas, forms, AI output, config",
+  },
+  "streams": {
+    slug: "effect-streams",
+    description: "Stream, Sink, transforms, stateful operations, grouping, windowing, error handling in streams",
+  },
+  "testing": {
+    slug: "effect-testing",
+    description: "Mock layers, testing services, concurrent/streaming tests, property-based testing",
+  },
+  "tooling-and-debugging": {
+    slug: "effect-tooling",
+    description: "Editor setup, CI/CD, linting, DevTools, profiling, LSP, MCP server",
+  },
+};
+
+const groupByCategory = (
+  rules: ReadonlyArray<Rule>
+): Map<string, Rule[]> => {
+  const byCategory = new Map<string, Rule[]>();
+  for (const rule of rules) {
+    const cat = rule.category ?? "core-concepts";
+    const existing = byCategory.get(cat) ?? [];
+    existing.push(rule);
+    byCategory.set(cat, existing);
+  }
+  return byCategory;
 };
 
 const markerByTool: Partial<Record<InstallTool, { start: string; end: string }>> = {
   agent: { start: EFFECT_AGENT_START, end: EFFECT_AGENT_END },
-  claude: { start: EFFECT_CLAUDE_START, end: EFFECT_CLAUDE_END },
 };
 
 const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -85,26 +162,89 @@ const buildAgentSection = (
     ]),
   ].join("\n");
 
-const buildClaudeSection = (
-  rules: ReadonlyArray<Pick<InstalledRule, "title" | "skillLevel" | "useCase" | "description">>,
+const formatCategoryTitle = (category: string): string =>
+  category
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+
+const buildClaudeSkillFile = (
+  category: string,
+  description: string,
+  rules: ReadonlyArray<Pick<Rule, "title" | "skillLevel" | "description">>,
   generatedAtIso: string
 ): string =>
   [
-    "## Coding Standards (Effect Patterns)",
+    `## Effect Patterns: ${formatCategoryTitle(category)}`,
+    "",
+    `Use when: ${description}`,
     "",
     `Updated: ${generatedAtIso}`,
     "",
-    "### Guiding Principles",
+    "### Patterns",
     "",
     ...rules.map((rule) => {
       const level = rule.skillLevel ?? "general";
-      const useCases = (rule.useCase ?? []).slice(0, 3).join(", ");
-      const useCaseSuffix = useCases.length > 0 ? ` [${useCases}]` : "";
-      return `- **${rule.title}** (${level})${useCaseSuffix}: ${rule.description}`;
+      return `- **${rule.title}** (${level}): ${rule.description}`;
     }),
     "",
-    "Use these as defaults when making implementation decisions in this repository.",
   ].join("\n");
+
+const buildMdcSkillFile = (
+  category: string,
+  description: string,
+  rules: ReadonlyArray<Pick<Rule, "title" | "skillLevel" | "description">>,
+  generatedAtIso: string
+): string =>
+  [
+    "---",
+    `description: "Effect patterns: ${description}"`,
+    `globs: "**/*.ts, **/*.tsx"`,
+    `alwaysApply: false`,
+    "---",
+    "",
+    `# Effect Patterns: ${formatCategoryTitle(category)}`,
+    "",
+    `Use when: ${description}`,
+    "",
+    `Updated: ${generatedAtIso}`,
+    "",
+    ...rules.map((rule) => {
+      const level = rule.skillLevel ?? "general";
+      return `- **${rule.title}** (${level}): ${rule.description}`;
+    }),
+    "",
+  ].join("\n");
+
+const buildCopilotFile = (
+  byCategory: Map<string, ReadonlyArray<Pick<Rule, "title" | "skillLevel" | "description">>>,
+  generatedAtIso: string
+): string => {
+  const sections: string[] = [
+    "# Effect Patterns",
+    "",
+    `Generated by ep on ${generatedAtIso}.`,
+    "",
+  ];
+
+  for (const [cat, rules] of byCategory) {
+    const config = categoryConfigs[cat];
+    if (!config) continue;
+    sections.push(
+      `## ${formatCategoryTitle(cat)}`,
+      "",
+      `Use when: ${config.description}`,
+      "",
+      ...rules.map((rule) => {
+        const level = rule.skillLevel ?? "general";
+        return `- **${rule.title}** (${level}): ${rule.description}`;
+      }),
+      "",
+    );
+  }
+
+  return sections.join("\n");
+};
 
 /**
  * install:add - Add rules to AI tool configuration
@@ -177,36 +317,14 @@ export const installAddCommand = Command.make("add", {
       }
 
       const generatedAt = new Date().toISOString();
-      const rulesMarkdown = [
-        "# Effect Patterns Rules",
-        "",
-        `Generated by ep on ${generatedAt}.`,
-        "Source: Effect Patterns Database",
-        "",
-        ...rulesToInstall.flatMap((rule) => [
-          `## ${rule.title}`,
-          "",
-          `- ID: ${rule.id}`,
-          `- Skill Level: ${rule.skillLevel ?? "general"}`,
-          `- Use Cases: ${(rule.useCase ?? []).join(", ") || "none"}`,
-          "",
-          rule.description,
-          "",
-          rule.content,
-          "",
-        ]),
-      ].join("\n");
 
-      if (normalizedTool === "agent" || normalizedTool === "claude") {
+      if (normalizedTool === "agent") {
         const markers = markerByTool[normalizedTool];
         if (!markers) {
           return yield* Effect.fail(new Error(`Missing marker configuration for tool: ${normalizedTool}`));
         }
 
-        const managedBody =
-          normalizedTool === "agent"
-            ? buildAgentSection(rulesToInstall, generatedAt)
-            : buildClaudeSection(rulesToInstall, generatedAt);
+        const managedBody = buildAgentSection(rulesToInstall, generatedAt);
         const exists = yield* fs.exists(targetPath);
         const current = exists ? yield* fs.readFileString(targetPath) : "";
         const nextContent = upsertManagedSection(
@@ -217,9 +335,63 @@ export const installAddCommand = Command.make("add", {
         );
 
         yield* fs.writeFileString(targetPath, nextContent);
-      } else {
+      } else if (normalizedTool === "claude") {
+        const skillsDir = ".claude/skills";
+        yield* fs.makeDirectory(skillsDir, { recursive: true });
+
+        const byCategory = groupByCategory(rulesToInstall);
+
+        let filesWritten = 0;
+        for (const [cat, rules] of byCategory) {
+          const config = categoryConfigs[cat];
+          if (!config) continue;
+          const filePath = path.join(skillsDir, `${config.slug}.md`);
+          const content = buildClaudeSkillFile(cat, config.description, rules, generatedAt);
+          yield* fs.writeFileString(filePath, content);
+          filesWritten++;
+        }
+
+        yield* Console.log(
+          colorize(
+            `\n✅ Installed ${rulesToInstall.length} rule(s) across ${filesWritten} skill file(s) in ${skillsDir}/`,
+            "GREEN"
+          )
+        );
+      } else if (normalizedTool === "cursor" || normalizedTool === "windsurf") {
+        const rulesDir = targetPath; // e.g. ".cursor/rules/" or ".windsurf/rules/"
+        yield* fs.makeDirectory(rulesDir, { recursive: true });
+
+        const byCategory = groupByCategory(rulesToInstall);
+
+        let filesWritten = 0;
+        for (const [cat, rules] of byCategory) {
+          const config = categoryConfigs[cat];
+          if (!config) continue;
+          const filePath = path.join(rulesDir, `${config.slug}.mdc`);
+          const content = buildMdcSkillFile(cat, config.description, rules, generatedAt);
+          yield* fs.writeFileString(filePath, content);
+          filesWritten++;
+        }
+
+        yield* Console.log(
+          colorize(
+            `\n✅ Installed ${rulesToInstall.length} rule(s) across ${filesWritten} file(s) in ${rulesDir}`,
+            "GREEN"
+          )
+        );
+      } else if (normalizedTool === "vscode") {
         yield* fs.makeDirectory(path.dirname(targetPath), { recursive: true });
-        yield* fs.writeFileString(targetPath, rulesMarkdown);
+
+        const byCategory = groupByCategory(rulesToInstall);
+        const content = buildCopilotFile(byCategory, generatedAt);
+        yield* fs.writeFileString(targetPath, content);
+
+        yield* Console.log(
+          colorize(
+            `\n✅ Installed ${rulesToInstall.length} rule(s) to ${targetPath}`,
+            "GREEN"
+          )
+        );
       }
 
       // Save install state
@@ -236,10 +408,8 @@ export const installAddCommand = Command.make("add", {
       ];
       yield* saveInstalledRules(merged);
 
-      if (normalizedTool === "agent" || normalizedTool === "claude") {
+      if (normalizedTool === "agent") {
         yield* Console.log(`✅ Installed Effect Skills to ${targetPath}`);
-      } else {
-        yield* Display.showSuccess(`Installed ${rulesToInstall.length} rule(s) to ${targetPath}`);
       }
       yield* Display.showInfo(`Next: ep install list --installed`);
     })

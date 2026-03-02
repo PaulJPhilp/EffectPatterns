@@ -82,6 +82,7 @@ describe("Install Service", () => {
 				skillLevel: "beginner",
 				useCase: ["resilience"],
 				content: "Retry transient failures.",
+				category: "error-handling",
 			},
 		]);
 	});

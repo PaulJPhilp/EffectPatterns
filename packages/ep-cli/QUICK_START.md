@@ -65,6 +65,27 @@ Resolution order is:
   - override: `EP_SKILLS_DIR`
   - otherwise auto-discovered from current directory upward
 
+## Install Patterns Into Your Editor
+
+```bash
+# Cursor — writes .mdc files to .cursor/rules/
+ep install add --tool cursor
+
+# Windsurf — writes .mdc files to .windsurf/rules/
+ep install add --tool windsurf
+
+# VS Code / Copilot — writes .github/copilot-instructions.md
+ep install add --tool vscode
+
+# Claude Code — writes .md files to .claude/skills/
+ep install add --tool claude
+
+# Agent — managed section in AGENTS.md (default)
+ep install add --tool agent
+```
+
+Each tool gets the format it expects: `.mdc` with YAML frontmatter for Cursor/Windsurf, a single aggregated markdown for VS Code/Copilot, and plain `.md` skill files for Claude.
+
 ## Useful Flags
 
 ```bash
