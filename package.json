@@ -137,7 +137,7 @@
   "devDependencies": {
     "@ai-sdk/openai": "^3.0.29",
     "@biomejs/biome": "^2.4.0",
-    "@effect/language-service": "^0.75.1",
+    "@effect/language-service": "^0.77.0",
     "@effect/opentelemetry": "^0.61.0",
     "@effect/schema": "^0.75.5",
     "@modelcontextprotocol/sdk": "^1.26.0",
@@ -162,7 +162,7 @@
     "tsx": "^4.21.0",
     "turbo": "^2.8.9",
     "typescript": "5.9.3",
-    "ultracite": "7.2.3",
+    "ultracite": "7.2.4",
     "vitest": "^4.0.18"
   },
   "keywords": [
