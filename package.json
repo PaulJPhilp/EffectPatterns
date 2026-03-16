@@ -127,7 +127,7 @@
     "gray-matter": "^4.0.3",
     "js-yaml": "^4.1.1",
     "liquidjs": "^10.24.0",
-    "msgpackr": "1.11.8",
+    "msgpackr": "1.11.9",
     "ora": "^9.3.0",
     "postgres": "^3.4.8",
     "semver": "^7.7.4",
