@@ -42,13 +42,13 @@
   },
   "dependencies": {
     "@effect/platform": "0.94.5",
-    "@effect/platform-node": "0.104.1",
+    "@effect/platform-node": "0.106.0",
     "@effect/schema": "^0.75.5",
     "effect": "3.19.19"
   },
   "peerDependencies": {
     "@effect/platform": "0.94.5",
-    "@effect/platform-node": "0.104.1",
+    "@effect/platform-node": "0.106.0",
     "@effect/schema": "^0.75.5",
     "effect": "3.19.19"
   },

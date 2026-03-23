@@ -23,7 +23,7 @@
     "@effect/cli": "0.73.2",
     "@effect/platform": "0.94.5",
     "@effect/cluster": "0.56.4",
-    "@effect/platform-node": "0.104.1",
+    "@effect/platform-node": "0.106.0",
     "@effect/rpc": "0.73.2",
     "@effect/sql": "0.49.0",
     "effect": "3.19.19",
