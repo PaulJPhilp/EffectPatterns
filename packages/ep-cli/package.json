@@ -26,7 +26,7 @@
     "@effect/platform-node": "0.104.1",
     "@effect/rpc": "0.73.2",
     "@effect/sql": "0.49.0",
-    "effect": "3.19.19",
+    "effect": "3.21.0",
     "effect-cli-tui": "^2.2.0",
     "effect-env": "^0.4.1"
   },
