@@ -103,7 +103,7 @@
     "lifecycle-harness": "bun run scripts/lifecycle-harness/src/index.ts"
   },
   "dependencies": {
-    "@effect/cli": "0.73.2",
+    "@effect/cli": "0.75.0",
     "@effect/platform": "0.94.5",
     "@effect/platform-node": "0.104.1",
     "@effect/rpc": "^0.73.1",

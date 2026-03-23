@@ -5,7 +5,7 @@
     "@effect-patterns/ep-shared-services": "workspace:*",
     "@effect-patterns/pipeline-state": "workspace:*",
     "@effect-patterns/toolkit": "workspace:*",
-    "@effect/cli": "0.73.2",
+    "@effect/cli": "0.75.0",
     "@effect/platform": "0.94.5",
     "@effect/platform-node": "0.104.1",
     "conventional-commits-parser": "^6.2.1",
