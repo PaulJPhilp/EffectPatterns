@@ -21,7 +21,7 @@
     "@effect-patterns/ep-shared-services": "workspace:*",
     "@effect-patterns/toolkit": "workspace:*",
     "@effect/cli": "0.73.2",
-    "@effect/platform": "0.94.5",
+    "@effect/platform": "0.96.0",
     "@effect/cluster": "0.56.4",
     "@effect/platform-node": "0.104.1",
     "@effect/rpc": "0.73.2",
