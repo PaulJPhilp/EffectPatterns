@@ -112,7 +112,7 @@ jobs:
           CI: true
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         if: github.event_name == 'push'
         with:
           files: ./packages/toolkit/coverage/coverage-final.json
