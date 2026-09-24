@@ -69,7 +69,7 @@ const Article = Schema.Struct({
     Schema.description("Main title of article")
   ),
   summary: Schema.String.pipe(
-    Schema.maxLength(300),
+    Schema.check(Schema.isMaxLength(300)),
     Schema.description("Executive summary, under 300 chars")
   ),
   metadata: Metadata,

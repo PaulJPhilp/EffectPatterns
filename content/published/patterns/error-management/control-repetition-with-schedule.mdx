@@ -71,7 +71,7 @@ const exponentialBackoff = Schedule.exponential("100 millis");
 const withJitter = Schedule.jittered(exponentialBackoff);
 
 // 3. Limit the schedule to a maximum of 5 repetitions
-const limitedWithJitter = Schedule.compose(withJitter, Schedule.recurs(5));
+const limitedWithJitter = Schedule.max([withJitter, Schedule.recurs(5)]);
 
 // --- Using the Schedule ---
 const program = Effect.gen(function* () {

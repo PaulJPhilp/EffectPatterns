@@ -25,17 +25,17 @@ You have a JSON file on disk and need to read it, parse it, and validate the str
 
 ```typescript
 import { Schema, Effect } from "effect";
-import { FileSystem } from "@effect/platform";
+import { FileSystem } from "effect";
 import { NodeFileSystem } from "@effect/platform-node";
 
 // 1. Define schema for expected structure
 const UserProfile = Schema.Struct({
   id: Schema.String,
-  name: Schema.String.pipe(Schema.minLength(1)),
+  name: Schema.String.pipe(Schema.check(Schema.isMinLength(1))),
   email: Schema.String.pipe(
-    Schema.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)
+    Schema.check(Schema.isPattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/))
   ),
-  age: Schema.Number.pipe(Schema.int(), Schema.between(0, 150)),
+  age: Schema.Number.pipe(Schema.check(Schema.isInt()), Schema.check(Schema.isBetween(0, 150))),
 });
 
 type UserProfile = typeof UserProfile.Type;
@@ -65,7 +65,7 @@ const validateJsonFile = (filePath: string) =>
     }
 
     // Validate against schema
-    const profile = yield* Schema.decodeUnknown(UserProfile)(
+    const profile = yield* Schema.decodeUnknownEffect(UserProfile)(
       jsonData
     ).pipe(
       Effect.mapError((error) => ({
@@ -104,7 +104,7 @@ const parseJsonString = (jsonString: string) =>
       );
     }
 
-    const profile = yield* Schema.decodeUnknown(UserProfile)(data);
+    const profile = yield* Schema.decodeUnknownEffect(UserProfile)(data);
     return profile;
   });
 
@@ -124,7 +124,7 @@ const parseJsonString = (jsonString: string) =>
 | `FileSystem` service | Platform-agnostic file operations bound to runtime |
 | `readFileString` | Reads entire file into memory safely |
 | `JSON.parse()` wrapped in try/catch | Captures JSON parsing errors without throwing |
-| `Schema.decodeUnknown()` | Type-safe validation returning typed result |
+| `Schema.decodeUnknownEffect()` | Type-safe validation returning typed result |
 | Effect error channel | No exceptions; errors flow through typed handler |
 | `provideLayer(NodeFileSystem.layer)` | Injects file system implementation at runtime |
 | Type derivation `typeof X.Type` | Full TypeScript type inference from schema |

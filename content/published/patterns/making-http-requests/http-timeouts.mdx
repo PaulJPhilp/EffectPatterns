@@ -42,18 +42,18 @@ Timeouts prevent these from blocking your application.
 
 ```typescript
 import { Effect, Duration, Data } from "effect"
-import { HttpClient, HttpClientRequest, HttpClientResponse } from "@effect/platform"
+import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/http"
 
 // ============================================
 // 1. Basic request timeout
 // ============================================
 
-const fetchWithTimeout = (url: string, timeout: Duration.DurationInput) =>
+const fetchWithTimeout = (url: string, timeout: Duration.Input) =>
   Effect.gen(function* () {
     const client = yield* HttpClient.HttpClient
 
     return yield* client.get(url).pipe(
-      Effect.flatMap((r) => HttpClientResponse.json(r)),
+      Effect.flatMap((r) => r.json),
       Effect.timeout(timeout)
     )
     // Returns Option<A> - None if timed out
@@ -68,17 +68,17 @@ class RequestTimeoutError extends Data.TaggedError("RequestTimeoutError")<{
   readonly timeout: Duration.Duration
 }> {}
 
-const fetchWithTimeoutError = (url: string, timeout: Duration.DurationInput) =>
+const fetchWithTimeoutError = (url: string, timeout: Duration.Input) =>
   Effect.gen(function* () {
     const client = yield* HttpClient.HttpClient
 
     return yield* client.get(url).pipe(
-      Effect.flatMap((r) => HttpClientResponse.json(r)),
+      Effect.flatMap((r) => r.json),
       Effect.timeoutFail({
         duration: timeout,
         onTimeout: () => new RequestTimeoutError({
           url,
-          timeout: Duration.decode(timeout),
+          timeout: Duration.fromInputUnsafe(timeout),
         }),
       })
     )
@@ -100,7 +100,7 @@ const fetchWithPhasedTimeouts = (url: string) =>
     )
 
     // Read timeout (body)
-    const body = yield* HttpClientResponse.text(response).pipe(
+    const body = yield* response.text.pipe(
       Effect.timeout("30 seconds"),
       Effect.flatten,
       Effect.mapError(() => new Error("Read timeout"))
@@ -123,7 +123,7 @@ const fetchWithFallback = (url: string): Effect.Effect<ApiResponse> =>
     const client = yield* HttpClient.HttpClient
 
     return yield* client.get(url).pipe(
-      Effect.flatMap((r) => HttpClientResponse.json(r)),
+      Effect.flatMap((r) => r.json),
       Effect.map((data) => ({ data, cached: false })),
       Effect.timeout("5 seconds"),
       Effect.flatMap((result) =>
@@ -143,7 +143,7 @@ const fetchWithInterrupt = (url: string) =>
     const client = yield* HttpClient.HttpClient
 
     return yield* client.get(url).pipe(
-      Effect.flatMap((r) => HttpClientResponse.json(r)),
+      Effect.flatMap((r) => r.json),
       Effect.interruptible,
       Effect.timeout("10 seconds")
     )
@@ -155,9 +155,9 @@ const fetchWithInterrupt = (url: string) =>
 // ============================================
 
 interface TimeoutConfig {
-  readonly connect: Duration.DurationInput
-  readonly read: Duration.DurationInput
-  readonly total: Duration.DurationInput
+  readonly connect: Duration.Input
+  readonly read: Duration.Input
+  readonly total: Duration.Input
 }
 
 const defaultTimeouts: TimeoutConfig = {
@@ -176,7 +176,7 @@ const createHttpClient = (config: TimeoutConfig = defaultTimeouts) =>
           Effect.timeout(config.connect),
           Effect.flatten,
           Effect.flatMap((r) =>
-            HttpClientResponse.json(r).pipe(
+            r.json.pipe(
               Effect.timeout(config.read),
               Effect.flatten
             )

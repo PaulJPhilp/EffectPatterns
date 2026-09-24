@@ -68,10 +68,10 @@ const User = Schema.Struct({
 type User = typeof User.Type
 
 // Now create decoders at each level
-const parseCoordinate = Schema.decodeUnknown(Coordinate)
-const parseAddress = Schema.decodeUnknown(Address)
-const parseProfile = Schema.decodeUnknown(Profile)
-const parseUser = Schema.decodeUnknown(User)
+const parseCoordinate = Schema.decodeUnknownEffect(Coordinate)
+const parseAddress = Schema.decodeUnknownEffect(Address)
+const parseProfile = Schema.decodeUnknownEffect(Profile)
+const parseUser = Schema.decodeUnknownEffect(User)
 
 // Use in pipeline
 const fetchUser = (id: number) =>
@@ -99,7 +99,7 @@ const fetchUserPartial = (id: number) =>
     )
 
     // Validate user fields first
-    const userFields = yield* Schema.decodeUnknown(
+    const userFields = yield* Schema.decodeUnknownEffect(
       Schema.Struct({
         id: Schema.Number,
         name: Schema.String,
@@ -131,7 +131,7 @@ const fetchUserPartial = (id: number) =>
 
 // Paginated response example
 const UserResponse = Schema.Struct({
-  status: Schema.Literal("success", "error"),
+  status: Schema.Literals(["success", "error"]),
   data: Schema.Array(User),
   meta: Schema.Struct({
     total: Schema.Number,
@@ -142,7 +142,7 @@ const UserResponse = Schema.Struct({
 
 type UserResponse = typeof UserResponse.Type
 
-const parseUserResponse = Schema.decodeUnknown(UserResponse)
+const parseUserResponse = Schema.decodeUnknownEffect(UserResponse)
 
 const fetchUsers = (page: number) =>
   Effect.gen(function* () {

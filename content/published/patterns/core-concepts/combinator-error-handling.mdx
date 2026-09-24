@@ -1,19 +1,19 @@
 ---
-title: 'Handling Errors with catchAll, orElse, and match'
+title: 'Handling Errors with catch, orElse, and match'
 id: combinator-error-handling
 skillLevel: intermediate
 applicationPatternId: core-concepts
 summary: >-
-  Use catchAll, orElse, and match to recover from errors, provide fallbacks, or
-  transform errors in Effect, Either, and Option.
+  Use catch, orElse, and match to recover from errors, provide fallbacks, or
+  transform errors in Effect, Result, and Option.
 tags:
   - error-handling
-  - catchAll
+  - catch
   - orElse
   - match
   - combinator
   - effect
-  - either
+  - result
   - option
 rule:
   description: >-
@@ -27,11 +27,11 @@ author: PaulJPhilp
 lessonOrder: 5
 ---
 
-# Handling Errors with `catchAll`, `orElse`, and `match`
+# Handling Errors with `catch`, `orElse`, and `match`
 
 ## Guideline
 
-Use combinators like `catchAll`, `orElse`, and `match` to handle errors declaratively.  
+Use combinators like `catch`, `orElse`, and `match` to handle errors declaratively.  
 These allow you to recover from failures, provide fallback values, or transform errors, all while preserving composability and type safety.
 
 ## Rationale
@@ -42,20 +42,20 @@ By using combinators, you keep error recovery logic close to where errors may oc
 ## Good Example
 
 ```typescript
-import { Effect, Option, Either } from "effect";
+import { Effect, Option, Result } from "effect";
 
 // Effect: Recover from any error
 const effect = Effect.fail("fail!").pipe(
-  Effect.catchAll((err) => Effect.succeed(`Recovered from: ${err}`))
+  Effect.catch((err) => Effect.succeed(`Recovered from: ${err}`))
 ); // Effect<string>
 
 // Option: Provide a fallback if value is None
 const option = Option.none().pipe(Option.orElse(() => Option.some("default"))); // Option<string>
 
-// Either: Provide a fallback if value is Left
-const either = Either.left("error").pipe(
-  Either.orElse(() => Either.right("fallback"))
-); // Either<never, string>
+// Result: Provide a fallback if value is Left
+const either = Result.fail("error").pipe(
+  Result.orElse(() => Result.succeed("fallback"))
+); // Result<string, never>
 
 // Effect: Pattern match on success or failure
 const matchEffect = Effect.fail("fail!").pipe(

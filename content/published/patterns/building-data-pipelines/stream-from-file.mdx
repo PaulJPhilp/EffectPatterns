@@ -46,9 +46,9 @@ The `Stream.fromReadable` constructor provides a bridge from Node.js's built-in 
 This example demonstrates reading a text file, splitting it into individual lines, and processing each line. The combination of `Stream.fromReadable`, `Stream.decodeText`, and `Stream.splitLines` is a powerful and common pattern for handling text-based files.
 
 ```typescript
-import { FileSystem } from "@effect/platform";
+import { FileSystem } from "effect";
 import { NodeFileSystem } from "@effect/platform-node";
-import type { PlatformError } from "@effect/platform/Error";
+import type { PlatformError } from "effect/PlatformError";
 import { Effect, Stream } from "effect";
 import * as path from "node:path";
 
@@ -83,7 +83,7 @@ const program = Effect.gen(function* () {
   const filePath = path.join(__dirname, "large-file.txt");
 
   yield* processFile(filePath, "line 1\nline 2\nline 3").pipe(
-    Effect.catchAll((error: PlatformError) =>
+    Effect.catch((error: PlatformError) =>
       Effect.logError(`Error processing file: ${error.message}`)
     )
   );

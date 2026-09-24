@@ -47,13 +47,12 @@ import { Effect, Context } from "effect"
 // 1. Define a service
 // ============================================
 
-class UserRepository extends Context.Tag("UserRepository")<
-  UserRepository,
-  {
+class UserRepository extends Context.Service<
+  UserRepository, {
     readonly findById: (id: string) => Effect.Effect<User | null>
     readonly save: (user: User) => Effect.Effect<void>
   }
->() {}
+>()("UserRepository") {}
 
 interface User {
   id: string

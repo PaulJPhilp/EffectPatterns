@@ -33,21 +33,23 @@ A runtime bakes your layers into a reusable execution environment. You call `run
 ## Good Example
 
 ```typescript
-import { Effect, Layer, ManagedRuntime } from "effect"
+import { Effect, Layer, ManagedRuntime, Context } from "effect"
 
-class Db extends Effect.Service<Db>()("Db", {
-  sync: () => ({ query: () => Effect.succeed("data") }),
-}) {}
+class Db extends Context.Service<Db>()("Db", {
+  make: Effect.sync(() => ({ query: () => Effect.succeed("data") })),
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 // One-off: provide at the edge
 const oneOff = Effect.gen(function* () {
   const db = yield* Db
   return yield* db.query()
 })
-Effect.runPromise(Effect.provide(oneOff, Db.Default))
+Effect.runPromise(Effect.provide(oneOff, Db.layer))
 
 // Many runs: create runtime once
-const runtime = ManagedRuntime.make(Db.Default)
+const runtime = ManagedRuntime.make(Db.layer)
 const effect = Effect.gen(function* () {
   const db = yield* Db
   return yield* db.query()

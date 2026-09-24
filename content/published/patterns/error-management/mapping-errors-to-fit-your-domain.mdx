@@ -77,7 +77,7 @@ const program = Effect.gen(function* () {
     yield* Effect.logInfo("This won't be reached due to Effect error handling");
   }
 }).pipe(
-  Effect.catchAll((error) =>
+  Effect.catch((error) =>
     Effect.gen(function* () {
       if (error instanceof RepositoryError) {
         yield* Effect.logInfo(`Repository error occurred: ${error._tag}`);

@@ -47,20 +47,20 @@ const attemptAdminAction = (user: { isAdmin: boolean }) =>
 const program = Effect.gen(function* () {
   // Try with admin user
   yield* Effect.logInfo("\nTrying with admin user...");
-  const adminResult = yield* Effect.either(
+  const adminResult = yield* Effect.result(
     attemptAdminAction({ isAdmin: true })
   );
   yield* Effect.logInfo(
-    `Admin result: ${adminResult._tag === "Right" ? adminResult.right : adminResult.left}`
+    `Admin result: ${adminResult._tag === "Success" ? adminResult.success : adminResult.failure}`
   );
 
   // Try with non-admin user
   yield* Effect.logInfo("\nTrying with non-admin user...");
-  const userResult = yield* Effect.either(
+  const userResult = yield* Effect.result(
     attemptAdminAction({ isAdmin: false })
   );
   yield* Effect.logInfo(
-    `User result: ${userResult._tag === "Right" ? userResult.right : userResult.left}`
+    `User result: ${userResult._tag === "Success" ? userResult.success : userResult.failure}`
   );
 });
 

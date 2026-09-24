@@ -35,7 +35,7 @@ Error propagation preserves context:
 - **Error mapping**: Transform errors between layers
 - **Recovery points**: Decide where to handle errors
 
-Pattern: Use `mapError()`, `tapError()`, `catchAll()`, `Cause.prettyPrint()`
+Pattern: Use `mapError()`, `tapError()`, `catch()`, `Cause.prettyPrint()`
 
 ---
 
@@ -199,7 +199,7 @@ const program = Effect.gen(function* () {
         },
       };
     }),
-    Effect.catchAll((error) =>
+    Effect.catch((error) =>
       Effect.gen(function* () {
         yield* Effect.log(`[ERROR CAUGHT] ${error.operation}`);
         yield* Effect.log(`[CONTEXT] ${JSON.stringify(error.context, null, 2)}`);
@@ -263,7 +263,7 @@ const program = Effect.gen(function* () {
       ).pipe(
         Effect.tap(() => Effect.log(`[SUCCESS] Connected on attempt ${i}`))
       ).pipe(
-        Effect.catchAll(() => Effect.succeed(null))
+        Effect.catch(() => Effect.succeed(null))
       );
 
       if (result !== null) {
@@ -279,7 +279,7 @@ const program = Effect.gen(function* () {
   });
 
   const networkResult = yield* withRetryContext.pipe(
-    Effect.catchAll((error) =>
+    Effect.catch((error) =>
       Effect.gen(function* () {
         yield* Effect.log(`[EXHAUSTED] All retries failed`);
         return "fallback";
@@ -327,7 +327,7 @@ const program = Effect.gen(function* () {
       code: "PROFILE_LOAD_FAILED",
       originalError: bizError.originalError.message,
     })),
-    Effect.catchAll((userError) =>
+    Effect.catch((userError) =>
       Effect.gen(function* () {
         yield* Effect.log(`[USER MESSAGE] ${userError.message}`);
         yield* Effect.log(`[CODE] ${userError.code}`);
@@ -362,7 +362,7 @@ const program = Effect.gen(function* () {
       ],
       { concurrency: 3 }
     ).pipe(
-      Effect.catchAll((errors) =>
+      Effect.catch((errors) =>
         Effect.gen(function* () {
           yield* Effect.log(`[CONCURRENT] Caught aggregated errors`);
 
@@ -407,7 +407,7 @@ const inspectCauseChain = <E,>(effect: Effect.Effect<unknown, E>) =>
 
         return error;
       }),
-      Effect.catchAll((error) =>
+      Effect.catch((error) =>
         Effect.gen(function* () {
           yield* Effect.log(
             `[CAUSE] ${JSON.stringify(error, null, 2)}`
@@ -446,7 +446,7 @@ const applyRecoveryStrategies = (
   return sorted.reduce(
     (current, strategy) =>
       current.pipe(
-        Effect.catchAll((error) =>
+        Effect.catch((error) =>
           Effect.gen(function* () {
             if (strategy.canRecover(error as Error)) {
               yield* Effect.log(
@@ -497,7 +497,7 @@ const trackErrorPropagation = <E,>(
         layers.push("layer-2");
         return error;
       }),
-      Effect.catchAll((error) =>
+      Effect.catch((error) =>
         Effect.gen(function* () {
           const duration = Date.now() - startTime;
 

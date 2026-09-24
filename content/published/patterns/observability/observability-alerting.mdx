@@ -58,7 +58,7 @@ interface AlertRule {
   readonly severity: "critical" | "warning" | "info"
   readonly message: string
   readonly labels: Record<string, string>
-  readonly forDuration: Duration.DurationInput
+  readonly forDuration: Duration.Input
 }
 
 // ============================================
@@ -222,7 +222,7 @@ const pagerDutyChannel: NotificationChannel = {
 const runAlertEvaluation = (
   rules: AlertRule[],
   channels: NotificationChannel[],
-  interval: Duration.DurationInput
+  interval: Duration.Input
 ) =>
   Effect.gen(function* () {
     const alertManager = yield* makeAlertManager

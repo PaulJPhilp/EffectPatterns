@@ -39,7 +39,7 @@ HTTP logging helps with:
 
 ```typescript
 import { Effect, Duration } from "effect"
-import { HttpClient, HttpClientRequest, HttpClientResponse } from "@effect/platform"
+import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/http"
 
 // ============================================
 // 1. Simple request/response logging
@@ -114,7 +114,7 @@ const makeLoggingClient = Effect.gen(function* () {
           response.headers
         )
 
-        return yield* HttpClientResponse.json(response) as Effect.Effect<T>
+        return yield* response.json as Effect.Effect<T>
       }),
 
     post: <T>(url: string, body: unknown, options?: { headers?: Record<string, string> }) =>
@@ -136,7 +136,7 @@ const makeLoggingClient = Effect.gen(function* () {
           response.headers
         )
 
-        return yield* HttpClientResponse.json(response) as Effect.Effect<T>
+        return yield* response.json as Effect.Effect<T>
       }),
   }
 })
@@ -150,7 +150,7 @@ const fetchWithSpan = (url: string) =>
     const client = yield* HttpClient.HttpClient
 
     return yield* client.get(url).pipe(
-      Effect.flatMap((r) => HttpClientResponse.json(r)),
+      Effect.flatMap((r) => r.json),
       Effect.withLogSpan(`HTTP GET ${url}`)
     )
   })
@@ -183,7 +183,7 @@ const makeConditionalLoggingClient = (debug: boolean) =>
             duration: `${Date.now() - startTime}ms`,
           })
 
-          return yield* HttpClientResponse.json(response) as Effect.Effect<T>
+          return yield* response.json as Effect.Effect<T>
         }),
     }
   })
@@ -219,7 +219,7 @@ const makeTrackedClient = Effect.gen(function* () {
           })
         )
 
-        return yield* HttpClientResponse.json(response) as Effect.Effect<T>
+        return yield* response.json as Effect.Effect<T>
       })
   }
 })
@@ -247,7 +247,7 @@ const fetchWithErrorLogging = (url: string) =>
         }
         return Effect.succeed(response)
       }),
-      Effect.flatMap((r) => HttpClientResponse.json(r)),
+      Effect.flatMap((r) => r.json),
       Effect.tapError((error) =>
         Effect.logError("Request failed").pipe(
           Effect.annotateLogs({

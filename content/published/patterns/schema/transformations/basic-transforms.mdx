@@ -24,13 +24,10 @@ Your application receives data in one shape but needs it in another. API returns
 # Solution
 
 ```typescript
-import { Schema, Effect } from "effect"
+import { Schema, Effect, SchemaTransformation } from "effect"
 
 // 1. Basic string-to-number transformation
-const StringToNumber = Schema.transform(
-  Schema.String,
-  Schema.Number,
-  {
+const StringToNumber = Schema.String.pipe(Schema.decodeTo(Schema.Number, SchemaTransformation.transform({
     decode: (input) => {
       const num = Number(input)
       if (isNaN(num)) {
@@ -39,24 +36,16 @@ const StringToNumber = Schema.transform(
       return num
     },
     encode: (num) => String(num),
-  }
-)
+  })))
 
 // 2. Unix timestamp to Date transformation
-const UnixTimestamp = Schema.transform(
-  Schema.Number,
-  Schema.Date,
-  {
+const UnixTimestamp = Schema.Number.pipe(Schema.decodeTo(Schema.Date, SchemaTransformation.transform({
     decode: (timestamp) => new Date(timestamp * 1000),
     encode: (date) => Math.floor(date.getTime() / 1000),
-  }
-)
+  })))
 
 // 3. ISO date string to Date transformation
-const ISODateString = Schema.transform(
-  Schema.String,
-  Schema.Date,
-  {
+const ISODateString = Schema.String.pipe(Schema.decodeTo(Schema.Date, SchemaTransformation.transform({
     decode: (input) => {
       const date = new Date(input)
       if (isNaN(date.getTime())) {
@@ -65,28 +54,19 @@ const ISODateString = Schema.transform(
       return date
     },
     encode: (date) => date.toISOString(),
-  }
-)
+  })))
 
 // 4. Trimmed string transformation
-const Trimmed = Schema.transform(
-  Schema.String,
-  Schema.String,
-  {
+const Trimmed = Schema.String.pipe(Schema.decodeTo(Schema.String, SchemaTransformation.transform({
     decode: (input) => input.trim(),
     encode: (output) => output, // Already trimmed
-  }
-)
+  })))
 
 // 5. Uppercase transformation
-const Uppercase = Schema.transform(
-  Schema.String,
-  Schema.String,
-  {
+const Uppercase = Schema.String.pipe(Schema.decodeTo(Schema.String, SchemaTransformation.transform({
     decode: (input) => input.toUpperCase(),
     encode: (output) => output,
-  }
-)
+  })))
 
 // 6. Define a user form with transformations
 const UserFormInput = Schema.Struct({
@@ -107,8 +87,8 @@ type User = {
 }
 
 // 7. Create decoder and encoder
-const decodeUserForm = Schema.decodeUnknown(UserFormInput)
-const encodeUserForm = Schema.encode(UserFormInput)
+const decodeUserForm = Schema.decodeUnknownEffect(UserFormInput)
+const encodeUserForm = Schema.encodeEffect(UserFormInput)
 
 // 8. Apply transformations in effect
 const processUserForm = (rawInput: unknown) =>

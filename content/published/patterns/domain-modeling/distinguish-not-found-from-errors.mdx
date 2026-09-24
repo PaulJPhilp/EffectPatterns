@@ -67,7 +67,7 @@ const findUserInDb = (
     });
 
     // We wrap the potentially null result in an Option
-    return Option.fromNullable(dbResult);
+    return Option.fromNullishOr(dbResult);
   });
 
 // The caller can now handle all three cases explicitly.
@@ -80,7 +80,7 @@ const program = (id: number) =>
         onSome: (user) => Effect.logInfo(`Result: Found user ${user.name}.`),
       })
     ),
-    Effect.catchAll((error) =>
+    Effect.catch((error) =>
       Effect.logInfo("Error: Could not connect to the database.")
     )
   );

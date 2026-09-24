@@ -305,20 +305,19 @@ const createEffectRetrySink = (
         const result = yield* database
           .insertUser(user)
           .pipe(
-            // Retry with exponential backoff
+            // Retry with exponential backoff, up to maxRetries attempts
             Effect.retry(
-              Schedule.exponential("100 millis").pipe(
-                Schedule.addDelay((attempt) =>
-                  Duration.millis(Math.random() * 10) // Add jitter
+              Schedule.max([
+                Schedule.exponential("100 millis").pipe(
+                  Schedule.addDelay(() =>
+                    Duration.millis(Math.random() * 10) // Add jitter
+                  )
                 ),
-                Schedule.compose(
-                  Schedule.recurs(maxRetries),
-                  Schedule.resetAfter(Duration.seconds(30)) // Reset backoff after 30s
-                )
-              )
+                Schedule.recurs(maxRetries)
+              ])
             ),
             // Handle permanent failures
-            Effect.catchAll((error: WriteError) =>
+            Effect.catch((error: WriteError) =>
               Effect.gen(function* () {
                 if (!error.isTransient) {
                   return "permanent-failed" as const;

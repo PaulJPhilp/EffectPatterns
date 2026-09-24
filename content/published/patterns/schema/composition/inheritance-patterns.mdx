@@ -36,7 +36,7 @@ const BaseProduct = Schema.Struct({
   description: Schema.String,
   price: Schema.Number,
   currency: Schema.Enum({ usd: "USD", eur: "EUR", gbp: "GBP" }),
-  createdAt: Schema.Date,
+  createdAt: Schema.DateFromString,
   tags: Schema.Array(Schema.String),
 })
 
@@ -46,9 +46,7 @@ type BaseProduct = typeof BaseProduct.Type
 // 2. Specializations with inheritance
 // ============================================
 
-const PhysicalProduct = Schema.extend(
-  BaseProduct,
-  Schema.Struct({
+const PhysicalProduct = Schema.Struct({ ...BaseProduct.fields,
     type: Schema.Literal("physical"),
     weight: Schema.Number,
     dimensions: Schema.Struct({
@@ -59,13 +57,10 @@ const PhysicalProduct = Schema.extend(
     warehouse: Schema.String,
     stock: Schema.Number,
   })
-)
 
 type PhysicalProduct = typeof PhysicalProduct.Type
 
-const DigitalProduct = Schema.extend(
-  BaseProduct,
-  Schema.Struct({
+const DigitalProduct = Schema.Struct({ ...BaseProduct.fields,
     type: Schema.Literal("digital"),
     downloadUrl: Schema.String,
     fileSize: Schema.Number,
@@ -80,20 +75,16 @@ const DigitalProduct = Schema.extend(
       cloud: "cloud",
     }),
   })
-)
 
 type DigitalProduct = typeof DigitalProduct.Type
 
-const ServiceProduct = Schema.extend(
-  BaseProduct,
-  Schema.Struct({
+const ServiceProduct = Schema.Struct({ ...BaseProduct.fields,
     type: Schema.Literal("service"),
     duration: Schema.Number, // in minutes
     serviceCategory: Schema.String,
     includesSupport: Schema.Boolean,
     maxParticipants: Schema.Optional(Schema.Number),
   })
-)
 
 type ServiceProduct = typeof ServiceProduct.Type
 
@@ -101,7 +92,7 @@ type ServiceProduct = typeof ServiceProduct.Type
 // 3. Union of specializations
 // ============================================
 
-const Product = Schema.Union(PhysicalProduct, DigitalProduct, ServiceProduct)
+const Product = Schema.Union([PhysicalProduct, DigitalProduct, ServiceProduct])
 
 type Product = typeof Product.Type
 
@@ -155,7 +146,7 @@ const validateInventory = (product: Product): boolean => {
 
 const parseProduct = (raw: unknown): Effect.Effect<Product, Error> =>
   Effect.tryPromise({
-    try: () => Schema.decodeUnknown(Product)(raw),
+    try: () => Schema.decodeUnknownEffect(Product)(raw),
     catch: (error) => new Error(String(error)),
   })
 

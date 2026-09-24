@@ -24,19 +24,19 @@ Standard validation stops at the first error: "Username is required". But users 
 # Solution
 
 ```typescript
-import { Schema, Effect, ParseResult } from "effect"
+import { Schema, Effect } from "effect"
 
 // 1. Define form with multiple fields
 const RegistrationForm = Schema.Struct({
-  firstName: Schema.String.pipe(Schema.minLength(1)),
-  lastName: Schema.String.pipe(Schema.minLength(1)),
+  firstName: Schema.String.pipe(Schema.check(Schema.isMinLength(1))),
+  lastName: Schema.String.pipe(Schema.check(Schema.isMinLength(1))),
   email: Schema.String.pipe(
-    Schema.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)
+    Schema.check(Schema.isPattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/))
   ),
   phone: Schema.String.pipe(
-    Schema.pattern(/^\d{10}$/)
+    Schema.check(Schema.isPattern(/^\d{10}$/))
   ),
-  age: Schema.Number.pipe(Schema.between(18, 120)),
+  age: Schema.Number.pipe(Schema.check(Schema.isBetween(18, 120))),
   terms: Schema.Boolean.pipe(
     Schema.refine((b) => b === true, {
       message: "You must accept terms",
@@ -49,7 +49,7 @@ type RegistrationForm = typeof RegistrationForm.Type
 // 2. Collect all errors
 const validateWithAllErrors = (input: unknown) =>
   Effect.gen(function* () {
-    const result = yield* Schema.decodeUnknown(
+    const result = yield* Schema.decodeUnknownEffect(
       RegistrationForm
     )(input).pipe(
       Effect.matchEffect({

@@ -29,9 +29,9 @@ import { Anthropic } from "@anthropic-ai/sdk"
 
 // 1. Define the output shape
 const SentimentAnalysis = Schema.Struct({
-  sentiment: Schema.Literal("positive", "negative", "neutral"),
+  sentiment: Schema.Literals(["positive", "negative", "neutral"]),
   confidence: Schema.Number.pipe(
-    Schema.between(0, 1)
+    Schema.check(Schema.isBetween(0, 1))
   ),
   keywords: Schema.Array(Schema.String),
 })
@@ -80,7 +80,7 @@ const analyzeSentiment = (text: string) =>
       )
     }
 
-    const parseResponse = Schema.decodeUnknown(SentimentAnalysis)
+    const parseResponse = Schema.decodeUnknownEffect(SentimentAnalysis)
     const result = yield* Effect.tryPromise({
       try: () => parseResponse(toolUse.input),
       catch: (error) => new Error(`Validation failed: ${error}`),
@@ -101,7 +101,7 @@ Effect.runPromise(analyzeSentiment("I absolutely love this product!"))
 | `Schema.Literal` | Constrains to exact string values—LLM can only output these values |
 | `Schema.between` | Numeric validation—confidence must be 0-1 |
 | `JSONSchema.make` | Converts Effect.Schema to JSON Schema for LLM APIs |
-| `Schema.decodeUnknown` | Validates LLM response matches schema at runtime, catching hallucinations |
+| `Schema.decodeUnknownEffect` | Validates LLM response matches schema at runtime, catching hallucinations |
 | Single source of truth | Schema defines types, JSON Schema, and validation all in one place |
 
 # When to Use

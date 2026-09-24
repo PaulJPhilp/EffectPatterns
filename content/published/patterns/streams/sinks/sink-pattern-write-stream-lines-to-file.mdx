@@ -271,7 +271,7 @@ const compressRotatedFile = (filePath: string): Effect.Effect<void> =>
   Effect.try(() => {
     execSync(`gzip -f ${filePath}`);
   }).pipe(
-    Effect.catchAll((error) =>
+    Effect.catch((error) =>
       Effect.log(`Failed to compress ${filePath}: ${error}`)
     )
   );

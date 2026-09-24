@@ -157,25 +157,25 @@ const program = Effect.gen(function* () {
     "SUBSCRIBER-1",
     pubsub,
     subscriber1Events
-  ).pipe(Effect.fork);
+  ).pipe(Effect.forkChild);
 
   const sub2Fiber = yield* createSubscriber(
     "SUBSCRIBER-2",
     pubsub,
     subscriber2Events
-  ).pipe(Effect.fork);
+  ).pipe(Effect.forkChild);
 
   const sub3Fiber = yield* createSubscriber(
     "SUBSCRIBER-3",
     pubsub,
     subscriber3Events
-  ).pipe(Effect.fork);
+  ).pipe(Effect.forkChild);
 
   // Wait for subscriptions to establish
   yield* Effect.sleep("100 millis");
 
   // Start publisher
-  const publisherFiber = yield* publisher(pubsub, 5).pipe(Effect.fork);
+  const publisherFiber = yield* publisher(pubsub, 5).pipe(Effect.forkChild);
 
   // Wait for publisher to finish
   yield* Fiber.join(publisherFiber);
@@ -185,9 +185,9 @@ const program = Effect.gen(function* () {
 
   // Shut down
   yield* PubSub.shutdown(pubsub);
-  yield* Fiber.join(sub1Fiber).pipe(Effect.catchAll(() => Effect.void));
-  yield* Fiber.join(sub2Fiber).pipe(Effect.catchAll(() => Effect.void));
-  yield* Fiber.join(sub3Fiber).pipe(Effect.catchAll(() => Effect.void));
+  yield* Fiber.join(sub1Fiber).pipe(Effect.catch(() => Effect.void));
+  yield* Fiber.join(sub2Fiber).pipe(Effect.catch(() => Effect.void));
+  yield* Fiber.join(sub3Fiber).pipe(Effect.catch(() => Effect.void));
 
   // Print summary
   const events1 = yield* Ref.get(subscriber1Events);
@@ -413,7 +413,7 @@ const eventAggregator = <T extends BaseEvent>(
           const event = yield* sub.take();
           yield* PubSub.publish(aggregate, event);
         }
-      }).pipe(Effect.fork)
+      }).pipe(Effect.forkChild)
     );
 
     // Wait for all forwarders
@@ -430,7 +430,7 @@ const aggregatedEventBus = Effect.gen(function* () {
   yield* eventAggregator(
     [source1, source2, source3],
     eventBus
-  ).pipe(Effect.fork);
+  ).pipe(Effect.forkChild);
 
   return { source1, source2, source3, eventBus };
 });

@@ -223,7 +223,7 @@ const adaptiveBuffer = <A>(
       }
     });
 
-    yield* Effect.fork(monitor);
+    yield* Effect.forkChild(monitor);
     yield* adaptiveStream;
   });
 ```

@@ -89,7 +89,7 @@ Type 'Effect<User, NotFoundError, never>' is not assignable to type 'Effect<User
 {
   const result = Effect.runPromise(
     findUser("123").pipe(
-      Effect.catchAll(() => Effect.succeed(defaultUser))
+      Effect.catch(() => Effect.succeed(defaultUser))
     )
   )  // ✅
 }
@@ -142,7 +142,7 @@ Type 'Effect<number, Error, never>' is not assignable to parameter of type 'Effe
   const program = Effect.gen(function* () {
     const a = yield* Effect.succeed(1)
     const b = yield* mayFail().pipe(
-      Effect.catchAll(() => Effect.succeed(0))
+      Effect.catch(() => Effect.succeed(0))
     )
     return a + b  // ✅
   })

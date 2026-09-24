@@ -5,7 +5,7 @@ skillLevel: beginner
 applicationPatternId: core-concepts
 summary: >-
   Use combinators like if, when, and cond to express conditional logic
-  declaratively across Effect, Stream, Option, and Either.
+  declaratively across Effect, Stream, Option, and Result.
 tags:
   - conditional
   - if
@@ -43,7 +43,7 @@ It also ensures that error handling and context propagation are preserved, and t
 ## Good Example
 
 ```typescript
-import { Effect, Stream, Option, Either } from "effect";
+import { Effect, Stream, Option, Result } from "effect";
 
 // Effect: Branch based on a condition
 const effect = Effect.if(true, {
@@ -54,8 +54,8 @@ const effect = Effect.if(true, {
 // Option: Conditionally create an Option
 const option = true ? Option.some("yes") : Option.none(); // Option<string> (Some("yes"))
 
-// Either: Conditionally create an Either
-const either = true ? Either.right("yes") : Either.left("error"); // Either<string, string> (Right("yes"))
+// Result: Conditionally create an Result
+const either = true ? Result.succeed("yes") : Result.fail("error"); // Result<string, string> (Right("yes"))
 
 // Stream: Conditionally emit a stream
 const stream = false ? Stream.fromIterable([1, 2]) : Stream.empty; // Stream<number> (empty)

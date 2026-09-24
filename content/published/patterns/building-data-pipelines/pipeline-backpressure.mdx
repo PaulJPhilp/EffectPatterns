@@ -124,7 +124,7 @@ const boundedQueueExample = Effect.gen(function* () {
       count++
     }
     return count
-  }).pipe(Effect.catchAll(() => Effect.succeed(0)))
+  }).pipe(Effect.catch(() => Effect.succeed(0)))
 
   // Run both - producer will block when queue is full
   yield* Effect.all([producer, consumer], { concurrency: 2 })

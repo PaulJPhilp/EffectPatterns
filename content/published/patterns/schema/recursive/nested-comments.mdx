@@ -54,9 +54,9 @@ const Comment: Schema.Schema<Comment> = Schema.suspend(() =>
       karma: Schema.Number,
     }),
     content: Schema.String,
-    createdAt: Schema.Date,
+    createdAt: Schema.DateFromString,
     score: Schema.Number,
-    edited: Schema.Optional(Schema.Date),
+    edited: Schema.Optional(Schema.DateFromString),
     replies: Schema.Array(Comment),
   })
 )
@@ -80,7 +80,7 @@ const CommentThread = Schema.Struct({
   title: Schema.String,
   author: Schema.String,
   content: Schema.String,
-  createdAt: Schema.Date,
+  createdAt: Schema.DateFromString,
   commentCount: Schema.Number,
   topComments: Schema.Array(Comment),
 })

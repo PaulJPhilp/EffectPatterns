@@ -36,7 +36,7 @@ Stream error handling enables resilience:
 - **Terminate gracefully**: Controlled shutdown
 - **Propagate**: Let errors flow upstream
 
-Pattern: `Stream.catchAll()`, `Stream.retry()`, `Stream.recover()`, `Stream.runCollect()`
+Pattern: `Stream.catch()`, `Stream.retry()`, `Stream.recover()`, `Stream.runCollect()`
 
 ---
 
@@ -143,7 +143,7 @@ const program = Effect.gen(function* () {
     Stream.mapEffect((record) =>
       processElement(record).pipe(
         Effect.map((result) => ({ success: true, result })),
-        Effect.catchAll((error) =>
+        Effect.catch((error) =>
           Effect.gen(function* () {
             yield* Effect.log(`[ERROR] Record ${record.id} failed`);
 
@@ -168,7 +168,7 @@ const program = Effect.gen(function* () {
   const recovered = yield* Stream.fromIterable(["ok1", "fail1", "ok2"]).pipe(
     Stream.mapEffect((id) =>
       getData(id).pipe(
-        Effect.catchAll(() =>
+        Effect.catch(() =>
           Effect.gen(function* () {
             yield* Effect.log(`[FALLBACK] Using default for ${id}`);
 
@@ -203,7 +203,7 @@ const program = Effect.gen(function* () {
             },
           ])
         ),
-        Effect.catchAll((error) =>
+        Effect.catch((error) =>
           Ref.modify(results, (r) => [
             undefined,
             {
@@ -253,11 +253,11 @@ const program = Effect.gen(function* () {
   const retried = unreliableOperation("test").pipe(
     Effect.retry(
       Schedule.exponential("10 millis").pipe(
-        Schedule.upTo("100 millis"),
+        Schedule.upTo({ duration: "100 millis" }),
         Schedule.recurs(3)
       )
     ),
-    Effect.catchAll((error) =>
+    Effect.catch((error) =>
       Effect.gen(function* () {
         yield* Effect.log(`[EXHAUSTED] All retries failed`);
 
@@ -291,7 +291,7 @@ const program = Effect.gen(function* () {
           return value * 2;
         })
       ),
-      Stream.catchAll((error) =>
+      Stream.catch((error) =>
         Effect.gen(function* () {
           yield* Effect.log(`[CONTEXT ERROR] ${error.message}`);
 
@@ -326,7 +326,7 @@ const program = Effect.gen(function* () {
   const partialResults = yield* Stream.fromIterable(mixedQuality).pipe(
     Stream.mapEffect((record) =>
       processQuality(record).pipe(
-        Effect.catchAll((error) =>
+        Effect.catch((error) =>
           Effect.gen(function* () {
             yield* Effect.log(`[LOG] ${error.message}`);
 
@@ -362,7 +362,7 @@ const program = Effect.gen(function* () {
     Stream.mapEffect((id) =>
       slowOperation(id).pipe(
         Effect.timeout("100 millis"),
-        Effect.catchAll((error) =>
+        Effect.catch((error) =>
           Effect.gen(function* () {
             yield* Effect.log(`[TIMEOUT] Operation ${id} timed out`);
 
@@ -388,7 +388,7 @@ const program = Effect.gen(function* () {
         ? Effect.fail(new Error("CRITICAL: System failure"))
         : Effect.succeed(value)
     ),
-    Stream.catchAll((error) =>
+    Stream.catch((error) =>
       Effect.gen(function* () {
         if (isCritical(error)) {
           yield* Effect.log(`[CRITICAL] Terminating stream`);
@@ -405,7 +405,7 @@ const program = Effect.gen(function* () {
 
   yield* terminateOnCritical.pipe(
     Stream.runCollect,
-    Effect.catchAll((error) =>
+    Effect.catch((error) =>
       Effect.gen(function* () {
         yield* Effect.log(`[STOPPED] Stream stopped: ${error.message}`);
 
@@ -437,7 +437,7 @@ const applyRecoveryStrategies = (
   strategies: RecoveryStrategy[]
 ) =>
   stream.pipe(
-    Stream.catchAll((error) =>
+    Stream.catch((error) =>
       Effect.gen(function* () {
         const sorted = strategies.sort((a, b) =>
           b.priority - a.priority
@@ -446,7 +446,7 @@ const applyRecoveryStrategies = (
         for (const strategy of sorted) {
           if (strategy.canRecover(error)) {
             const recovered = yield* strategy.recover(error, null).pipe(
-              Effect.catchAll(() => Effect.fail(error))
+              Effect.catch(() => Effect.fail(error))
             );
 
             return Stream.succeed(recovered);

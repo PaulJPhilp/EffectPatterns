@@ -1,20 +1,20 @@
 ---
-title: Understand the Either Data Type
+title: Understand the Result Data Type
 id: data-either
 skillLevel: beginner
 applicationPatternId: core-concepts
 summary: >-
-  Use Either<E, A> to represent computations that can fail, allowing you to
+  Use Result<E, A> to represent computations that can fail, allowing you to
   accumulate multiple errors instead of short-circuiting on the first one.
 tags:
-  - Either
+  - Result
   - error-handling
   - data-type
   - domain
   - effect
 rule:
   description: >-
-    Use Either to model computations that may fail, making errors explicit and
+    Use Result to model computations that may fail, making errors explicit and
     type-safe.
 related:
   - data-option
@@ -23,50 +23,50 @@ author: PaulJPhilp
 lessonOrder: 1
 ---
 
-# Accumulate Multiple Errors with `Either`
+# Accumulate Multiple Errors with `Result`
 
 ## Guideline
 
-Use the `Either<E, A>` data type to represent computations that can fail (`Left<E>`) or succeed (`Right<A>`).  
+Use the `Result<E, A>` data type to represent computations that can fail (`Failure<E>`) or succeed (`Success<A>`).  
 This makes error handling explicit, type-safe, and composable.
 
 ## Rationale
 
-`Either` is a foundational data type for error handling in functional programming.  
+`Result` is a foundational data type for error handling in functional programming.  
 It allows you to accumulate errors, model domain-specific failures, and avoid exceptions and unchecked errors.
 
 ## Good Example
 
 ```typescript
-import { Either } from "effect";
+import { Result } from "effect";
 
-// Create a Right (success) or Left (failure)
-const success = Either.right(42); // Either<never, number>
-const failure = Either.left("Something went wrong"); // Either<string, never>
+// Create a Success or Failure
+const success = Result.succeed(42); // Result<number, never>
+const failure = Result.fail("Something went wrong"); // Result<never, string>
 
-// Pattern match on Either
+// Pattern match on Result
 const result = success.pipe(
-  Either.match({
-    onLeft: (err) => `Error: ${err}`,
-    onRight: (value) => `Value: ${value}`,
+  Result.match({
+    onFailure: (err) => `Error: ${err}`,
+    onSuccess: (value) => `Value: ${value}`,
   })
 ); // string
 
-// Combine multiple Eithers and accumulate errors
-const e1 = Either.right(1);
-const e2 = Either.left("fail1");
-const e3 = Either.left("fail2");
+// Combine multiple Results and accumulate errors
+const e1 = Result.succeed(1);
+const e2 = Result.fail("fail1");
+const e3 = Result.fail("fail2");
 
-const all = [e1, e2, e3].filter(Either.isRight).map(Either.getRight); // [1]
-const errors = [e1, e2, e3].filter(Either.isLeft).map(Either.getLeft); // ["fail1", "fail2"]
+const all = [e1, e2, e3].filter(Result.isSuccess).map(Result.getSuccess); // [1]
+const errors = [e1, e2, e3].filter(Result.isFailure).map(Result.getFailure); // ["fail1", "fail2"]
 ```
 
 **Explanation:**
 
-- `Either.right(value)` represents success.
-- `Either.left(error)` represents failure.
+- `Result.succeed(value)` represents success.
+- `Result.fail(error)` represents failure.
 - Pattern matching ensures all cases are handled.
-- You can accumulate errors or results from multiple Eithers.
+- You can accumulate errors or results from multiple Results.
 
 ## Anti-Pattern
 

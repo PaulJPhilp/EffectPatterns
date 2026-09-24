@@ -25,27 +25,27 @@ Configuration files are often JSON and must be loaded and validated at applicati
 
 ```typescript
 import { Schema, Effect } from "effect";
-import { FileSystem } from "@effect/platform";
+import { FileSystem } from "effect";
 import { NodeFileSystem } from "@effect/platform-node";
 
 // 1. Define configuration schema
 const AppConfig = Schema.Struct({
   // Required fields
-  appName: Schema.String.pipe(Schema.minLength(1)),
+  appName: Schema.String.pipe(Schema.check(Schema.isMinLength(1))),
   port: Schema.Number.pipe(
-    Schema.int(),
-    Schema.between(1, 65535)
+    Schema.check(Schema.isInt()),
+    Schema.check(Schema.isBetween(1, 65535))
   ),
-  environment: Schema.Literal("development", "staging", "production"),
+  environment: Schema.Literals(["development", "staging", "production"]),
 
   // Optional fields with defaults handled later
   debug: Schema.Boolean.pipe(Schema.optional),
-  logLevel: Schema.Literal("error", "warn", "info", "debug").pipe(
+  logLevel: Schema.Literals(["error", "warn", "info", "debug"]).pipe(
     Schema.optional
   ),
   maxConnections: Schema.Number.pipe(
-    Schema.int(),
-    Schema.positive()
+    Schema.check(Schema.isInt()),
+    Schema.check(Schema.isGreaterThan(0))
   ).pipe(Schema.optional),
 });
 
@@ -75,7 +75,7 @@ const loadConfig = (filePath: string) =>
     }
 
     // Validate config
-    const config = yield* Schema.decodeUnknown(AppConfig)(
+    const config = yield* Schema.decodeUnknownEffect(AppConfig)(
       jsonData
     ).pipe(
       Effect.mapError((error) => ({
@@ -112,7 +112,7 @@ const loadConfigWithFallback = (
 ) =>
   Effect.gen(function* () {
     const config = yield* loadConfig(primaryPath).pipe(
-      Effect.catchAll(() =>
+      Effect.catch(() =>
         Effect.gen(function* () {
           console.log(
             `⚠️  Failed to load ${primaryPath}, trying fallback...`
@@ -158,7 +158,7 @@ Effect.runPromise(
 | `Schema.Literal` | Restrict values to allowed options (enums) |
 | `Schema.between` | Validate numeric ranges (port, connections) |
 | `Schema.optional` | Mark fields as not required |
-| `Effect.catchAll` | Recover from first file load, try fallback |
+| `Effect.catch` | Recover from first file load, try fallback |
 | Clear error hierarchy | Different error tags for different failure modes |
 | Startup validation | Fail fast if config is invalid before app starts |
 | Type safety | TypeScript prevents accessing missing config fields |

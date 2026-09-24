@@ -10,7 +10,7 @@ tags:
   - routing
   - get
 rule:
-  description: Use Http.router.get to associate a URL path with a specific response Effect.
+  description: Use HttpRouter.route to associate a URL path with a specific response Effect.
 author: PaulJPhilp
 related:
   - launch-http-server
@@ -21,13 +21,13 @@ lessonOrder: 3
 
 ## Guideline
 
-To handle specific URL paths, create individual routes using `Http.router` functions (like `Http.router.get`) and combine them into a single `Http.App`.
+To handle specific URL paths, create individual routes using `HttpRouter` functions (like `Http.router.get`) and combine them into a single `HttpEffect`.
 
 ---
 
 ## Rationale
 
-A real application needs to respond differently to different URLs. The `Http.router` provides a declarative, type-safe, and composable way to manage this routing logic. Instead of a single handler with complex conditional logic, you define many small, focused handlers and assign them to specific paths and HTTP methods.
+A real application needs to respond differently to different URLs. The `HttpRouter` provides a declarative, type-safe, and composable way to manage this routing logic. Instead of a single handler with complex conditional logic, you define many small, focused handlers and assign them to specific paths and HTTP methods.
 
 This approach has several advantages:
 
@@ -43,7 +43,7 @@ This approach has several advantages:
 This example defines two separate GET routes, one for the root path (`/`) and one for `/hello`. We create an empty router and add each route to it. The resulting `app` is then served. The router automatically handles sending a `404 Not Found` response for any path that doesn't match.
 
 ```typescript
-import { Data, Effect } from "effect";
+import { Data, Effect, Context, Layer } from "effect";
 
 // Define response types
 interface RouteResponse {
@@ -62,8 +62,8 @@ class RouteHandlerError extends Data.TaggedError("RouteHandlerError")<{
 }> {}
 
 // Define route service
-class RouteService extends Effect.Service<RouteService>()("RouteService", {
-  sync: () => {
+class RouteService extends Context.Service<RouteService>()("RouteService", {
+  make: Effect.sync(() => {
     // Create instance methods
     const handleRoute = (
       path: string
@@ -108,8 +108,10 @@ class RouteService extends Effect.Service<RouteService>()("RouteService", {
           return response;
         }),
     };
-  },
-}) {}
+  }),
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 // Create program with proper error handling
 const program = Effect.gen(function* () {
@@ -148,7 +150,7 @@ const program = Effect.gen(function* () {
 });
 
 // Run the program
-Effect.runPromise(Effect.provide(program, RouteService.Default));
+Effect.runPromise(Effect.provide(program, RouteService.layer));
 ```
 
 ## Anti-Pattern
@@ -157,26 +159,30 @@ The anti-pattern is to create a single, monolithic handler that uses conditional
 
 ```typescript
 import { Effect } from "effect";
-import { Http, NodeHttpServer, NodeRuntime } from "@effect/platform-node";
+import { HttpRouter, HttpServerRequest, HttpServerResponse } from "effect/http";
+import { NodeHttpServer, NodeRuntime } from "@effect/platform-node";
+import { createServer } from "node:http";
 
 // A single app that manually checks the URL
-const app = Http.request.ServerRequest.pipe(
+const app = HttpServerRequest.HttpServerRequest.pipe(
   Effect.flatMap((req) => {
     if (req.url === "/") {
-      return Effect.succeed(Http.response.text("Welcome to the home page!"));
+      return Effect.succeed(HttpServerResponse.text("Welcome to the home page!"));
     } else if (req.url === "/hello") {
-      return Effect.succeed(Http.response.text("Hello, Effect!"));
+      return Effect.succeed(HttpServerResponse.text("Hello, Effect!"));
     } else {
-      return Effect.succeed(Http.response.empty({ status: 404 }));
+      return Effect.succeed(HttpServerResponse.empty({ status: 404 }));
     }
   })
 );
 
-const program = Http.server
-  .serve(app)
-  .pipe(Effect.provide(NodeHttpServer.layer({ port: 3000 })));
+const ServerLive = HttpRouter.serve(app).pipe(
+  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
+);
+
+Layer.launch(ServerLive).pipe(NodeRuntime.runMain);
 
 NodeRuntime.runMain(program);
 ```
 
-This manual routing logic is verbose, error-prone (a typo in a string breaks the route), and mixes the "what" (the response) with the "where" (the routing). It doesn't scale to handle different HTTP methods, path parameters, or middleware gracefully. The `Http.router` is designed to solve all of these problems elegantly.
+This manual routing logic is verbose, error-prone (a typo in a string breaks the route), and mixes the "what" (the response) with the "where" (the routing). It doesn't scale to handle different HTTP methods, path parameters, or middleware gracefully. The `HttpRouter` is designed to solve all of these problems elegantly.

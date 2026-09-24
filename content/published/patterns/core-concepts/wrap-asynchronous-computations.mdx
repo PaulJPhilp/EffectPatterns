@@ -34,7 +34,7 @@ you to leverage the massive `async/await` ecosystem safely.
 ## Good Example
 
 ```typescript
-import { Effect, Data } from "effect";
+import { Effect, Data, Context, Layer } from "effect";
 
 // Define error type using Data.TaggedError
 class HttpError extends Data.TaggedError("HttpError")<{
@@ -42,23 +42,23 @@ class HttpError extends Data.TaggedError("HttpError")<{
 }> {}
 
 // Define HTTP client service
-export class HttpClient extends Effect.Service<HttpClient>()("HttpClient", {
+export class HttpClient extends Context.Service<HttpClient>()("HttpClient", {
   // Provide default implementation
-  sync: () => ({
+  make: Effect.sync(() => ({
     getUrl: (url: string) =>
       Effect.tryPromise({
         try: () => fetch(url),
         catch: (error) =>
           new HttpError({ message: `Failed to fetch ${url}: ${error}` }),
       }),
-  }),
-}) {}
+  })),
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 // Mock HTTP client for demonstration
-export class MockHttpClient extends Effect.Service<MockHttpClient>()(
-  "MockHttpClient",
-  {
-    sync: () => ({
+export class MockHttpClient extends Context.Service<MockHttpClient>()("MockHttpClient", {
+    make: Effect.sync(() => ({
       getUrl: (url: string) =>
         Effect.gen(function* () {
           yield* Effect.logInfo(`Fetching URL: ${url}`);
@@ -81,9 +81,10 @@ export class MockHttpClient extends Effect.Service<MockHttpClient>()(
             });
           }
         }),
-    }),
-  }
-) {}
+    })),
+  }) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 // Demonstrate wrapping asynchronous computations
 const program = Effect.gen(function* () {
@@ -96,7 +97,7 @@ const program = Effect.gen(function* () {
   const response1 = yield* client
     .getUrl("https://api.example.com/success")
     .pipe(
-      Effect.catchAll((error) =>
+      Effect.catch((error) =>
         Effect.gen(function* () {
           yield* Effect.logError(`Request failed: ${error.message}`);
           return new Response("Error response", { status: 500 });
@@ -108,7 +109,7 @@ const program = Effect.gen(function* () {
   // Example 2: Failed request with error handling
   yield* Effect.logInfo("\n2. Failed request with error handling:");
   const response2 = yield* client.getUrl("https://api.example.com/error").pipe(
-    Effect.catchAll((error) =>
+    Effect.catch((error) =>
       Effect.gen(function* () {
         yield* Effect.logError(`Request failed: ${error.message}`);
         return new Response("Fallback response", { status: 200 });
@@ -127,7 +128,7 @@ const program = Effect.gen(function* () {
     ],
     { concurrency: 2 }
   ).pipe(
-    Effect.catchAll((error) =>
+    Effect.catch((error) =>
       Effect.gen(function* () {
         yield* Effect.logError(`One or more requests failed: ${error.message}`);
         return [];
@@ -142,7 +143,7 @@ const program = Effect.gen(function* () {
 });
 
 // Run with mock implementation
-Effect.runPromise(Effect.provide(program, MockHttpClient.Default));
+Effect.runPromise(Effect.provide(program, MockHttpClient.layer));
 ```
 
 **Explanation:**  

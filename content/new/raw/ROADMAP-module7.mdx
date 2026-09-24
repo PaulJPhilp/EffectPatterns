@@ -2,7 +2,7 @@
 
 Pattern matching is a cornerstone of robust, declarative functional programming.  
 It allows you to handle different cases of data, errors, and tagged unions in a type-safe, readable, and maintainable way.  
-Effect, Option, and Either all provide powerful pattern matching combinators that let you express complex logic without resorting to nested if/else or switch statements.
+Effect, Option, and Result all provide powerful pattern matching combinators that let you express complex logic without resorting to nested if/else or switch statements.
 
 This module will teach you the most important pattern matching techniques in the Effect ecosystem, how to use them, and when to reach for each one.
 
@@ -16,8 +16,8 @@ This module will teach you the most important pattern matching techniques in the
 | `matchTag`, `matchTags`                 | Match on specific tagged union cases               | [Matching Tagged Unions with matchTag and matchTags](./patterns/pattern-matchtag)   |
 | `matchEffect`                           | Pattern match with effectful branches              | [Effectful Pattern Matching with matchEffect](./patterns/pattern-matcheffect)       |
 | `catchTag`, `catchTags`                 | Handle specific error types in the failure channel | [Handling Specific Errors with catchTag and catchTags](./patterns/pattern-catchtag) |
-| `Option.match`, `Either.match`          | Handle Option/Either cases declaratively           | [Pattern Matching on Option and Either](./patterns/pattern-option-either-match)     |
-| `isSome`, `isNone`, `isLeft`, `isRight` | Simple case checks for Option/Either               | [Checking Option and Either Cases](./patterns/pattern-option-either-checks)         |
+| `Option.match`, `Result.match`          | Handle Option/Result cases declaratively           | [Pattern Matching on Option and Result](./patterns/pattern-option-either-match)     |
+| `isSome`, `isNone`, `isFailure`, `isSuccess` | Simple case checks for Option/Result               | [Checking Option and Result Cases](./patterns/pattern-option-either-checks)         |
 
 ---
 
@@ -41,11 +41,11 @@ Follow these patterns in order to build a comprehensive understanding of pattern
 
     **Goal**: Recover from or handle specific error types in the Effect failure channel.
 
-5.  #### [Pattern Matching on Option and Either](./patterns/pattern-option-either-match)
+5.  #### [Pattern Matching on Option and Result](./patterns/pattern-option-either-match)
 
-    **Goal**: Handle Option and Either cases declaratively, without manual checks.
+    **Goal**: Handle Option and Result cases declaratively, without manual checks.
 
-6.  #### [Checking Option and Either Cases](./patterns/pattern-option-either-checks)
+6.  #### [Checking Option and Result Cases](./patterns/pattern-option-either-checks)
     **Goal**: Use simple predicates to check for Some/None or Left/Right cases.
 
 ---

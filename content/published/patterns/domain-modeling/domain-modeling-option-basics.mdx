@@ -56,8 +56,8 @@ const hasValue = Option.some(42)
 const noValue = Option.none<number>()
 
 // From nullable - null/undefined becomes None
-const fromNull = Option.fromNullable(null)        // None
-const fromValue = Option.fromNullable("hello")    // Some("hello")
+const fromNull = Option.fromNullishOr(null)        // None
+const fromValue = Option.fromNullishOr("hello")    // Some("hello")
 
 // ============================================
 // 2. Checking and extracting values

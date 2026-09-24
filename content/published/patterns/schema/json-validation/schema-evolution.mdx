@@ -56,8 +56,8 @@ const UserProfileV3 = Schema.Struct({
   phone: Schema.String.pipe(Schema.optional),
   createdAt: Schema.String,
   updatedAt: Schema.String.pipe(Schema.optional),
-  schemaVersion: Schema.Literal("v1", "v2", "v3").pipe(
-    Schema.optionalWith({ default: () => "v3" })
+  schemaVersion: Schema.Literals(["v1", "v2", "v3"]).pipe(
+    Schema.withDecodingDefaultKey(Effect.succeed("v3"))
   ),
 });
 
@@ -151,7 +151,7 @@ const validateAndMigrate = (rawData: unknown) =>
 
     switch (version) {
       case "v1": {
-        const v1 = yield* Schema.decodeUnknown(UserProfileV1)(
+        const v1 = yield* Schema.decodeUnknownEffect(UserProfileV1)(
           rawData
         ).pipe(
           Effect.mapError((error) => ({
@@ -164,7 +164,7 @@ const validateAndMigrate = (rawData: unknown) =>
       }
 
       case "v2": {
-        const v2 = yield* Schema.decodeUnknown(UserProfileV2)(
+        const v2 = yield* Schema.decodeUnknownEffect(UserProfileV2)(
           rawData
         ).pipe(
           Effect.mapError((error) => ({
@@ -177,7 +177,7 @@ const validateAndMigrate = (rawData: unknown) =>
       }
 
       case "v3": {
-        profile = yield* Schema.decodeUnknown(UserProfile)(
+        profile = yield* Schema.decodeUnknownEffect(UserProfile)(
           rawData
         ).pipe(
           Effect.mapError((error) => ({
@@ -200,7 +200,7 @@ const migrateHistoricalRecords = (records: unknown[]) =>
     const results = yield* Effect.all(
       records.map((record, index) =>
         validateAndMigrate(record).pipe(
-          Effect.catchAll((error) =>
+          Effect.catch((error) =>
             Effect.succeed({
               index,
               success: false,

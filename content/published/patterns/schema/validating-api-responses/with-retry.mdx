@@ -42,7 +42,7 @@ const User = Schema.Struct({
 
 type User = typeof User.Type
 
-const parseUser = Schema.decodeUnknown(User)
+const parseUser = Schema.decodeUnknownEffect(User)
 
 // Custom errors to distinguish failure modes
 class NetworkError extends Error {
@@ -68,7 +68,7 @@ const fetchUserRaw = (id: number) =>
         return r.json()
       })
   ).pipe(
-    Effect.catchAll((error) =>
+    Effect.catch((error) =>
       // Wrap fetch errors as NetworkError
       Effect.fail(new NetworkError(String(error)))
     )

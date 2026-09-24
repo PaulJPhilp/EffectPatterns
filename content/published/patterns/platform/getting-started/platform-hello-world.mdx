@@ -43,8 +43,8 @@ Platform wraps system operations in Effect, giving you:
 
 ```typescript
 import { Effect } from "effect"
-import { FileSystem } from "@effect/platform"
-import { NodeContext, NodeRuntime } from "@effect/platform-node"
+import { FileSystem } from "effect"
+import { NodeServices, NodeRuntime } from "@effect/platform-node"
 
 // Read a file - returns Effect<string, PlatformError>
 const readConfig = Effect.gen(function* () {
@@ -77,7 +77,7 @@ const program = Effect.gen(function* () {
 
 // Run with Node.js platform
 program.pipe(
-  Effect.provide(NodeContext.layer),
+  Effect.provide(NodeServices.layer),
   NodeRuntime.runMain
 )
 ```

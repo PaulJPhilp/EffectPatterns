@@ -344,7 +344,7 @@ const createResilientPublishSink = (
                 delay: () =>
                   Effect.sleep(`${config.backoffMs} millis`),
               }),
-              Effect.catchAll((error) =>
+              Effect.catch((error) =>
                 Effect.gen(function* () {
                   console.error(
                     `Failed to publish batch to ${partition}: ${error}`

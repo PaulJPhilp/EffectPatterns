@@ -83,14 +83,14 @@ const quick = Effect.retry(operation, Schedule.recurs(5));
 
 // Retry 3 times with 1 second between
 const spaced = Effect.retry(
-  operation, 
-  Schedule.spaced("1 second").pipe(Schedule.intersect(Schedule.recurs(3)))
+  operation,
+  Schedule.max([Schedule.spaced("1 second"), Schedule.recurs(3)])
 );
 
 // Retry with exponential backoff (1s, 2s, 4s, 8s...)
 const exponential = Effect.retry(
   operation,
-  Schedule.exponential("1 second").pipe(Schedule.intersect(Schedule.recurs(5)))
+  Schedule.max([Schedule.exponential("1 second"), Schedule.recurs(5)])
 );
 ```
 
@@ -121,7 +121,7 @@ const fetchWithRetry = (userId: string) =>
     Effect.retry(
       Schedule.recurs(3).pipe(Schedule.addDelay(() => "500 millis"))
     ),
-    Effect.catchAll((error) =>
+    Effect.catch((error) =>
       Effect.succeed({ error: `Failed after retries: ${error._tag}` })
     )
   );

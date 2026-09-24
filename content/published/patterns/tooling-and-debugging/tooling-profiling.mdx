@@ -168,7 +168,7 @@ const withCpuProfile = <A, E, R>(
     const result = yield* effect
 
     // Stop and save profile
-    yield* Effect.async<void>((resume) => {
+    yield* Effect.callback<void>((resume) => {
       inspector.post("Profiler.stop", (err: Error, { profile }: any) => {
         if (err) {
           resume(Effect.fail(err))

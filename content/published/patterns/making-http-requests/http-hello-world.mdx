@@ -43,7 +43,7 @@ Effect's HttpClient is better than `fetch`:
 
 ```typescript
 import { Effect, Console } from "effect"
-import { HttpClient, HttpClientRequest, HttpClientResponse } from "@effect/platform"
+import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/http"
 import { NodeHttpClient, NodeRuntime } from "@effect/platform-node"
 
 // ============================================
@@ -57,7 +57,7 @@ const simpleGet = Effect.gen(function* () {
   const response = yield* client.get("https://jsonplaceholder.typicode.com/posts/1")
   
   // Get response as JSON
-  const json = yield* HttpClientResponse.json(response)
+  const json = yield* response.json
   
   return json
 })
@@ -79,7 +79,7 @@ const getPost = (id: number) =>
     const response = yield* client.get(
       `https://jsonplaceholder.typicode.com/posts/${id}`
     )
-    const post = yield* HttpClientResponse.json(response) as Effect.Effect<Post>
+    const post = yield* response.json as Effect.Effect<Post>
     return post
   })
 
@@ -98,7 +98,7 @@ const createPost = (title: string, body: string) =>
     )
     
     const response = yield* client.execute(yield* request)
-    const created = yield* HttpClientResponse.json(response)
+    const created = yield* response.json
     
     return created
   })
@@ -109,7 +109,7 @@ const createPost = (title: string, body: string) =>
 
 const safeGetPost = (id: number) =>
   getPost(id).pipe(
-    Effect.catchAll((error) =>
+    Effect.catch((error) =>
       Effect.gen(function* () {
         yield* Console.error(`Failed to fetch post ${id}: ${error}`)
         return { id, title: "Unavailable", body: "", userId: 0 }
@@ -156,9 +156,9 @@ program.pipe(
 
 | Function | Purpose |
 |----------|---------|
-| `HttpClientResponse.json` | Parse as JSON |
-| `HttpClientResponse.text` | Get as text |
-| `HttpClientResponse.arrayBuffer` | Get as bytes |
+| `response.json` | Parse as JSON |
+| `response.text` | Get as text |
+| `response.arrayBuffer` | Get as bytes |
 | `response.status` | HTTP status code |
 | `response.headers` | Response headers |
 

@@ -24,35 +24,35 @@ REST APIs support PATCH requests that update only specific fields—users don't 
 # Solution
 
 ```typescript
-import { Schema, Effect } from "effect";
+import { Schema, Effect, Struct } from "effect";
 
 // 1. Define full document schema
 const ProductSchema = Schema.Struct({
   id: Schema.String,
-  name: Schema.String.pipe(Schema.minLength(1)),
-  description: Schema.String.pipe(Schema.minLength(10)),
-  price: Schema.Number.pipe(Schema.positive()),
-  stock: Schema.Number.pipe(Schema.int(), Schema.between(0, 10000)),
-  category: Schema.Literal(
+  name: Schema.String.pipe(Schema.check(Schema.isMinLength(1))),
+  description: Schema.String.pipe(Schema.check(Schema.isMinLength(10))),
+  price: Schema.Number.pipe(Schema.check(Schema.isGreaterThan(0))),
+  stock: Schema.Number.pipe(Schema.check(Schema.isInt()), Schema.check(Schema.isBetween(0, 10000))),
+  category: Schema.Literals([
     "electronics",
     "clothing",
     "books",
     "other"
-  ),
+  ]),
   active: Schema.Boolean,
 });
 
 type Product = typeof ProductSchema.Type;
 
 // 2. Create partial schema (all fields optional)
-const ProductPatchSchema = Schema.partial(ProductSchema);
+const ProductPatchSchema = Schema.Struct(Struct.map(ProductSchema.fields, Schema.optional));
 
 type ProductPatch = typeof ProductPatchSchema.Type;
 
 // 3. Validate full product (PUT)
 const validateFullProduct = (input: unknown) =>
   Effect.gen(function* () {
-    const product = yield* Schema.decodeUnknown(ProductSchema)(
+    const product = yield* Schema.decodeUnknownEffect(ProductSchema)(
       input
     ).pipe(
       Effect.mapError((error) => ({
@@ -67,7 +67,7 @@ const validateFullProduct = (input: unknown) =>
 // 4. Validate partial product (PATCH)
 const validateProductPatch = (input: unknown) =>
   Effect.gen(function* () {
-    const patch = yield* Schema.decodeUnknown(
+    const patch = yield* Schema.decodeUnknownEffect(
       ProductPatchSchema
     )(input).pipe(
       Effect.mapError((error) => ({
@@ -152,7 +152,7 @@ const batchUpdateProducts = (
     const results = yield* Effect.all(
       updates.map(({ id, patch }) =>
         updateProductInDb(id, patch).pipe(
-          Effect.catchAll((error) =>
+          Effect.catch((error) =>
             Effect.succeed({
               id,
               success: false,
@@ -279,7 +279,7 @@ Effect.runPromise(
 
 | Concept | Explanation |
 |---------|-------------|
-| `Schema.partial()` | Makes all fields optional while keeping type constraints |
+| `Schema.Struct(Struct.map(.fields, Schema.optional))` | Makes all fields optional while keeping type constraints |
 | PATCH vs PUT | Different validation strategies for full vs partial updates |
 | Field merging | Only updated fields override existing values |
 | Re-validation | Full document valid after patch applied |

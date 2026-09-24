@@ -4,7 +4,7 @@ id: concurrency-fork-basics
 skillLevel: beginner
 applicationPatternId: concurrency-getting-started
 summary: >-
-  Use Effect.fork to run work in the background while your main code continues.
+  Use Effect.forkChild to run work in the background while your main code continues.
 tags:
   - concurrency
   - fork
@@ -12,7 +12,7 @@ tags:
   - fiber
   - getting-started
 rule:
-  description: Use Effect.fork to start background work, Effect.forkDaemon for fire-and-forget tasks.
+  description: Use Effect.forkChild to start background work, Effect.forkDetach for fire-and-forget tasks.
 author: PaulJPhilp
 related:
   - concurrency-understanding-fibers
@@ -21,7 +21,7 @@ related:
 
 ## Guideline
 
-Use `Effect.fork` to run effects in the background. The forked effect runs on its own fiber while your main code continues.
+Use `Effect.forkChild` to run effects in the background. The forked effect runs on its own fiber while your main code continues.
 
 ---
 
@@ -46,7 +46,7 @@ import { Effect, Fiber } from "effect"
 
 const basicFork = Effect.gen(function* () {
   // Start expensive work in background
-  const fiber = yield* Effect.fork(
+  const fiber = yield* Effect.forkChild(
     Effect.gen(function* () {
       yield* Effect.log("Starting expensive computation...")
       yield* Effect.sleep("2 seconds")
@@ -70,7 +70,7 @@ const basicFork = Effect.gen(function* () {
 
 const fireAndForget = Effect.gen(function* () {
   // This runs completely independently
-  yield* Effect.forkDaemon(
+  yield* Effect.forkDetach(
     Effect.gen(function* () {
       yield* Effect.log("Daemon: Starting background task")
       yield* Effect.sleep("5 seconds")
@@ -109,7 +109,7 @@ const fanOut = Effect.gen(function* () {
   
   // Fork all tasks
   const fibers = yield* Effect.forEach(tasks, (n) =>
-    Effect.fork(
+    Effect.forkChild(
       Effect.gen(function* () {
         yield* Effect.sleep(`${n * 100} millis`)
         yield* Effect.log(`Task ${n} complete`)
@@ -132,8 +132,8 @@ Effect.runPromise(fanOut)
 
 | Method | Behavior |
 |--------|----------|
-| `Effect.fork` | Child fiber, interrupted when parent completes |
-| `Effect.forkDaemon` | Independent fiber, keeps running |
+| `Effect.forkChild` | Child fiber, interrupted when parent completes |
+| `Effect.forkDetach` | Independent fiber, keeps running |
 | `Effect.forkScoped` | Tied to scope, interrupted when scope closes |
 | `Effect.forkIn(scope)` | Fork into specific scope |
 
@@ -142,16 +142,16 @@ Effect.runPromise(fanOut)
 ```typescript
 Effect.gen(function* () {
   // Fire and forget (logging, analytics)
-  yield* Effect.forkDaemon(sendAnalytics(event))
+  yield* Effect.forkDetach(sendAnalytics(event))
 
   // Background with timeout
-  const fiber = yield* Effect.fork(longRunningTask)
+  const fiber = yield* Effect.forkChild(longRunningTask)
   yield* Effect.sleep("5 seconds")
   yield* Fiber.interrupt(fiber) // Cancel if still running
 
   // Parallel fan-out/fan-in
   const fibers = yield* Effect.forEach(items, (item) =>
-    Effect.fork(processItem(item))
+    Effect.forkChild(processItem(item))
   )
   const results = yield* Fiber.joinAll(fibers)
 })

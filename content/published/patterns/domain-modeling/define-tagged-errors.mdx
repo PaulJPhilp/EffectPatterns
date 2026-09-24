@@ -63,7 +63,7 @@ const program = Effect.gen(function* () {
     const user = yield* findUser(1);
     yield* Effect.logInfo(`Found user: ${JSON.stringify(user)}`);
   }).pipe(
-    Effect.catchAll((error) =>
+    Effect.catch((error) =>
       Effect.logInfo(`Error finding user: ${error._tag} - ${error.cause}`)
     )
   );
@@ -90,5 +90,5 @@ Tagged errors allow you to handle errors in a type-safe, self-documenting way.
 ## Anti-Pattern
 
 Using generic `Error` objects or strings in the error channel. This loses all
-type information, forcing consumers to use `catchAll` and perform unsafe
+type information, forcing consumers to use `catch` and perform unsafe
 checks.

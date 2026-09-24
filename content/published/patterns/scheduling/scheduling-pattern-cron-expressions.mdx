@@ -160,8 +160,7 @@ const scheduleWithCron = (config: ReportConfig) =>
 
     // Create schedule that checks every minute
     const schedule = Schedule.fixed("1 minute").pipe(
-      Schedule.untilInputEffect((report: ScheduledReport) =>
-        Effect.gen(function* () {
+      Schedule.while(({ input: report }: { input: ScheduledReport }) => Effect.map(Effect.gen(function* () {
           const isPastTime = shouldRunNow(parsed);
 
           if (isPastTime) {
@@ -172,8 +171,7 @@ const scheduleWithCron = (config: ReportConfig) =>
           }
 
           return false; // Continue scheduling
-        })
-      )
+        }), (completed) => !completed))
     );
 
     // Generate report with cron schedule
@@ -266,18 +264,20 @@ const scheduleWithTimezone = (config: TimezoneConfig) =>
 
     // Schedule task
     const schedule = Schedule.fixed("1 minute").pipe(
-      Schedule.untilInput((prev: number) => {
-        const shouldRun = shouldRunInTimezone(parsed);
+      Schedule.while(({ input: prev }: { input: number }) =>
+        Effect.sync(() => {
+          const shouldRun = shouldRunInTimezone(parsed);
 
-        if (shouldRun) {
-          yield* Console.log(
-            `[TIMEZONE] Running job in ${config.timezone} at ${getTimeInTimezone().toISOString()}`
-          );
+          if (shouldRun) {
+            console.log(
+              `[TIMEZONE] Running job in ${config.timezone} at ${getTimeInTimezone().toISOString()}`
+            );
+            return false;
+          }
+
           return true;
-        }
-
-        return false;
-      })
+        })
+      )
     );
 
     yield* generateReport(config.jobName).pipe(
@@ -312,8 +312,7 @@ const scheduleWithLocking = (config: CronJobWithLocking) =>
 
     // Schedule with lock
     const schedule = Schedule.fixed("1 minute").pipe(
-      Schedule.untilInputEffect((report: ScheduledReport) =>
-        Effect.gen(function* () {
+      Schedule.while(({ input: report }: { input: ScheduledReport }) => Effect.map(Effect.gen(function* () {
           const now = Date.now();
           const shouldRun = shouldRunNow(parsed);
           const isStale = now - lastCompletionTime > config.maxDurationMs * 2;
@@ -359,8 +358,7 @@ const scheduleWithLocking = (config: CronJobWithLocking) =>
           }
 
           return false; // Continue scheduling
-        })
-      )
+        }), (completed) => !completed))
     );
 
     yield* Schedule.repeat_forever(schedule);
@@ -401,8 +399,7 @@ const scheduleDynamicCron = (config: DynamicCronConfig) =>
 
     // Schedule with dynamic cron
     const schedule = Schedule.fixed("1 minute").pipe(
-      Schedule.untilInputEffect((report: ScheduledReport) =>
-        Effect.gen(function* () {
+      Schedule.while(({ input: report }: { input: ScheduledReport }) => Effect.map(Effect.gen(function* () {
           const currentCron = yield* Ref.get(cronExpression);
           const parsed = parseCronExpression(currentCron);
 
@@ -414,8 +411,7 @@ const scheduleDynamicCron = (config: DynamicCronConfig) =>
           }
 
           return false;
-        })
-      )
+        }), (completed) => !completed))
     );
 
     // Run job
@@ -462,8 +458,7 @@ const scheduleCronWithBackoff = (config: CronWithRetryConfig) =>
     );
 
     const schedule = Schedule.fixed("1 minute").pipe(
-      Schedule.untilInputEffect((report: ScheduledReport) =>
-        Effect.gen(function* () {
+      Schedule.while(({ input: report }: { input: ScheduledReport }) => Effect.map(Effect.gen(function* () {
           if (!shouldRunNow(parsed)) {
             return false;
           }
@@ -501,8 +496,7 @@ const scheduleCronWithBackoff = (config: CronWithRetryConfig) =>
           }
 
           return false; // Continue scheduling for next cron time
-        })
-      )
+        }), (completed) => !completed))
     );
 
     yield* Schedule.repeat_forever(schedule);

@@ -120,7 +120,7 @@ const jsonStreamParser = (
 // 3. Incremental validator
 const validateStreamed = (object: unknown) =>
   Effect.gen(function* () {
-    const decoder = Schema.decodeUnknown(StreamedThought)
+    const decoder = Schema.decodeUnknownEffect(StreamedThought)
 
     const result = yield* decoder(object).pipe(
       Effect.mapError((error) => ({
@@ -158,7 +158,7 @@ const handleStreamedThoughts = (
           )
         )
       ),
-      Stream.catchAll((error) =>
+      Stream.catch((error) =>
         Effect.sync(() => onError(error))
       ),
       Stream.runDrain

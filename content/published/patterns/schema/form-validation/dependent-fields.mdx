@@ -30,10 +30,10 @@ import { Schema, Effect } from "effect"
 // 1. Define form with dependent fields
 const PasswordChangeForm = Schema.Struct({
   currentPassword: Schema.String.pipe(
-    Schema.minLength(1)
+    Schema.check(Schema.isMinLength(1))
   ),
   newPassword: Schema.String.pipe(
-    Schema.minLength(8)
+    Schema.check(Schema.isMinLength(8))
   ),
   confirmPassword: Schema.String,
 }).pipe(
@@ -76,10 +76,10 @@ type RegistrationForm = typeof RegistrationForm.Type
 const EventForm = Schema.Struct({
   name: Schema.String,
   startDate: Schema.String.pipe(
-    Schema.pattern(/^\d{4}-\d{2}-\d{2}$/)
+    Schema.check(Schema.isPattern(/^\d{4}-\d{2}-\d{2}$/))
   ),
   endDate: Schema.String.pipe(
-    Schema.pattern(/^\d{4}-\d{2}-\d{2}$/)
+    Schema.check(Schema.isPattern(/^\d{4}-\d{2}-\d{2}$/))
   ),
 }).pipe(
   Schema.refine((form) => {
@@ -96,7 +96,7 @@ type EventForm = typeof EventForm.Type
 // 4. Validate with field-specific error handling
 const validatePasswordChange = (input: unknown) =>
   Effect.gen(function* () {
-    const result = yield* Schema.decodeUnknown(
+    const result = yield* Schema.decodeUnknownEffect(
       PasswordChangeForm
     )(input).pipe(
       Effect.matchEffect({
@@ -143,7 +143,7 @@ const eventData = {
 }
 
 Effect.runPromise(
-  Schema.decodeUnknown(EventForm)(eventData)
+  Schema.decodeUnknownEffect(EventForm)(eventData)
 ).catch((error) => {
   console.error("Date error:", error.message)
 })

@@ -43,15 +43,9 @@ OpenAPI documentation provides:
 ## Good Example
 
 ```typescript
-import { Effect, Schema } from "effect"
-import {
-  HttpApi,
-  HttpApiBuilder,
-  HttpApiEndpoint,
-  HttpApiGroup,
-  HttpApiSwagger,
-  OpenApi,
-} from "@effect/platform"
+import { Effect, Schema, Layer } from "effect"
+import {  } from "effect"
+import { HttpApi, HttpApiBuilder, HttpApiEndpoint, HttpApiGroup, HttpApiSwagger, OpenApi } from "effect/http"
 
 // ============================================
 // 1. Define schemas for request/response
@@ -59,13 +53,13 @@ import {
 
 const UserSchema = Schema.Struct({
   id: Schema.String,
-  email: Schema.String.pipe(Schema.pattern(/@/)),
+  email: Schema.String.pipe(Schema.check(Schema.isPattern(/@/))),
   name: Schema.String,
   createdAt: Schema.DateFromString,
 })
 
 const CreateUserSchema = Schema.Struct({
-  email: Schema.String.pipe(Schema.pattern(/@/)),
+  email: Schema.String.pipe(Schema.check(Schema.isPattern(/@/))),
   name: Schema.String,
 })
 

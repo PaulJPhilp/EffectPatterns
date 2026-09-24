@@ -106,7 +106,7 @@ Solutions:
 This example demonstrates advanced file system patterns.
 
 ```typescript
-import { Effect, Stream, Ref, FileSystem } from "@effect/platform";
+import { Effect, Stream, Ref, FileSystem } from "effect";
 import * as Path from "node:path";
 import * as FS from "node:fs";
 import * as PromiseFS from "node:fs/promises";
@@ -427,7 +427,7 @@ const processBulkFiles = (
             { ...p, completed: p.completed + 1 },
           ])
         ),
-        Effect.catchAll((error) =>
+        Effect.catch((error) =>
           Ref.modify(progress, (p) => [
             undefined,
             { ...p, failed: p.failed + 1 },

@@ -28,28 +28,28 @@ Your HTTP server receives headers as strings—`Content-Type: text/plain`, `Auth
 import { Schema, Effect } from "effect"
 
 // 1. Define common header schemas
-const ContentType = Schema.Union(
-  Schema.Literal(
+const ContentType = Schema.Union([
+  Schema.Literals([
     "application/json",
     "text/plain",
     "text/html",
     "application/octet-stream"
-  ),
+  ]),
   Schema.String.pipe(
-    Schema.pattern(/^[\w\-]+\/[\w\.\+\-]+$/),
+    Schema.check(Schema.isPattern(/^[\w\-]+\/[\w\.\+\-]+$/)),
     Schema.annotations({
       description: "MIME type (type/subtype)",
     })
   )
-).pipe(Schema.brand("ContentType"))
+]).pipe(Schema.brand("ContentType"))
 
 type ContentType = typeof ContentType.Type
 
 // 2. Authorization header
 const Authorization = Schema.String.pipe(
-  Schema.pattern(
+  Schema.check(Schema.isPattern(
     /^Bearer [A-Za-z0-9\-\._~\+\/]+=*$/
-  ).pipe(
+  )).pipe(
     Schema.annotations({
       description:
         "Authorization: Bearer <token>",
@@ -62,12 +62,12 @@ type Authorization = typeof Authorization.Type
 
 // 3. Custom header validation
 const CustomHeader = Schema.String.pipe(
-  Schema.minLength(1),
-  Schema.maxLength(1024),
-  Schema.filter((s) => {
+  Schema.check(Schema.isMinLength(1)),
+  Schema.check(Schema.isMaxLength(1024)),
+  Schema.check(Schema.makeFilter((s) => {
     // No control characters
     return !s.match(/[\x00-\x1F\x7F]/g)
-  }).pipe(
+  })).pipe(
     Schema.annotations({
       description: "Valid HTTP header value",
     })
@@ -95,7 +95,7 @@ const validateRequest = (
   raw: Record<string, string>
 ) =>
   Effect.gen(function* () {
-    const headers = yield* Schema.decodeUnknown(
+    const headers = yield* Schema.decodeUnknownEffect(
       RequestHeaders
     )(raw).pipe(
       Effect.mapError((error) => ({

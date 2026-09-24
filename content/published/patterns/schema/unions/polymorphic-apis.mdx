@@ -37,7 +37,7 @@ const PaginatedResponse = Schema.Struct({
     Schema.Struct({
       id: Schema.String,
       name: Schema.String,
-      createdAt: Schema.Date,
+      createdAt: Schema.DateFromString,
     })
   ),
   page: Schema.Number,
@@ -52,8 +52,8 @@ const SingleItemResponse = Schema.Struct({
   id: Schema.String,
   name: Schema.String,
   description: Schema.String,
-  createdAt: Schema.Date,
-  updatedAt: Schema.Date,
+  createdAt: Schema.DateFromString,
+  updatedAt: Schema.DateFromString,
   tags: Schema.Array(Schema.String),
 })
 
@@ -71,7 +71,7 @@ const BatchResponse = Schema.Struct({
       data: Schema.Any,
     })
   ),
-  processedAt: Schema.Date,
+  processedAt: Schema.DateFromString,
   failureCount: Schema.Number,
 })
 
@@ -82,16 +82,16 @@ const ErrorResponse = Schema.Struct({
   message: Schema.String,
   details: Schema.Optional(Schema.Record(Schema.String, Schema.Any)),
   requestId: Schema.String,
-  timestamp: Schema.Date,
+  timestamp: Schema.DateFromString,
 })
 
 // Unified polymorphic API response
-const ApiResponse = Schema.Union(
+const ApiResponse = Schema.Union([
   PaginatedResponse,
   SingleItemResponse,
   BatchResponse,
   ErrorResponse
-)
+])
 
 type ApiResponse = typeof ApiResponse.Type
 
@@ -126,7 +126,7 @@ const fetchSearchResults = (
     }
 
     return yield* Effect.tryPromise({
-      try: () => Schema.decodeUnknown(ApiResponse)(response),
+      try: () => Schema.decodeUnknownEffect(ApiResponse)(response),
       catch: (error) => {
         const msg = error instanceof Error ? error.message : String(error)
         return new Error(`Search API error: ${msg}`)
@@ -153,7 +153,7 @@ const fetchItemDetail = (id: string): Effect.Effect<ApiResponse, Error> =>
     }
 
     return yield* Effect.tryPromise({
-      try: () => Schema.decodeUnknown(ApiResponse)(response),
+      try: () => Schema.decodeUnknownEffect(ApiResponse)(response),
       catch: (error) => {
         const msg = error instanceof Error ? error.message : String(error)
         return new Error(`Detail API error: ${msg}`)
@@ -182,7 +182,7 @@ const processBatch = (
     }
 
     return yield* Effect.tryPromise({
-      try: () => Schema.decodeUnknown(ApiResponse)(response),
+      try: () => Schema.decodeUnknownEffect(ApiResponse)(response),
       catch: (error) => {
         const msg = error instanceof Error ? error.message : String(error)
         return new Error(`Batch API error: ${msg}`)

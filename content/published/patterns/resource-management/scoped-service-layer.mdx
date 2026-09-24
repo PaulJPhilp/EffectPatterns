@@ -4,7 +4,7 @@ id: scoped-service-layer
 skillLevel: intermediate
 applicationPatternId: resource-management
 summary: >-
-  Use `Layer.scoped` with `Effect.Service` to transform a managed resource into
+  Use `Layer.effect` with `Context.Service` to transform a managed resource into
   a shareable, application-wide service.
 tags:
   - resource
@@ -15,7 +15,7 @@ tags:
   - context
   - acquire-release
 rule:
-  description: Provide a managed resource to the application context using `Layer.scoped`.
+  description: Provide a managed resource to the application context using `Layer.effect`.
 related:
   - acquire-release-bracket
 author: PaulJPhilp
@@ -26,16 +26,16 @@ lessonOrder: 2
 
 ## Guideline
 
-Define a service using `class MyService extends Effect.Service(...)`. Implement the service using the `scoped` property of the service class. This property should be a scoped `Effect` (typically from `Effect.acquireRelease`) that builds and releases the underlying resource.
+Define a service using `class MyService extends Context.Service(...)`. Implement the service using the `make` option of the service class, then expose it with `static readonly layer = Layer.effect(this, this.make)`. The `make` effect should be scoped (typically from `Effect.acquireRelease`) so it builds and releases the underlying resource.
 
 ## Rationale
 
-This pattern is the key to building robust, testable, and leak-proof applications in Effect. It elevates a managed resource into a first-class service that can be used anywhere in your application. The `Effect.Service` helper simplifies defining the service's interface and context key. This approach decouples your business logic from the concrete implementation, as the logic only depends on the abstract service. The `Layer` declaratively handles the resource's entire lifecycle, ensuring it is acquired lazily, shared safely, and released automatically.
+This pattern is the key to building robust, testable, and leak-proof applications in Effect. It elevates a managed resource into a first-class service that can be used anywhere in your application. The `Context.Service` helper simplifies defining the service's interface and context key. This approach decouples your business logic from the concrete implementation, as the logic only depends on the abstract service. The `Layer` declaratively handles the resource's entire lifecycle, ensuring it is acquired lazily, shared safely, and released automatically.
 
 ## Good Example
 
 ```typescript
-import { Effect, Console } from "effect";
+import { Effect, Console, Layer, Context } from "effect";
 
 // 1. Define the service interface
 interface DatabaseService {
@@ -43,9 +43,9 @@ interface DatabaseService {
 }
 
 // 2. Define the service implementation with scoped resource management
-class Database extends Effect.Service<DatabaseService>()("Database", {
-  // The scoped property manages the resource lifecycle
-  scoped: Effect.gen(function* () {
+class Database extends Context.Service<Database, DatabaseService>()("Database", {
+  // The make effect manages the resource lifecycle
+  make: Effect.gen(function* () {
     const id = Math.floor(Math.random() * 1000);
 
     // Acquire the connection
@@ -60,7 +60,9 @@ class Database extends Effect.Service<DatabaseService>()("Database", {
         Effect.sync(() => [`Result for '${sql}' from pool ${id}`]),
     };
   }),
-}) {}
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 // 3. Use the service in your program
 const program = Effect.gen(function* () {
@@ -71,7 +73,7 @@ const program = Effect.gen(function* () {
 
 // 4. Run the program with scoped resource management
 Effect.runPromise(
-  Effect.scoped(program).pipe(Effect.provide(Database.Default))
+  Effect.scoped(program).pipe(Effect.provide(Database.layer))
 );
 
 /*
@@ -83,7 +85,7 @@ Query successful: Result for 'SELECT * FROM users' from pool 458
 ```
 
 **Explanation:**
-The `Effect.Service` helper creates the `Database` class, which acts as both the service definition and its context key (Tag). The `Database.Live` layer connects this service to a concrete, lifecycle-managed implementation. When `program` asks for the `Database` service, the Effect runtime uses the `Live` layer to run the `acquire` effect once, caches the resulting `DbPool`, and injects it. The `release` effect is automatically run when the program completes.
+The `Context.Service` helper creates the `Database` class, which acts as both the service definition and its context key. The `Database.layer` layer (built with `Layer.effect`) connects this service to a concrete, lifecycle-managed implementation. When `program` asks for the `Database` service, the Effect runtime uses the `layer` to run the `acquire` effect once, caches the result, and injects it. The `release` effect is automatically run when the program completes.
 
 ## Anti-Pattern
 

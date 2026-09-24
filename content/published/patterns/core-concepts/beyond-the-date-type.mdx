@@ -81,7 +81,7 @@ const program = Effect.gen(function* () {
 // Run the program
 const programWithErrorHandling = program.pipe(
   Effect.provideService(Clock.Clock, Clock.make()),
-  Effect.catchAll((error) =>
+  Effect.catch((error) =>
     Effect.gen(function* () {
       yield* Effect.logError(`Program error: ${error}`);
       return null;

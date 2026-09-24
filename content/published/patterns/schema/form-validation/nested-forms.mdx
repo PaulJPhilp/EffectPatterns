@@ -29,11 +29,11 @@ import { Schema, Effect } from "effect"
 
 // 1. Define reusable sub-schemas
 const Address = Schema.Struct({
-  street: Schema.String.pipe(Schema.minLength(1)),
-  city: Schema.String.pipe(Schema.minLength(1)),
-  state: Schema.String.pipe(Schema.length(2)),
+  street: Schema.String.pipe(Schema.check(Schema.isMinLength(1))),
+  city: Schema.String.pipe(Schema.check(Schema.isMinLength(1))),
+  state: Schema.String.pipe(Schema.check(Schema.isMinLength(2), Schema.isMaxLength(2))),
   zipCode: Schema.String.pipe(
-    Schema.pattern(/^\d{5}(-\d{4})?$/)
+    Schema.check(Schema.isPattern(/^\d{5}(-\d{4})?$/))
   ),
 })
 
@@ -42,10 +42,10 @@ type Address = typeof Address.Type
 const LineItem = Schema.Struct({
   productId: Schema.String,
   quantity: Schema.Number.pipe(
-    Schema.int(),
-    Schema.positive()
+    Schema.check(Schema.isInt()),
+    Schema.check(Schema.isGreaterThan(0))
   ),
-  price: Schema.Number.pipe(Schema.positive()),
+  price: Schema.Number.pipe(Schema.check(Schema.isGreaterThan(0))),
 })
 
 type LineItem = typeof LineItem.Type
@@ -65,7 +65,7 @@ const Order = Schema.Struct({
       description: "Order must have at least one item",
     })
   ),
-  total: Schema.Number.pipe(Schema.positive()),
+  total: Schema.Number.pipe(Schema.check(Schema.isGreaterThan(0))),
 })
 
 type Order = typeof Order.Type
@@ -73,7 +73,7 @@ type Order = typeof Order.Type
 // 3. Validate entire nested structure
 const validateOrder = (input: unknown) =>
   Effect.gen(function* () {
-    const order = yield* Schema.decodeUnknown(Order)(
+    const order = yield* Schema.decodeUnknownEffect(Order)(
       input
     ).pipe(
       Effect.mapError((error) => ({
@@ -110,14 +110,14 @@ const UserProfile = Schema.Struct({
     Schema.Struct({
       name: Schema.String,
       phone: Schema.String.pipe(
-        Schema.pattern(/^\d{10}$/)
+        Schema.check(Schema.isPattern(/^\d{10}$/))
       ),
-      relationship: Schema.Literal(
+      relationship: Schema.Literals([
         "spouse",
         "parent",
         "sibling",
         "other"
-      ),
+      ]),
     })
   ).pipe(Schema.optional),
 })

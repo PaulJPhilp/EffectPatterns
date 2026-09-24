@@ -32,7 +32,7 @@ For complex scenarios where a resource's lifecycle doesn't fit a simple `acquire
 
 ## Rationale
 
-While `Effect.acquireRelease` and `Layer.scoped` are sufficient for most use cases, sometimes you need more control. This pattern is essential when:
+While `Effect.acquireRelease` and `Layer.effect` are sufficient for most use cases, sometimes you need more control. This pattern is essential when:
 
 1.  A single logical operation acquires multiple resources that need independent cleanup.
 2.  You are building a custom, complex `Layer` that orchestrates several dependent resources.
@@ -43,7 +43,7 @@ By interacting with `Scope` directly, you gain precise, imperative-style control
 ## Good Example
 
 ```typescript
-import { Effect, Console } from "effect";
+import { Effect, Console, Layer } from "effect";
 
 // Mocking a complex file operation
 const openFile = (path: string) =>

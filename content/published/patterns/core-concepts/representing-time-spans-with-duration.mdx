@@ -56,7 +56,7 @@ const program = Effect.log("Starting...").pipe(
 );
 
 // Durations can also be compared
-const isLonger = Duration.greaterThan(fiveSeconds, oneHundredMillis); // true
+const isLonger = Duration.isGreaterThan(fiveSeconds, oneHundredMillis); // true
 
 // Demonstrate the duration functionality
 const demonstration = Effect.gen(function* () {
@@ -83,7 +83,7 @@ const demonstration = Effect.gen(function* () {
   const oneMinute = Duration.minutes(1);
   yield* Effect.logInfo(`One minute: ${Duration.toMillis(oneMinute)}ms`);
 
-  const isMinuteLonger = Duration.greaterThan(oneMinute, fiveSeconds);
+  const isMinuteLonger = Duration.isGreaterThan(oneMinute, fiveSeconds);
   yield* Effect.logInfo(`Is 1 minute longer than 5 seconds? ${isMinuteLonger}`);
 });
 

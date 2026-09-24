@@ -1,0 +1,61 @@
+---
+title: Write Reusable Functions with Effect.fn
+id: reusable-functions-with-effect-fn
+skillLevel: intermediate
+applicationPatternId: core-concepts
+summary: >-
+  Use Effect.fn for traced reusable functions and Effect.fnUntraced for hot
+  paths. Do not wrap Effect.gen in a plain function.
+tags:
+  - effect-fn
+  - tracing
+  - functions
+  - v4
+rule:
+  description: >-
+    Define reusable effectful functions with Effect.fn("name") or
+    Effect.fnUntraced; add behavior via extra args, not .pipe after.
+related:
+  - write-sequential-code-with-gen
+  - transform-effect-values
+author: effect_website
+lessonOrder: 32
+---
+
+# Problem
+
+Wrapping `Effect.gen` in a plain arrow function loses span names, stack traces, and encourages `.pipe` after the fact instead of declarative combinators.
+
+# Solution
+
+```typescript
+import { Effect } from "effect"
+
+// Traced boundary — creates a span named "getUser"
+const getUser = Effect.fn("getUser")(function*(id: number) {
+  yield* Effect.logInfo(`fetch ${id}`)
+  return { id }
+})
+
+// Hot path — no tracing overhead
+const isPositive = Effect.fnUntraced(function*(n: number) {
+  return n > 0
+})
+
+Effect.runPromise(getUser(1).pipe(Effect.zipRight(isPositive(2))))
+```
+
+# Why This Works
+
+- Name string matches function name → better stacks + automatic `withSpan`.
+- Extra args after the generator replace `.pipe(Effect.fn(...)(...))`.
+- `Effect.fn.Return<A, E, R>` types the return without annotating the generator.
+
+# When to Use
+
+- `Effect.fn("name")`: service methods, handlers, traced boundaries.
+- `Effect.fnUntraced`: validators, mappers, tight loops.
+
+# Related Patterns
+
+- [Write Sequential Code](./write-sequential-code-with-gen.mdx)

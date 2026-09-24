@@ -32,8 +32,8 @@ You need an HTTP client that:
 # Solution
 
 ```typescript
-import { Effect, Schema, Duration, HttpClient, Layer } from "effect"
-import { HttpClientRequest, HttpClientResponse } from "@effect/platform"
+import { Effect, Schema, Duration, Layer, Context } from "effect"
+import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/http"
 
 // 1. Define the schema
 const User = Schema.Struct({
@@ -44,14 +44,14 @@ const User = Schema.Struct({
 
 type User = typeof User.Type
 
-const parseUser = Schema.decodeUnknown(User)
+const parseUser = Schema.decodeUnknownEffect(User)
 
 // 2. Create a typed HTTP client service
 interface UserClient {
   readonly getUser: (id: number) => Effect.Effect<User>
 }
 
-const UserClient = Effect.Tag<UserClient>()
+const UserClient = Context.Service<UserClient>()
 
 // 3. Implement the service
 const UserClientLive = Layer.succeed(
@@ -127,8 +127,8 @@ await Effect.runPromise(main.pipe(Effect.provide(layer)))
 ## More Advanced: Custom Client with Middleware
 
 ```typescript
-import { Effect, Schema, Duration, HttpClient, Layer, Fiber } from "effect"
-import { HttpClientRequest } from "@effect/platform"
+import { Effect, Schema, Duration, Layer, Fiber } from "effect"
+import { HttpClient, HttpClientRequest } from "effect/http"
 
 // Schemas
 const User = Schema.Struct({
@@ -139,7 +139,7 @@ const User = Schema.Struct({
 
 type User = typeof User.Type
 
-const parseUser = Schema.decodeUnknown(User)
+const parseUser = Schema.decodeUnknownEffect(User)
 
 // Error type
 class ApiError extends Error {
@@ -162,7 +162,7 @@ interface ApiClient {
   readonly baseUrl: string
 }
 
-const ApiClient = Effect.Tag<ApiClient>()
+const ApiClient = Context.Service<ApiClient>()
 
 const createApiClient = (baseUrl: string): Layer.Layer<ApiClient> =>
   Layer.succeed(ApiClient, {
@@ -200,7 +200,7 @@ const createApiClient = (baseUrl: string): Layer.Layer<ApiClient> =>
         // Parse and validate
         const body = yield* response.json
 
-        const parsed = yield* Schema.decodeUnknown(schema)(body).pipe(
+        const parsed = yield* Schema.decodeUnknownEffect(schema)(body).pipe(
           Effect.mapError(
             (error) =>
               new ApiError(

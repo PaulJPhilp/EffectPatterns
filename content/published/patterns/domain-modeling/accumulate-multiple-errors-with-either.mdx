@@ -1,20 +1,20 @@
 ---
-title: Accumulate Multiple Errors with Either
+title: Accumulate Multiple Errors with Result
 id: accumulate-multiple-errors-with-either
 skillLevel: intermediate
 applicationPatternId: domain-modeling
 summary: >-
-  Use Either<E, A> to represent computations that can fail, allowing you to
+  Use Result<E, A> to represent computations that can fail, allowing you to
   accumulate multiple errors instead of short-circuiting on the first one.
 tags:
-  - either
+  - result
   - validation
   - error-accumulation
   - schema
   - data
 rule:
   description: >-
-    Use Either to accumulate multiple validation errors instead of failing on
+    Use Result to accumulate multiple validation errors instead of failing on
     the first one.
 related:
   - define-contracts-with-schema
@@ -25,7 +25,7 @@ lessonOrder: 1
 
 ## Guideline
 
-When you need to perform multiple validation checks and collect all failures, use the `Either<E, A>` data type. `Either` represents a value that can be one of two possibilities: a `Left<E>` (typically for failure) or a `Right<A>` (typically for success).
+When you need to perform multiple validation checks and collect all failures, use the `Result<E, A>` data type. `Result` represents a value that can be one of two possibilities: a `Failure<E>` (typically for failure) or a `Success<A>` (typically for success).
 
 ---
 
@@ -35,16 +35,16 @@ The `Effect` error channel is designed to short-circuit. The moment an `Effect` 
 
 However, for tasks like validating a user's input, this is poor user experience. You want to show the user all of their mistakes at once.
 
-`Either` is the solution. Since it's a pure data structure, you can run multiple checks that each return an `Either`, and then combine the results to accumulate all the `Left` (error) values. The `Effect/Schema` module uses this pattern internally to provide powerful error accumulation.
+`Result` is the solution. Since it's a pure data structure, you can run multiple checks that each return a `Result`, and then combine the results to accumulate all the `Failure` (error) values. The `Effect/Schema` module uses this pattern internally to provide powerful error accumulation.
 
 ---
 
 ## Good Example
 
-Using `Schema.decode` with the `allErrors: true` option demonstrates this pattern perfectly. The underlying mechanism uses `Either` to collect all parsing errors into an array instead of stopping at the first one.
+Using `Schema.decodeEffect` with the `allErrors: true` option demonstrates this pattern perfectly. The underlying mechanism uses `Result` to collect all parsing errors into an array instead of stopping at the first one.
 
 ```typescript
-import { Effect, Schema, Data, Either } from "effect";
+import { Effect, Schema, Data, Result } from "effect";
 
 // Define validation error type
 class ValidationError extends Data.TaggedError("ValidationError")<{
@@ -61,16 +61,16 @@ type User = {
 // Define schema with custom validation
 const UserSchema = Schema.Struct({
   name: Schema.String.pipe(
-    Schema.minLength(3),
-    Schema.filter((name) => /^[A-Za-z\s]+$/.test(name), {
+    Schema.check(Schema.isMinLength(3)),
+    Schema.check(Schema.makeFilter((name) => /^[A-Za-z\s]+$/.test(name), {
       message: () => "name must contain only letters and spaces",
-    })
+    }))
   ),
   email: Schema.String.pipe(
-    Schema.pattern(/@/),
-    Schema.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, {
+    Schema.check(Schema.isPattern(/@/)),
+    Schema.check(Schema.isPattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, {
       message: () => "email must be a valid email address",
-    })
+    }))
   ),
 });
 
@@ -93,7 +93,7 @@ const invalidInputs: User[] = [
 // Validate a single user
 const validateUser = (input: User) =>
   Effect.gen(function* () {
-    const result = yield* Schema.decode(UserSchema)(input, { errors: "all" });
+    const result = yield* Schema.decodeEffect(UserSchema)(input, { errors: "all" });
     return result;
   });
 
@@ -102,20 +102,20 @@ const program = Effect.gen(function* () {
   yield* Effect.log("Validating users...\n");
 
   for (const input of invalidInputs) {
-    const result = yield* Effect.either(validateUser(input));
+    const result = yield* Effect.result(validateUser(input));
 
     yield* Effect.log(`Validating user: ${input.name} <${input.email}>`);
 
     // Handle success and failure cases separately for clarity
-    // Using Either.match which is the idiomatic way to handle Either values
-    yield* Either.match(result, {
-      onLeft: (error) =>
+    // Using Result.match which is the idiomatic way to handle Result values
+    yield* Result.match(result, {
+      onFailure: (error) =>
         Effect.gen(function* () {
           yield* Effect.log("❌ Validation failed:");
           yield* Effect.log(error.message);
           yield* Effect.log(""); // Empty line for readability
         }),
-      onRight: (user) =>
+      onSuccess: (user) =>
         Effect.gen(function* () {
           yield* Effect.log(`✅ User is valid: ${JSON.stringify(user)}`);
           yield* Effect.log(""); // Empty line for readability

@@ -1,0 +1,56 @@
+---
+title: Provide Scopes with Scope.provide
+id: scope-provide-and-layer-memoization
+skillLevel: intermediate
+applicationPatternId: resource-management
+summary: >-
+  Scope.extend was renamed to Scope.provide in v4. Layers memoize across
+  Effect.provide calls.
+tags:
+  - scope
+  - layer
+  - resource-management
+  - v4
+rule:
+  description: >-
+    Use Scope.provide (data-first or curried) to run scoped effects;
+    rely on Layer memoization instead of manual caching.
+related:
+  - manual-scope-management
+  - compose-scoped-layers
+author: effect_website
+lessonOrder: 11
+---
+
+# Problem
+
+v3 `Scope.extend` does not exist in v4, and manual layer caching fights the runtime.
+
+# Solution
+
+```typescript
+import { Effect, Scope } from "effect"
+
+const program = Effect.gen(function*() {
+  const scope = yield* Scope.make()
+  // data-last (curried)
+  yield* myEffect.pipe(Scope.provide(scope))
+  // data-first equivalent: yield* Scope.provide(myEffect, scope)
+})
+
+const myEffect = Effect.log("using scoped resource")
+void program
+```
+
+# Why This Works
+
+| v3 | v4 |
+|----|----|
+| `Scope.extend(eff, scope)` | `Scope.provide(eff, scope)` / `eff.pipe(Scope.provide(scope))` |
+
+Layers memoize across `Effect.provide` calls in v4 — building the same layer twice reuses the first result. Fibers also keep the process alive automatically (fiber keep-alive).
+
+# Related Patterns
+
+- [Manual Scope Management](./manual-scope-management.mdx)
+- [Compose Scoped Layers](./compose-scoped-layers.mdx)

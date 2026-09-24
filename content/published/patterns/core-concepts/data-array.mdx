@@ -1,13 +1,12 @@
 ---
-title: Working with Immutable Arrays using Data.array
+title: Working with Immutable Arrays and Structural Equality
 id: data-array
 skillLevel: beginner
 applicationPatternId: core-concepts
 summary: >-
-  Use Data.array to create immutable, type-safe arrays that support value-based
+  Use readonly arrays to create immutable, type-safe collections that support value-based
   equality and safe functional operations.
 tags:
-  - Data.array
   - array
   - structural-equality
   - immutable
@@ -15,7 +14,7 @@ tags:
   - effect
 rule:
   description: >-
-    Use Data.array to define arrays whose equality is based on their contents,
+    Use readonly arrays to define collections whose equality is based on their contents,
     enabling safe, predictable comparisons and functional operations.
 related:
   - use-chunk-for-high-performance-collections
@@ -25,26 +24,26 @@ author: PaulJPhilp
 lessonOrder: 24
 ---
 
-# Working with Immutable Arrays using `Data.array`
+# Working with Immutable Arrays and Structural Equality
 
 ## Guideline
 
-Use `Data.array` to create immutable, type-safe arrays that support value-based equality and safe functional operations.  
+Use readonly arrays to create immutable, type-safe collections that support value-based equality and safe functional operations.  
 This is useful for modeling ordered collections where immutability and structural equality are important.
 
 ## Rationale
 
 JavaScript arrays are mutable and compared by reference, which can lead to bugs in value-based logic and concurrent code.  
-`Data.array` provides immutable arrays with structural equality, making them ideal for functional programming and safe domain modeling.
+`Equal.equals` compares plain arrays structurally in Effect v4, making them ideal for functional programming and safe domain modeling.
 
 ## Good Example
 
 ```typescript
-import { Data, Equal } from "effect";
+import { Equal } from "effect";
 
 // Create two structurally equal arrays
-const arr1 = Data.array([1, 2, 3]);
-const arr2 = Data.array([1, 2, 3]);
+const arr1 = [1, 2, 3] as const;
+const arr2 = [1, 2, 3] as const;
 
 // Compare by value, not reference
 const areEqual = Equal.equals(arr1, arr2); // true
@@ -55,15 +54,15 @@ const set = HashSet.make(arr1);
 console.log(HashSet.has(set, arr2)); // true
 
 // Functional operations (map, filter, etc.)
-const doubled = arr1.map((n) => n * 2); // Data.array([2, 4, 6])
+const doubled = arr1.map((n) => n * 2); // [2, 4, 6]
 ```
 
 **Explanation:**
 
-- `Data.array` creates immutable arrays with value-based equality.
+- Plain readonly arrays have value-based equality with `Equal.equals` in Effect v4.
 - Useful for modeling ordered collections in a safe, functional way.
 - Supports all standard array operations, but with immutability and structural equality.
 
 ## Anti-Pattern
 
-Using plain JavaScript arrays for value-based logic, as keys in sets/maps, or in concurrent code, which can lead to bugs due to mutability and reference-based comparison.
+Mutating shared arrays in concurrent code. Prefer readonly arrays (or `Chunk` for high-performance collections) and compare with `Equal.equals` instead of `===`.

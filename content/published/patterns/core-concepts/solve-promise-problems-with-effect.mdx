@@ -51,7 +51,7 @@ Understanding that Effect was built specifically to solve these problems is key 
 This code is type-safe, testable, and cancellable. The signature `Effect.Effect<User, DbError, HttpClient>` tells us everything we need to know.
 
 ```typescript
-import { Effect, Data } from "effect";
+import { Effect, Data, Context, Layer } from "effect";
 
 interface DbErrorType {
   readonly _tag: "DbError";
@@ -64,15 +64,17 @@ interface User {
   name: string;
 }
 
-class HttpClient extends Effect.Service<HttpClient>()("HttpClient", {
-  sync: () => ({
+class HttpClient extends Context.Service<HttpClient>()("HttpClient", {
+  make: Effect.sync(() => ({
     findById: (id: number): Effect.Effect<User, DbErrorType> =>
       Effect.try({
         try: () => ({ name: `User ${id}` }),
         catch: () => DbError({ message: "Failed to find user" }),
       }),
-  }),
-}) {}
+  })),
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 const findUser = (id: number) =>
   Effect.gen(function* () {
@@ -88,7 +90,7 @@ const program = Effect.gen(function* () {
   yield* Effect.logInfo("1. Demonstrating type-safe error handling:");
 
   const result1 = yield* findUser(123).pipe(
-    Effect.catchAll((error) =>
+    Effect.catch((error) =>
       Effect.gen(function* () {
         yield* Effect.logInfo(`Handled error: ${error.message}`);
         return { name: "Default User" };
@@ -129,7 +131,7 @@ const program = Effect.gen(function* () {
   yield* Effect.logInfo("\n✅ All operations completed successfully!");
 });
 
-Effect.runPromise(Effect.provide(program, HttpClient.Default));
+Effect.runPromise(Effect.provide(program, HttpClient.layer));
 ```
 
 ---

@@ -44,7 +44,7 @@ These combinators let you express "do this for every item" declaratively, withou
 ## Good Example
 
 ```typescript
-import { Effect, Either, Option, Stream } from "effect";
+import { Effect, Result, Option, Stream } from "effect";
 
 // Effect: Apply an effectful function to each item in an array
 const numbers = [1, 2, 3];
@@ -59,9 +59,9 @@ const allEffect = Effect.all(effects, { concurrency: "unbounded" }); // Effect<[
 const options = [Option.some(1), Option.none(), Option.some(3)];
 const filtered = options.filter(Option.isSome).map((o) => o.value); // [1, 3]
 
-// Either: Collect all Right values from a collection of Eithers
-const eithers = [Either.right(1), Either.left("fail"), Either.right(3)];
-const rights = eithers.filter(Either.isRight); // [Either.Right(1), Either.Right(3)]
+// Result: Collect all Right values from a collection of Results
+const eithers = [Result.succeed(1), Result.fail("fail"), Result.succeed(3)];
+const rights = eithers.filter(Result.isSuccess); // [Result.Right(1), Result.Right(3)]
 
 // Stream: Map and flatten a stream of arrays
 const stream = Stream.fromIterable([

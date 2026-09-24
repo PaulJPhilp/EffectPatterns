@@ -101,7 +101,7 @@ const debugErrors = riskyOperation(true).pipe(
   Effect.tapError((error) => Effect.log(`Operation failed: ${error.message}`)),
 
   // Provide a fallback
-  Effect.catchAll((error) => {
+  Effect.catch((error) => {
     return Effect.succeed(`Recovered from: ${error.message}`)
   })
 )

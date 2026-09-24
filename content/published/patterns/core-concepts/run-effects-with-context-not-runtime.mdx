@@ -1,0 +1,68 @@
+---
+title: Run Effects with Context, Not Runtime
+id: run-effects-with-context-not-runtime
+skillLevel: intermediate
+applicationPatternId: core-concepts
+summary: >-
+  Runtime<R> was removed in v4. Capture Effect.context and run with
+  Effect.runForkWith; use ManagedRuntime for long-lived apps.
+tags:
+  - runtime
+  - context
+  - managed-runtime
+  - v4
+rule:
+  description: >-
+    Replace Effect.runtime + Runtime.runFork with Effect.context +
+    Effect.runForkWith. Use ManagedRuntime.make for servers/workers.
+related:
+  - create-reusable-runtime-from-layers
+  - understand-layers-for-dependency-injection
+author: effect_website
+lessonOrder: 33
+---
+
+# Problem
+
+v3 code that threads `Runtime<R>` (`Effect.runtime`, `Runtime.runFork`) fails in v4 — `Effect.runtime` is `undefined` and `Runtime` only holds process lifecycle utilities.
+
+# Solution
+
+```typescript
+import { Context, Effect, Layer, ManagedRuntime } from "effect"
+
+class Logger extends Context.Service<Logger, {
+  readonly log: (m: string) => void
+}>()("Logger") {}
+
+const program = Effect.gen(function*() {
+  const logger = yield* Logger
+  logger.log("hello")
+})
+
+// One-shot: capture services, run later
+const main = Effect.gen(function*() {
+  const services = yield* Effect.context<Logger>()
+  return Effect.runForkWith(services)(program)
+}).pipe(
+  Effect.provideContext(Context.make(Logger, { log: (m) => console.log(m) }))
+)
+
+// Long-lived: prefer ManagedRuntime
+const AppLive = Layer.succeed(Logger, { log: (m) => console.log(m) })
+const App = ManagedRuntime.make(AppLive)
+void App
+void main
+```
+
+# Why This Works
+
+| v3 | v4 |
+|----|----|
+| `Effect.runtime<R>()` | `Effect.context<R>()` |
+| `Runtime.runFork(rt)(eff)` | `Effect.runForkWith(services)(eff)` |
+| `Runtime<R>` type | `Context<R>` |
+
+# Related Patterns
+
+- [Create Reusable Runtime](./create-reusable-runtime-from-layers.mdx)

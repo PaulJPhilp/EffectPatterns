@@ -25,33 +25,33 @@ Configuration files often have optional fields where users can omit them and use
 
 ```typescript
 import { Schema, Effect } from "effect";
-import { FileSystem } from "@effect/platform";
+import { FileSystem } from "effect";
 import { NodeFileSystem } from "@effect/platform-node";
 
 // 1. Define schema with default values using pipe
 const ServerConfig = Schema.Struct({
   // Required fields
-  host: Schema.String.pipe(Schema.minLength(1)),
-  port: Schema.Number.pipe(Schema.int(), Schema.between(1, 65535)),
+  host: Schema.String.pipe(Schema.check(Schema.isMinLength(1))),
+  port: Schema.Number.pipe(Schema.check(Schema.isInt()), Schema.check(Schema.isBetween(1, 65535))),
 
   // Optional fields with defaults applied at parse time
   timeout: Schema.Number.pipe(
-    Schema.int(),
-    Schema.positive(),
-    Schema.optionalWith({ default: () => 5000 }) // 5 second default
+    Schema.check(Schema.isInt()),
+    Schema.check(Schema.isGreaterThan(0)),
+    Schema.withDecodingDefaultKey(Effect.succeed(5000)) // 5 second default
   ),
   maxRetries: Schema.Number.pipe(
-    Schema.int(),
-    Schema.between(0, 10),
-    Schema.optionalWith({ default: () => 3 })
+    Schema.check(Schema.isInt()),
+    Schema.check(Schema.isBetween(0, 10)),
+    Schema.withDecodingDefaultKey(Effect.succeed(3))
   ),
   enableSSL: Schema.Boolean.pipe(
-    Schema.optionalWith({ default: () => false })
+    Schema.withDecodingDefaultKey(Effect.succeed(false))
   ),
   compressionLevel: Schema.Number.pipe(
-    Schema.int(),
-    Schema.between(0, 9),
-    Schema.optionalWith({ default: () => 6 }) // Mid-range compression
+    Schema.check(Schema.isInt()),
+    Schema.check(Schema.isBetween(0, 9)),
+    Schema.withDecodingDefaultKey(Effect.succeed(6)) // Mid-range compression
   ),
 });
 
@@ -80,7 +80,7 @@ const loadServerConfig = (filePath: string) =>
     }
 
     // Decode with defaults applied automatically
-    const config = yield* Schema.decodeUnknown(ServerConfig)(
+    const config = yield* Schema.decodeUnknownEffect(ServerConfig)(
       jsonData
     ).pipe(
       Effect.mapError((error) => ({
@@ -161,7 +161,7 @@ Effect.runPromise(
 
 | Concept | Explanation |
 |---------|-------------|
-| `Schema.optionalWith({ default: () => value })` | Applies default when field is missing |
+| `Schema.withDecodingDefaultKey(Effect.succeed(value))` | Applies default when field is missing |
 | Default factory function `() => value` | Computed at parse time (not shared mutable state) |
 | Type becomes non-optional | TypeScript knows field always exists |
 | Eliminates null/undefined checks | Config properties guaranteed to exist |

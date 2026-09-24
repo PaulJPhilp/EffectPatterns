@@ -61,7 +61,7 @@ With fallback sinks:
 This example demonstrates a system that tries to write order records to a fast in-memory cache first, falls back to database if cache fails, and falls back to a dead letter file if database fails.
 
 ```typescript
-import { Effect, Stream, Sink, Chunk, Either, Data } from "effect";
+import { Effect, Stream, Sink, Chunk, Result, Data } from "effect";
 
 interface Order {
   readonly orderId: string;
@@ -173,33 +173,33 @@ const createFallbackSink = (): Sink.Sink<
         // Try cache first
         const cacheResult = yield* createCacheSink()
           .pipe(Sink.feed(Chunk.of(order)))
-          .pipe(Effect.either);
+          .pipe(Effect.result);
 
-        if (Either.isRight(cacheResult)) {
+        if (Result.isSuccess(cacheResult)) {
           return {
             ...state,
-            cached: state.cached + cacheResult.right,
+            cached: state.cached + cacheResult.success,
           };
         }
 
         console.log(
-          `[FALLBACK] Cache failed (${cacheResult.left.reason}), trying database`
+          `[FALLBACK] Cache failed (${cacheResult.failure.reason}), trying database`
         );
 
         // Cache failed, try database
         const dbResult = yield* createDatabaseSink()
           .pipe(Sink.feed(Chunk.of(order)))
-          .pipe(Effect.either);
+          .pipe(Effect.result);
 
-        if (Either.isRight(dbResult)) {
+        if (Result.isSuccess(dbResult)) {
           return {
             ...state,
-            persisted: state.persisted + dbResult.right,
+            persisted: state.persisted + dbResult.success,
           };
         }
 
         console.log(
-          `[FALLBACK] Database failed (${dbResult.left.reason}), falling back to dead letter`
+          `[FALLBACK] Database failed (${dbResult.failure.reason}), falling back to dead letter`
         );
 
         // Database failed, use dead letter
@@ -311,21 +311,21 @@ const createIntelligentFallbackSink = (): Sink.Sink<
         // Try cache
         const cacheAttempt = yield* createCacheSink()
           .pipe(Sink.feed(Chunk.of(order)))
-          .pipe(Effect.either);
+          .pipe(Effect.result);
 
-        if (Either.isRight(cacheAttempt)) {
+        if (Result.isSuccess(cacheAttempt)) {
           return { ...state, cached: state.cached + 1 };
         }
 
-        const strategy = determineFallback(cacheAttempt.left);
+        const strategy = determineFallback(cacheAttempt.failure);
 
         if (strategy === "retry") {
           // Try database
           const dbAttempt = yield* createDatabaseSink()
             .pipe(Sink.feed(Chunk.of(order)))
-            .pipe(Effect.either);
+            .pipe(Effect.result);
 
-          if (Either.isRight(dbAttempt)) {
+          if (Result.isSuccess(dbAttempt)) {
             return { ...state, persisted: state.persisted + 1 };
           }
         }
@@ -387,9 +387,9 @@ const createResilientFallbackSink = (
                 ),
             })
           )
-          .pipe(Effect.either);
+          .pipe(Effect.result);
 
-        if (Either.isRight(primaryAttempt)) {
+        if (Result.isSuccess(primaryAttempt)) {
           return { ...state, primary: state.primary + 1 };
         }
 
@@ -399,7 +399,7 @@ const createResilientFallbackSink = (
         const fallbackResult = yield* createDatabaseSink()
           .pipe(Sink.feed(Chunk.of(order)))
           .pipe(
-            Effect.catchAll(() =>
+            Effect.catch(() =>
               createDeadLetterSink().pipe(Sink.feed(Chunk.of(order)))
             )
           );

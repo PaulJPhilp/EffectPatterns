@@ -30,19 +30,19 @@ import { Schema } from "effect"
 // ============================================
 
 // 2D coordinate [x, y]
-const Point2D = Schema.Tuple(Schema.Number, Schema.Number)
+const Point2D = Schema.Tuple([Schema.Number, Schema.Number])
 type Point2D = typeof Point2D.Type  // readonly [number, number]
 
 // 3D coordinate [x, y, z]
-const Point3D = Schema.Tuple(Schema.Number, Schema.Number, Schema.Number)
+const Point3D = Schema.Tuple([Schema.Number, Schema.Number, Schema.Number])
 type Point3D = typeof Point3D.Type  // readonly [number, number, number]
 
 // RGB color [r, g, b]
-const RGB = Schema.Tuple(Schema.Number, Schema.Number, Schema.Number)
+const RGB = Schema.Tuple([Schema.Number, Schema.Number, Schema.Number])
 type RGB = typeof RGB.Type
 
 // Date range [start, end]
-const DateRange = Schema.Tuple(Schema.Date, Schema.Date)
+const DateRange = Schema.Tuple([Schema.DateFromString, Schema.DateFromString])
 type DateRange = typeof DateRange.Type  // readonly [Date, Date]
 
 // ============================================
@@ -50,15 +50,15 @@ type DateRange = typeof DateRange.Type  // readonly [Date, Date]
 // ============================================
 
 // Key-value pair [key, value]
-const KeyValue = Schema.Tuple(Schema.String, Schema.Unknown)
+const KeyValue = Schema.Tuple([Schema.String, Schema.Unknown])
 type KeyValue = typeof KeyValue.Type  // readonly [string, unknown]
 
 // Named point ["label", x, y]
-const NamedPoint = Schema.Tuple(Schema.String, Schema.Number, Schema.Number)
+const NamedPoint = Schema.Tuple([Schema.String, Schema.Number, Schema.Number])
 type NamedPoint = typeof NamedPoint.Type
 
 // Result tuple [success, data | error]
-const StringResult = Schema.Tuple(Schema.Boolean, Schema.String)
+const StringResult = Schema.Tuple([Schema.Boolean, Schema.String])
 type StringResult = typeof StringResult.Type  // readonly [boolean, string]
 
 // ============================================
@@ -66,10 +66,11 @@ type StringResult = typeof StringResult.Type  // readonly [boolean, string]
 // ============================================
 
 // Optional third element [x, y, z?]
-const Point2Dor3D = Schema.Tuple(
+const Point2Dor3D = Schema.Tuple([
   Schema.Number,
   Schema.Number,
-).pipe(Schema.optionalElement(Schema.Number))
+  Schema.optional(Schema.Number)
+])
 // readonly [number, number, number?]
 
 // ============================================
@@ -77,9 +78,9 @@ const Point2Dor3D = Schema.Tuple(
 // ============================================
 
 // Fixed start, variable rest: [header, ...items]
-const ListWithHeader = Schema.Tuple(
-  [Schema.String],                    // First element: header
-  Schema.rest(Schema.Number)          // Rest: numbers
+const ListWithHeader = Schema.TupleWithRest(
+  Schema.Tuple([Schema.String]),      // First element: header
+  [Schema.Number]                     // Rest: numbers
 )
 type ListWithHeader = typeof ListWithHeader.Type
 // readonly [string, ...number[]]
@@ -164,8 +165,8 @@ console.log(`\n✅ Box: ${width}x${height}`)
 
 | Schema | Purpose |
 |--------|---------|
-| **Schema.Tuple(S1, S2, ...)** | Fixed-length typed array |
-| **optionalElement** | Optional trailing elements |
+| **Schema.Tuple([S1, S2, ...])** | Fixed-length typed array |
+| **Schema.optional (element)** | Optional trailing elements |
 | **rest** | Variable-length tail |
 | **Position types** | Each position has specific type |
 | **Length validation** | Exact length enforced |

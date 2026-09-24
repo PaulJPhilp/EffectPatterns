@@ -28,7 +28,7 @@ import { Schema, JSONSchema, Effect } from "effect"
 import { Anthropic } from "@anthropic-ai/sdk"
 
 // 1. Define literal and enum types
-const Priority = Schema.Literal("critical", "high", "medium", "low").pipe(
+const Priority = Schema.Literals(["critical", "high", "medium", "low"]).pipe(
   Schema.description(
     "Task priority: critical (fix immediately), high (this sprint), " +
     "medium (next sprint), low (backlog)"
@@ -43,13 +43,13 @@ const Status = Schema.Enum({
   CANCELLED: "cancelled",
 })
 
-const Category = Schema.Union(
+const Category = Schema.Union([
   Schema.Literal("bug"),
   Schema.Literal("feature"),
   Schema.Literal("documentation"),
   Schema.Literal("refactor"),
   Schema.Literal("test")
-).pipe(
+]).pipe(
   Schema.description("Categorize the work type")
 )
 
@@ -61,8 +61,8 @@ const Task = Schema.Struct({
   status: Status,
   category: Category,
   estimatedHours: Schema.Number.pipe(
-    Schema.int(),
-    Schema.between(1, 40),
+    Schema.check(Schema.isInt()),
+    Schema.check(Schema.isBetween(1, 40)),
     Schema.description("Estimate in hours: 1-40 range")
   ),
   labels: Schema.Array(Schema.String).pipe(

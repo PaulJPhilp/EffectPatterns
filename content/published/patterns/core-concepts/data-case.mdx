@@ -1,13 +1,13 @@
 ---
-title: Modeling Tagged Unions with Data.case
+title: Modeling Tagged Unions with Data.taggedEnum
 id: data-case
 skillLevel: intermediate
 applicationPatternId: core-concepts
 summary: >-
-  Use Data.case to create tagged unions (algebraic data types) for robust,
+  Use Data.taggedEnum to create tagged unions (algebraic data types) for robust,
   type-safe domain modeling and pattern matching.
 tags:
-  - Data.case
+  - Data.taggedEnum
   - tagged-union
   - ADT
   - domain-modeling
@@ -16,7 +16,7 @@ tags:
   - effect
 rule:
   description: >-
-    Use Data.case to define tagged unions (ADTs) for modeling domain-specific
+    Use Data.taggedEnum to define tagged unions (ADTs) for modeling domain-specific
     states and enabling exhaustive pattern matching.
 related:
   - data-struct
@@ -25,17 +25,17 @@ author: PaulJPhilp
 lessonOrder: 9
 ---
 
-# Modeling Tagged Unions with `Data.case`
+# Modeling Tagged Unions with `Data.taggedEnum`
 
 ## Guideline
 
-Use `Data.case` to create tagged unions (algebraic data types, or ADTs) for robust, type-safe domain modeling.  
+Use `Data.taggedEnum` to create tagged unions (algebraic data types, or ADTs) for robust, type-safe domain modeling.  
 Tagged unions make it easy to represent and exhaustively handle all possible states of your domain entities.
 
 ## Rationale
 
 Modeling domain logic with tagged unions ensures that all cases are handled, prevents illegal states, and enables safe, exhaustive pattern matching.  
-`Data.case` provides a concise, type-safe way to define and use ADTs in your application.
+`Data.taggedEnum` provides a concise, type-safe way to define and use ADTs in your application.
 
 ## Good Example
 
@@ -70,7 +70,7 @@ function handleState(state: State): string {
 
 **Explanation:**
 
-- `Data.case` creates tagged constructors for each state.
+- `Data.taggedEnum` creates tagged constructors for each state.
 - The `_tag` property enables exhaustive pattern matching.
 - Use for domain modeling, state machines, and error types.
 

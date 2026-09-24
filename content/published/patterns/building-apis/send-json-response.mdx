@@ -14,7 +14,7 @@ tags:
   - api
 rule:
   description: >-
-    Use Http.response.json to automatically serialize data structures into a
+    Use HttpServerResponse.json to automatically serialize data structures into a
     JSON response.
 author: PaulJPhilp
 related:
@@ -25,37 +25,37 @@ lessonOrder: 4
 
 ## Guideline
 
-To return a JavaScript object or value as a JSON response, use the `Http.response.json(data)` constructor.
+To return a JavaScript object or value as a JSON response, use the `HttpServerResponse.json(data)` constructor.
 
 ---
 
 ## Rationale
 
-APIs predominantly communicate using JSON. The `Http` module provides a dedicated `Http.response.json` helper to make this as simple and robust as possible. Manually constructing a JSON response involves serializing the data and setting the correct HTTP headers, which is tedious and error-prone.
+APIs predominantly communicate using JSON. The `Http` module provides a dedicated `HttpServerResponse.json` helper to make this as simple and robust as possible. Manually constructing a JSON response involves serializing the data and setting the correct HTTP headers, which is tedious and error-prone.
 
-Using `Http.response.json` is superior because:
+Using `HttpServerResponse.json` is superior because:
 
 1.  **Automatic Serialization**: It safely handles the `JSON.stringify` operation for you, including handling potential circular references or other serialization errors.
 2.  **Correct Headers**: It automatically sets the `Content-Type: application/json; charset=utf-8` header. This is critical for clients to correctly interpret the response body. Forgetting this header is a common source of bugs in manually constructed APIs.
 3.  **Simplicity and Readability**: Your intent is made clear with a single, declarative function call. The code is cleaner and focuses on the data being sent, not the mechanics of HTTP.
-4.  **Composability**: It creates a standard `Http.response` object that works seamlessly with all other parts of the Effect `Http` module.
+4.  **Composability**: It creates a standard `HttpServerResponse` object that works seamlessly with all other parts of the Effect `effect/http` module.
 
 ---
 
 ## Good Example
 
-This example defines a route that fetches a user object and returns it as a JSON response. The `Http.response.json` function handles all the necessary serialization and header configuration.
+This example defines a route that fetches a user object and returns it as a JSON response. The `HttpServerResponse.json` function handles all the necessary serialization and header configuration.
 
 ```typescript
 import { Effect, Context, Duration, Layer } from "effect";
-import { NodeContext, NodeHttpServer } from "@effect/platform-node";
+import { NodeServices, NodeHttpServer } from "@effect/platform-node";
 import { createServer } from "node:http";
 
 const PORT = 3459; // Changed port to avoid conflicts
 
 // Define HTTP Server service
-class JsonServer extends Effect.Service<JsonServer>()("JsonServer", {
-  sync: () => ({
+class JsonServer extends Context.Service<JsonServer>()("JsonServer", {
+  make: Effect.sync(() => ({
     handleRequest: () =>
       Effect.succeed({
         status: 200,
@@ -65,8 +65,10 @@ class JsonServer extends Effect.Service<JsonServer>()("JsonServer", {
           timestamp: new Date().toISOString(),
         }),
       }),
-  }),
-}) {}
+  })),
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 // Create and run the server
 const program = Effect.gen(function* () {
@@ -92,7 +94,7 @@ const program = Effect.gen(function* () {
   });
 
   // Start server with error handling
-  yield* Effect.async<void, Error>((resume) => {
+  yield* Effect.callback<void, Error>((resume) => {
     server.on("error", (error: NodeJS.ErrnoException) => {
       if (error.code === "EADDRINUSE") {
         resume(Effect.fail(new Error(`Port ${PORT} is already in use`)));
@@ -116,14 +118,14 @@ const program = Effect.gen(function* () {
   yield* Effect.sync(() => server.close());
   yield* Effect.logInfo("Server shutdown complete");
 }).pipe(
-  Effect.catchAll((error) =>
+  Effect.catch((error) =>
     Effect.gen(function* () {
       yield* Effect.logError(`Server error: ${error.message}`);
       return error;
     })
   ),
   // Merge layers and provide them in a single call to ensure proper lifecycle management
-  Effect.provide(Layer.merge(JsonServer.Default, NodeContext.layer))
+  Effect.provide(Layer.merge(JsonServer.layer, NodeServices.layer))
 );
 
 // Run the program
@@ -142,19 +144,21 @@ The anti-pattern is to manually serialize the data to a string and set the heade
 
 ```typescript
 import { Effect } from "effect";
-import { Http, NodeHttpServer, NodeRuntime } from "@effect/platform-node";
+import { HttpRouter, HttpServerRequest, HttpServerResponse } from "effect/http";
+import { NodeHttpServer, NodeRuntime } from "@effect/platform-node";
+import { createServer } from "node:http";
 
-const getUserRoute = Http.router.get(
+const getUserRoute = HttpRouter.route("GET", 
   "/users/1",
   Effect.succeed({ id: 1, name: "Paul", team: "Effect" }).pipe(
     Effect.flatMap((user) => {
       // Manually serialize the object to a JSON string.
       const jsonString = JSON.stringify(user);
       // Create a text response with the string.
-      const response = Http.response.text(jsonString);
+      const response = HttpServerResponse.text(jsonString);
       // Manually set the Content-Type header.
       return Effect.succeed(
-        Http.response.setHeader(
+        HttpServerResponse.setHeader(
           response,
           "Content-Type",
           "application/json; charset=utf-8"
@@ -164,13 +168,15 @@ const getUserRoute = Http.router.get(
   )
 );
 
-const app = Http.router.empty.pipe(Http.router.addRoute(getUserRoute));
+const app = HttpRouter.addAll([getUserRoute]);
 
-const program = Http.server
-  .serve(app)
-  .pipe(Effect.provide(NodeHttpServer.layer({ port: 3000 })));
+const ServerLive = HttpRouter.serve(app).pipe(
+  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
+);
+
+Layer.launch(ServerLive).pipe(NodeRuntime.runMain);
 
 NodeRuntime.runMain(program);
 ```
 
-This manual approach is unnecessarily complex. It forces you to remember to perform both the serialization and the header configuration. If you forget the `setHeader` call, many clients will fail to parse the response correctly. The `Http.response.json` helper eliminates this entire class of potential bugs.
+This manual approach is unnecessarily complex. It forces you to remember to perform both the serialization and the header configuration. If you forget the `setHeader` call, many clients will fail to parse the response correctly. The `HttpServerResponse.json` helper eliminates this entire class of potential bugs.

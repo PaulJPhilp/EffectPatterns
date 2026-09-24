@@ -44,35 +44,39 @@ This automates one of the most complex and error-prone parts of application arch
 ## Good Example
 
 ```typescript
-import { Effect, Layer, Console } from "effect";
+import { Effect, Layer, Console, Context } from "effect";
 
 // --- Service 1: Database ---
 interface DatabaseOps {
   query: (sql: string) => Effect.Effect<string, never, never>;
 }
 
-class Database extends Effect.Service<DatabaseOps>()("Database", {
-  sync: () => ({
+class Database extends Context.Service<Database, DatabaseOps>()("Database", {
+  make: Effect.sync(() => ({
     query: (sql: string): Effect.Effect<string, never, never> =>
       Effect.sync(() => `db says: ${sql}`),
-  }),
-}) {}
+  })),
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 // --- Service 2: API Client ---
 interface ApiClientOps {
   fetch: (path: string) => Effect.Effect<string, never, never>;
 }
 
-class ApiClient extends Effect.Service<ApiClientOps>()("ApiClient", {
-  sync: () => ({
+class ApiClient extends Context.Service<ApiClient, ApiClientOps>()("ApiClient", {
+  make: Effect.sync(() => ({
     fetch: (path: string): Effect.Effect<string, never, never> =>
       Effect.sync(() => `api says: ${path}`),
-  }),
-}) {}
+  })),
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 // --- Application Layer ---
 // We merge the two independent layers into one.
-const AppLayer = Layer.merge(Database.Default, ApiClient.Default);
+const AppLayer = Layer.merge(Database.layer, ApiClient.layer);
 
 // This program uses both services, unaware of their implementation details.
 const program = Effect.gen(function* () {

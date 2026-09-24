@@ -41,7 +41,7 @@ Distributed tracing shows the complete request journey:
 
 ```typescript
 import { Effect, Context, Layer } from "effect"
-import { HttpClient, HttpClientRequest, HttpServerRequest, HttpServerResponse } from "@effect/platform"
+import { HttpClient, HttpClientRequest, HttpServerRequest, HttpServerResponse } from "effect/http"
 
 // ============================================
 // 1. Define trace context
@@ -54,10 +54,9 @@ interface TraceContext {
   readonly sampled: boolean
 }
 
-class CurrentTrace extends Context.Tag("CurrentTrace")<
-  CurrentTrace,
-  TraceContext
->() {}
+class CurrentTrace extends Context.Service<
+  CurrentTrace, TraceContext
+>()("CurrentTrace") {}
 
 // W3C Trace Context header names
 const TRACEPARENT_HEADER = "traceparent"

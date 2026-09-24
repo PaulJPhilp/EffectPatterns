@@ -40,15 +40,15 @@ const Active = Schema.Literal("active")
 // ============================================
 
 // Status enum
-const Status = Schema.Literal("active", "inactive", "pending")
+const Status = Schema.Literals(["active", "inactive", "pending"])
 type Status = typeof Status.Type  // "active" | "inactive" | "pending"
 
 // Role enum
-const Role = Schema.Literal("admin", "user", "guest")
+const Role = Schema.Literals(["admin", "user", "guest"])
 type Role = typeof Role.Type  // "admin" | "user" | "guest"
 
 // HTTP methods
-const HttpMethod = Schema.Literal("GET", "POST", "PUT", "DELETE", "PATCH")
+const HttpMethod = Schema.Literals(["GET", "POST", "PUT", "DELETE", "PATCH"])
 type HttpMethod = typeof HttpMethod.Type
 
 // ============================================
@@ -56,11 +56,11 @@ type HttpMethod = typeof HttpMethod.Type
 // ============================================
 
 // HTTP status codes
-const SuccessCode = Schema.Literal(200, 201, 204)
-const ErrorCode = Schema.Literal(400, 401, 403, 404, 500)
+const SuccessCode = Schema.Literals([200, 201, 204])
+const ErrorCode = Schema.Literals([400, 401, 403, 404, 500])
 
 // Priority levels
-const Priority = Schema.Literal(1, 2, 3)
+const Priority = Schema.Literals([1, 2, 3])
 type Priority = typeof Priority.Type  // 1 | 2 | 3
 
 // ============================================

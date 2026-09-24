@@ -14,7 +14,7 @@ tags:
   - data
 rule:
   description: >-
-    Model application errors as typed classes and use Http.server.serveOptions
+    Model application errors as typed classes and use route-level error handling
     to map them to specific HTTP responses.
 author: PaulJPhilp
 related:
@@ -25,7 +25,7 @@ lessonOrder: 4
 
 ## Guideline
 
-Define specific error types for your application logic and use `Http.server.serveOptions` with a custom `unhandledErrorResponse` function to map those errors to appropriate HTTP status codes and responses.
+Define specific error types for your application logic and use `route-level error handling` with a custom `unhandledErrorResponse` function to map those errors to appropriate HTTP status codes and responses.
 
 ---
 
@@ -47,7 +47,7 @@ Centralizing error handling at the server level provides a clean separation of c
 This example defines two custom error types, `UserNotFoundError` and `InvalidIdError`. The route logic can fail with either. The `unhandledErrorResponse` function inspects the error and returns a `404` or `400` response accordingly, with a generic `500` for any other unexpected errors.
 
 ```typescript
-import { Cause, Data, Effect } from "effect";
+import { Cause, Data, Effect, Context, Layer } from "effect";
 
 // Define our domain types
 export interface User {
@@ -73,10 +73,8 @@ export class UnauthorizedError extends Data.TaggedError("UnauthorizedError")<{
 }> {}
 
 // Define error handler service
-export class ErrorHandlerService extends Effect.Service<ErrorHandlerService>()(
-  "ErrorHandlerService",
-  {
-    sync: () => ({
+export class ErrorHandlerService extends Context.Service<ErrorHandlerService>()("ErrorHandlerService", {
+    make: Effect.sync(() => ({
       // Handle API errors with proper logging
       handleApiError: <E>(error: E): Effect.Effect<ApiResponse, never, never> =>
         Effect.gen(function* () {
@@ -111,8 +109,8 @@ export class ErrorHandlerService extends Effect.Service<ErrorHandlerService>()(
         Effect.gen(function* () {
           yield* Effect.logError("Unexpected error occurred");
 
-          if (Cause.isDie(cause)) {
-            const defect = Cause.failureOption(cause);
+          if (Cause.hasDies(cause)) {
+            const defect = Cause.findErrorOption(cause);
             if (defect._tag === "Some") {
               const error = defect.value as Error;
               yield* Effect.logError(`Defect: ${error.message}`);
@@ -124,15 +122,14 @@ export class ErrorHandlerService extends Effect.Service<ErrorHandlerService>()(
 
           return Effect.succeed(void 0);
         }),
-    }),
-  }
-) {}
+    })),
+  }) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 // Define UserRepository service
-export class UserRepository extends Effect.Service<UserRepository>()(
-  "UserRepository",
-  {
-    sync: () => {
+export class UserRepository extends Context.Service<UserRepository>()("UserRepository", {
+    make: Effect.sync(() => {
       const users = new Map<string, User>([
         [
           "user_123",
@@ -211,9 +208,10 @@ export class UserRepository extends Effect.Service<UserRepository>()(
             return Effect.succeed(void 0);
           }),
       };
-    },
-  }
-) {}
+    }),
+  }) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 interface ApiResponse {
   readonly error?: string;
@@ -240,7 +238,7 @@ const createRoutes = () =>
             email: user.role === "admin" ? user.email : "[hidden]",
           },
         })),
-        Effect.catchAll((error) => errorHandler.handleApiError(error))
+        Effect.catch((error) => errorHandler.handleApiError(error))
       );
 
       yield* Effect.logInfo(`Response: ${JSON.stringify(response)}`);
@@ -254,12 +252,12 @@ const createRoutes = () =>
 
     yield* repo.checkRole(adminUser, "admin").pipe(
       Effect.tap(() => Effect.logInfo("Admin access successful")),
-      Effect.catchAll((error) => errorHandler.handleApiError(error))
+      Effect.catch((error) => errorHandler.handleApiError(error))
     );
 
     yield* repo.checkRole(regularUser, "admin").pipe(
       Effect.tap(() => Effect.logInfo("User admin access successful")),
-      Effect.catchAll((error) => errorHandler.handleApiError(error))
+      Effect.catch((error) => errorHandler.handleApiError(error))
     );
 
     return { message: "Tests completed successfully" };
@@ -268,8 +266,8 @@ const createRoutes = () =>
 // Run the program with all services
 Effect.runPromise(
   Effect.provide(
-    Effect.provide(createRoutes(), ErrorHandlerService.Default),
-    UserRepository.Default
+    Effect.provide(createRoutes(), ErrorHandlerService.layer),
+    UserRepository.layer
   )
 );
 ```
@@ -280,35 +278,39 @@ The anti-pattern is to handle HTTP-specific error logic inside each route handle
 
 ```typescript
 import { Effect, Data } from "effect";
-import { Http, NodeHttpServer, NodeRuntime } from "@effect/platform-node";
+import { HttpRouter, HttpServerResponse } from "effect/http";
+import { NodeHttpServer, NodeRuntime } from "@effect/platform-node";
+import { createServer } from "node:http";
 
 class UserNotFoundError extends Data.TaggedError("UserNotFoundError")<{
   id: string;
 }> {}
 // ... same getUser function and error classes
 
-const userRoute = Http.router.get(
+const userRoute = HttpRouter.route("GET", 
   "/users/:userId",
-  Effect.flatMap(Http.request.ServerRequest, (req) =>
-    getUser(req.params.userId)
+  Effect.flatMap(HttpRouter.params, (params) =>
+    getUser(params.userId)
   ).pipe(
-    Effect.map(Http.response.json),
+    Effect.map(HttpServerResponse.json),
     // Manually catching errors inside the route logic
     Effect.catchTag("UserNotFoundError", (e) =>
-      Http.response.text(`User ${e.id} not found`, { status: 404 })
+      HttpServerResponse.text(`User ${e.id} not found`, { status: 404 })
     ),
     Effect.catchTag("InvalidIdError", (e) =>
-      Http.response.text(`ID ${e.id} is not a valid format`, { status: 400 })
+      HttpServerResponse.text(`ID ${e.id} is not a valid format`, { status: 400 })
     )
   )
 );
 
-const app = Http.router.empty.pipe(Http.router.addRoute(userRoute));
+const app = HttpRouter.addAll([userRoute]);
 
 // No centralized error handling
-const program = Http.server
-  .serve(app)
-  .pipe(Effect.provide(NodeHttpServer.layer({ port: 3000 })));
+const ServerLive = HttpRouter.serve(app).pipe(
+  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
+);
+
+Layer.launch(ServerLive).pipe(NodeRuntime.runMain);
 
 NodeRuntime.runMain(program);
 ```

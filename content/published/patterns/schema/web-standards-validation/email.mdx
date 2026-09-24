@@ -30,11 +30,11 @@ import { Schema, Effect } from "effect"
 // 1. Define branded Email type with validation
 const Email = Schema.String.pipe(
   Schema.trimmed(),
-  Schema.minLength(5),
-  Schema.maxLength(254),
-  Schema.pattern(
+  Schema.check(Schema.isMinLength(5)),
+  Schema.check(Schema.isMaxLength(254)),
+  Schema.check(Schema.isPattern(
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  ).pipe(
+  )).pipe(
     Schema.annotations({
       description: "Valid email format (local@domain.tld)",
     })
@@ -45,13 +45,13 @@ const Email = Schema.String.pipe(
 type Email = typeof Email.Type
 
 // 2. Create parser
-const parseEmail = Schema.decodeUnknown(Email)
+const parseEmail = Schema.decodeUnknownEffect(Email)
 
 // 3. Use in request schemas
 const CreateUserRequest = Schema.Struct({
   name: Schema.String,
   email: Email,
-  password: Schema.String.pipe(Schema.minLength(8)),
+  password: Schema.String.pipe(Schema.check(Schema.isMinLength(8))),
 })
 
 type CreateUserRequest = typeof CreateUserRequest.Type
@@ -59,7 +59,7 @@ type CreateUserRequest = typeof CreateUserRequest.Type
 // 4. Validate and use
 const createUser = (input: unknown) =>
   Effect.gen(function* () {
-    const request = yield* Schema.decodeUnknown(
+    const request = yield* Schema.decodeUnknownEffect(
       CreateUserRequest
     )(input).pipe(
       Effect.mapError((error) => ({
@@ -97,7 +97,7 @@ Effect.runPromise(createUser(userInput))
 |---------|-------------|
 | `Schema.pattern` | Regex validation at runtime—catches invalid format |
 | `Schema.trimmed()` | Remove leading/trailing whitespace |
-| `Schema.maxLength(254)` | Email RFC 5321 limit |
+| `Schema.check(Schema.isMaxLength(254))` | Email RFC 5321 limit |
 | `Schema.brand("Email")` | Creates nominal type—`Email ≠ string` |
 | Compile-time safety | Functions requiring `Email` reject raw strings at compile time |
 | Composable | Reuse `Email` schema in any struct |

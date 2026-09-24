@@ -85,7 +85,7 @@ const programWithResults = Effect.gen(function* () {
     throw error;
   }
 }).pipe(
-  Effect.catchAll((error) =>
+  Effect.catch((error) =>
     Effect.gen(function* () {
       yield* Effect.logError(`Handled error: ${error}`);
       return null;
@@ -110,7 +110,7 @@ const programWithLogging = Effect.gen(function* () {
     return null;
   }
 }).pipe(
-  Effect.catchAll((error) =>
+  Effect.catch((error) =>
     Effect.gen(function* () {
       yield* Effect.logInfo(`Handled error: ${error}`);
       return null;

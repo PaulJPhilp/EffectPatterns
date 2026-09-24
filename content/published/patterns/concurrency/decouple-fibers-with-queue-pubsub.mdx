@@ -78,7 +78,7 @@ const program = Effect.gen(function* () {
       // Producer is faster than consumer (500ms vs 1000ms) to demonstrate queue buffering.
       yield* Effect.sleep("500 millis");
     }
-  }).pipe(Effect.fork); // Fork creates a new fiber that runs concurrently
+  }).pipe(Effect.forkChild); // Fork creates a new fiber that runs concurrently
 
   yield* Effect.logInfo("Started producer fiber");
 
@@ -98,7 +98,7 @@ const program = Effect.gen(function* () {
       yield* Effect.sleep("1 second");
       yield* Effect.logInfo(`Completed ${job}`);
     }
-  }).pipe(Effect.fork); // Fork creates another independent fiber
+  }).pipe(Effect.forkChild); // Fork creates another independent fiber
 
   yield* Effect.logInfo("Started worker fiber");
 
@@ -152,7 +152,7 @@ const program = Effect.gen(function* () {
         }
       })
     ),
-    Effect.fork
+    Effect.forkChild
   );
 
   // Subscriber 2: The "Notifier" service
@@ -165,7 +165,7 @@ const program = Effect.gen(function* () {
         }
       })
     ),
-    Effect.fork
+    Effect.forkChild
   );
 
   // Give subscribers time to start

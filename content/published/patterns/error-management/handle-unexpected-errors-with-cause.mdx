@@ -4,7 +4,7 @@ id: handle-unexpected-errors-with-cause
 skillLevel: advanced
 applicationPatternId: error-management
 summary: >-
-  Use Effect.catchAllCause or Effect.runFork to inspect the Cause of a failure,
+  Use Effect.catchCause or Effect.runFork to inspect the Cause of a failure,
   distinguishing between expected errors (Fail) and unexpected defects (Die).
 tags:
   - error-handling
@@ -28,7 +28,7 @@ lessonOrder: 3
 ## Guideline
 
 To build truly resilient applications, differentiate between known business
-errors (`Fail`) and unknown defects (`Die`). Use `Effect.catchAllCause` to
+errors (`Fail`) and unknown defects (`Die`). Use `Effect.catchCause` to
 inspect the full `Cause` of a failure.
 
 ## Rationale
@@ -40,7 +40,7 @@ thrown exception). They should be handled differently.
 ## Good Example
 
 ```typescript
-import { Cause, Effect, Data, Schedule, Duration } from "effect";
+import { Cause, Effect, Data, Schedule, Duration, Context, Layer } from "effect";
 
 // Define domain types
 interface DatabaseConfig {
@@ -68,10 +68,8 @@ class ValidationError extends Data.TaggedError("ValidationError")<{
 }> {}
 
 // Define database service
-class DatabaseService extends Effect.Service<DatabaseService>()(
-  "DatabaseService",
-  {
-    sync: () => ({
+class DatabaseService extends Context.Service<DatabaseService>()("DatabaseService", {
+    make: Effect.sync(() => ({
       // Connect to database with proper error handling
       connect: (
         config: DatabaseConfig
@@ -106,13 +104,14 @@ class DatabaseService extends Effect.Service<DatabaseService>()(
           yield* Effect.logInfo("Database connection successful");
           return { success: true };
         }),
-    }),
-  }
-) {}
+    })),
+  }) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 // Define user service
-class UserService extends Effect.Service<UserService>()("UserService", {
-  sync: () => ({
+class UserService extends Context.Service<UserService>()("UserService", {
+  make: Effect.sync(() => ({
     // Parse user data with validation
     parseUser: (input: unknown): Effect.Effect<UserData, ValidationError> =>
       Effect.gen(function* () {
@@ -158,12 +157,14 @@ class UserService extends Effect.Service<UserService>()("UserService", {
           throw e;
         }
       }),
-  }),
-}) {}
+  })),
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 // Define test service
-class TestService extends Effect.Service<TestService>()("TestService", {
-  sync: () => {
+class TestService extends Context.Service<TestService>()("TestService", {
+  make: Effect.sync(() => {
     // Create instance methods
     const printCause = (
       prefix: string,
@@ -172,8 +173,8 @@ class TestService extends Effect.Service<TestService>()("TestService", {
       Effect.gen(function* () {
         yield* Effect.logInfo(`\n=== ${prefix} ===`);
 
-        if (Cause.isDie(cause)) {
-          const defect = Cause.failureOption(cause);
+        if (Cause.hasDies(cause)) {
+          const defect = Cause.findErrorOption(cause);
           if (defect._tag === "Some") {
             const error = defect.value as Error;
             yield* Effect.logError("Defect (unexpected error)");
@@ -182,8 +183,8 @@ class TestService extends Effect.Service<TestService>()("TestService", {
               `Stack: ${error.stack?.split("\n")[1]?.trim() ?? "N/A"}`
             );
           }
-        } else if (Cause.isFailure(cause)) {
-          const error = Cause.failureOption(cause);
+        } else if (Cause.hasFails(cause)) {
+          const error = Cause.findErrorOption(cause);
           yield* Effect.logWarning("Expected failure");
           yield* Effect.logWarning(`Error: ${JSON.stringify(error)}`);
         }
@@ -204,7 +205,7 @@ class TestService extends Effect.Service<TestService>()("TestService", {
           readonly cause: Cause.Cause<E>;
         };
 
-        const result = yield* Effect.catchAllCause(program, (cause) =>
+        const result = yield* Effect.catchCause(program, (cause) =>
           Effect.succeed({ _tag: "error" as const, cause } as TestError)
         );
 
@@ -223,8 +224,10 @@ class TestService extends Effect.Service<TestService>()("TestService", {
       printCause,
       runScenario,
     };
-  },
-}) {}
+  }),
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 // Create program with proper error handling
 const program = Effect.gen(function* () {
@@ -243,7 +246,7 @@ const program = Effect.gen(function* () {
         Schedule.exponential(100)
       ).pipe(
         Effect.timeout(Duration.seconds(5)),
-        Effect.catchAll(() => Effect.fail("Connection timeout"))
+        Effect.catch(() => Effect.fail("Connection timeout"))
       );
       return result;
     })
@@ -257,7 +260,7 @@ const program = Effect.gen(function* () {
         db.connect({ url: "invalid" }),
         Schedule.recurs(3)
       ).pipe(
-        Effect.catchAllCause((cause) =>
+        Effect.catchCause((cause) =>
           Effect.gen(function* () {
             yield* Effect.logError("Failed after 3 retries");
             yield* Effect.logError(Cause.pretty(cause));
@@ -292,11 +295,11 @@ const program = Effect.gen(function* () {
         [
           db.connect({ url: "" }).pipe(
             Effect.timeout(Duration.seconds(1)),
-            Effect.catchAll(() => Effect.succeed({ success: true }))
+            Effect.catch(() => Effect.succeed({ success: true }))
           ),
           users.parseUser({ id: "invalid" }).pipe(
             Effect.timeout(Duration.seconds(1)),
-            Effect.catchAll(() =>
+            Effect.catch(() =>
               Effect.succeed({ id: "timeout", name: "Timeout" })
             )
           ),
@@ -317,10 +320,10 @@ const program = Effect.gen(function* () {
 Effect.runPromise(
   Effect.provide(
     Effect.provide(
-      Effect.provide(program, TestService.Default),
-      DatabaseService.Default
+      Effect.provide(program, TestService.layer),
+      DatabaseService.layer
     ),
-    UserService.Default
+    UserService.layer
   )
 );
 ```
@@ -331,5 +334,5 @@ failures, logging or escalating as appropriate.
 
 ## Anti-Pattern
 
-Using a simple `Effect.catchAll` can dangerously conflate expected errors and
+Using a simple `Effect.catch` can dangerously conflate expected errors and
 unexpected defects, masking critical bugs as recoverable errors.

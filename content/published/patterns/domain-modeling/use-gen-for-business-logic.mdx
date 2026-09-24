@@ -100,7 +100,7 @@ const program = Effect.gen(function* () {
     email: "paul@example.com",
     password: "securepassword123",
   }).pipe(
-    Effect.catchAll((error) =>
+    Effect.catch((error) =>
       Effect.gen(function* () {
         yield* Effect.logError(`Failed to create user: ${error.message}`);
         return { id: -1, email: "error" };
@@ -115,7 +115,7 @@ const program = Effect.gen(function* () {
     email: "invalid@example.com",
     password: "123", // Too short
   }).pipe(
-    Effect.catchAll((error) =>
+    Effect.catch((error) =>
       Effect.gen(function* () {
         yield* Effect.logError(`Failed to create user: ${error.message}`);
         return { id: -1, email: "error" };

@@ -1,6 +1,6 @@
 # Module 6: Creating with Constructors
 
-Constructors are the entry point to the Effect ecosystem. They let you create `Effect`, `Stream`, `Option`, and `Either` values from plain values, errors, promises, callbacks, and more.  
+Constructors are the entry point to the Effect ecosystem. They let you create `Effect`, `Stream`, `Option`, and `Result` values from plain values, errors, promises, callbacks, and more.  
 Mastering constructors is the first step to writing robust, type-safe, and composable functional code.
 
 This module will teach you the most important constructors, how they work, and when to use each one. You’ll learn to lift values and errors into the Effect world, wrap synchronous and asynchronous computations, and create streams and options from real-world data.
@@ -16,7 +16,7 @@ This module will teach you the most important constructors, how they work, and w
 | `try`, `tryPromise`                        | Wrap sync/async computations that may throw | [Wrapping Synchronous and Asynchronous Computations](./patterns/constructor-try-trypromise)       |
 | `sync`, `async`                            | Create from callback-based or sync code     | [Creating from Synchronous and Callback Code](./patterns/constructor-sync-async)                  |
 | `fromIterable`, `fromArray`                | Create from collections                     | [Creating from Collections](./patterns/constructor-from-iterable)                                 |
-| `fromNullable`, `fromOption`, `fromEither` | Convert from nullable, Option, or Either    | [Converting from Nullable, Option, or Either](./patterns/constructor-from-nullable-option-either) |
+| `fromNullishOr`, `fromOption`, `fromResult` | Convert from nullable, Option, or Result    | [Converting from Nullable, Option, or Result](./patterns/constructor-from-nullable-option-either) |
 
 ---
 
@@ -26,7 +26,7 @@ Follow these patterns in order to build a comprehensive understanding of constru
 
 1.  #### [Lifting Values with succeed, some, and right](./patterns/constructor-succeed-some-right)
 
-    **Goal**: Learn how to create an `Effect`, `Option`, or `Either` from a plain value.
+    **Goal**: Learn how to create an `Effect`, `Option`, or `Result` from a plain value.
 
 2.  #### [Lifting Errors and Absence with fail, none, and left](./patterns/constructor-fail-none-left)
 
@@ -44,8 +44,8 @@ Follow these patterns in order to build a comprehensive understanding of constru
 
     **Goal**: Create streams or effects from arrays, iterables, or other collections.
 
-6.  #### [Converting from Nullable, Option, or Either](./patterns/constructor-from-nullable-option-either)
-    **Goal**: Convert nullable values, `Option`, or `Either` into Effects or Streams.
+6.  #### [Converting from Nullable, Option, or Result](./patterns/constructor-from-nullable-option-either)
+    **Goal**: Convert nullable values, `Option`, or `Result` into Effects or Streams.
 
 ---
 

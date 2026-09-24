@@ -184,7 +184,7 @@ const program = Effect.gen(function* () {
   }).pipe(
     Effect.retry(
       Schedule.exponential("100 millis").pipe(
-        Schedule.upTo("1 second"),
+        Schedule.upTo({ duration: "1 second" }),
         Schedule.recurs(5)
       )
     )

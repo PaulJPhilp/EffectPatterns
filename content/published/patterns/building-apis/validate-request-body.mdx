@@ -16,7 +16,7 @@ tags:
   - body
 rule:
   description: >-
-    Use Http.request.schemaBodyJson with a Schema to automatically parse and
+    Use HttpServerRequest.schemaBodyJson with a Schema to automatically parse and
     validate request bodies.
 author: PaulJPhilp
 related:
@@ -29,7 +29,7 @@ lessonOrder: 8
 
 ## Guideline
 
-To process an incoming request body, use `Http.request.schemaBodyJson(YourSchema)` to parse the JSON and validate its structure in a single, type-safe step.
+To process an incoming request body, use `HttpServerRequest.schemaBodyJson(YourSchema)` to parse the JSON and validate its structure in a single, type-safe step.
 
 ---
 
@@ -37,7 +37,7 @@ To process an incoming request body, use `Http.request.schemaBodyJson(YourSchema
 
 Accepting user-provided data is one of the most critical and sensitive parts of an API. You must never trust incoming data. The `Http` module's integration with `Schema` provides a robust, declarative solution for this.
 
-Using `Http.request.schemaBodyJson` offers several major advantages:
+Using `HttpServerRequest.schemaBodyJson` offers several major advantages:
 
 1.  **Automatic Validation and Error Handling**: If the incoming body does not match the schema, the server automatically rejects the request with a `400 Bad Request` status and a detailed JSON response explaining the validation errors. You don't have to write any of this boilerplate logic.
 2.  **Type Safety**: If the validation succeeds, the value produced by the `Effect` is fully typed according to your `Schema`. This eliminates `any` types and brings static analysis benefits to your request handlers.
@@ -51,14 +51,14 @@ Using `Http.request.schemaBodyJson` offers several major advantages:
 This example defines a `POST` route to create a user. It uses a `CreateUser` schema to validate the request body. If validation passes, it returns a success message with the typed data. If it fails, the platform automatically sends a descriptive 400 error.
 
 ```typescript
-import { Duration, Effect } from "effect";
+import { Duration, Effect, Context, Layer, Schema } from "effect";
 import * as S from "effect/Schema";
 import { createServer, IncomingMessage, ServerResponse } from "http";
 
 // Define user schema
 const UserSchema = S.Struct({
   name: S.String,
-  email: S.String.pipe(S.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)),
+  email: S.String.pipe(S.check(S.isPattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/))),
 });
 type User = S.Schema.Type<typeof UserSchema>;
 
@@ -68,11 +68,13 @@ interface UserServiceInterface {
 }
 
 // Define user service
-class UserService extends Effect.Service<UserService>()("UserService", {
-  sync: () => ({
-    validateUser: (data: unknown) => S.decodeUnknown(UserSchema)(data),
-  }),
-}) {}
+class UserService extends Context.Service<UserService>()("UserService", {
+  make: Effect.sync(() => ({
+    validateUser: (data: unknown) => S.decodeUnknownEffect(UserSchema)(data),
+  })),
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 // Define HTTP server service interface
 interface HttpServerInterface {
@@ -84,9 +86,9 @@ interface HttpServerInterface {
 }
 
 // Define HTTP server service
-class HttpServer extends Effect.Service<HttpServer>()("HttpServer", {
+class HttpServer extends Context.Service<HttpServer>()("HttpServer", {
   // Define effect-based implementation that uses dependencies
-  effect: Effect.gen(function* () {
+  make: Effect.gen(function* () {
     const userService = yield* UserService;
 
     return {
@@ -101,7 +103,7 @@ class HttpServer extends Effect.Service<HttpServer>()("HttpServer", {
 
           try {
             // Read request body
-            const body = yield* Effect.async<unknown, Error>((resume) => {
+            const body = yield* Effect.callback<unknown, Error>((resume) => {
               let data = "";
               request.on("data", (chunk) => {
                 data += chunk;
@@ -154,7 +156,7 @@ class HttpServer extends Effect.Service<HttpServer>()("HttpServer", {
           );
 
           // Start server
-          yield* Effect.async<void, Error>((resume) => {
+          yield* Effect.callback<void, Error>((resume) => {
             server.on("error", (error) => resume(Effect.fail(error)));
             server.listen(3456, () => {
               Effect.runFork(
@@ -172,8 +174,11 @@ class HttpServer extends Effect.Service<HttpServer>()("HttpServer", {
     };
   }),
   // Specify dependencies
-  dependencies: [UserService.Default],
-}) {}
+}) {
+  static readonly layer = Layer.effect(this, this.make).pipe(
+    Layer.provide(UserService.layer)
+  )
+}
 
 // Create program with proper error handling
 const program = Effect.gen(function* () {
@@ -182,7 +187,7 @@ const program = Effect.gen(function* () {
   yield* Effect.logInfo("Starting HTTP server...");
 
   yield* server.start().pipe(
-    Effect.catchAll((error) =>
+    Effect.catch((error) =>
       Effect.gen(function* () {
         yield* Effect.logError(`Server error: ${error}`);
         return yield* Effect.fail(error);
@@ -194,7 +199,7 @@ const program = Effect.gen(function* () {
 );
 
 // Run the server
-Effect.runFork(Effect.provide(program, HttpServer.Default));
+Effect.runFork(Effect.provide(program, HttpServer.layer));
 
 /*
 To test:
@@ -212,12 +217,14 @@ The anti-pattern is to manually parse the JSON and then write imperative validat
 
 ```typescript
 import { Effect } from "effect";
-import { Http, NodeHttpServer, NodeRuntime } from "@effect/platform-node";
+import { HttpRouter, HttpServerRequest, HttpServerResponse } from "effect/http";
+import { NodeHttpServer, NodeRuntime } from "@effect/platform-node";
+import { createServer } from "node:http";
 
-const createUserRoute = Http.router.post(
+const createUserRoute = HttpRouter.route("POST", 
   "/users",
-  Http.request.json.pipe(
-    // Http.request.json returns Effect<unknown, ...>
+  HttpServerRequest.HttpServerRequest.pipe(Effect.flatMap((request) => request.json)).pipe(
+    // HttpServerRequest.HttpServerRequest.pipe(Effect.flatMap((request) => request.json)) returns Effect<unknown, ...>
     Effect.flatMap((body) => {
       // Manually check the type and properties of the body.
       if (
@@ -229,20 +236,22 @@ const createUserRoute = Http.router.post(
         typeof body.email === "string"
       ) {
         // The type is still not safely inferred here without casting.
-        return Http.response.text(`Successfully created user: ${body.name}`);
+        return HttpServerResponse.text(`Successfully created user: ${body.name}`);
       } else {
         // Manually create and return a generic error response.
-        return Http.response.text("Invalid request body", { status: 400 });
+        return HttpServerResponse.text("Invalid request body", { status: 400 });
       }
     })
   )
 );
 
-const app = Http.router.empty.pipe(Http.router.addRoute(createUserRoute));
+const app = HttpRouter.addAll([createUserRoute]);
 
-const program = Http.server
-  .serve(app)
-  .pipe(Effect.provide(NodeHttpServer.layer({ port: 3000 })));
+const ServerLive = HttpRouter.serve(app).pipe(
+  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
+);
+
+Layer.launch(ServerLive).pipe(NodeRuntime.runMain);
 
 NodeRuntime.runMain(program);
 ```

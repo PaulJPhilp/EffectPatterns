@@ -47,7 +47,7 @@ By abstracting the HTTP client into a service, you decouple your application's l
 ### 1. Define the Service
 
 ```typescript
-import { Effect, Data, Layer } from "effect";
+import { Effect, Data, Layer, Context } from "effect";
 
 interface HttpErrorType {
   readonly _tag: "HttpError";
@@ -60,14 +60,16 @@ interface HttpClientType {
   readonly get: <T>(url: string) => Effect.Effect<T, HttpErrorType>;
 }
 
-class HttpClient extends Effect.Service<HttpClientType>()("HttpClient", {
-  sync: () => ({
+class HttpClient extends Context.Service<HttpClient, HttpClientType>()("HttpClient", {
+  make: Effect.sync(() => ({
     get: <T>(url: string): Effect.Effect<T, HttpErrorType> =>
       Effect.tryPromise<T>(() =>
         fetch(url).then((res) => res.json() as T)
-      ).pipe(Effect.catchAll((error) => Effect.fail(HttpError({ error })))),
-  }),
-}) {}
+      ).pipe(Effect.catch((error) => Effect.fail(HttpError({ error })))),
+  })),
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 // Test implementation
 const TestLayer = Layer.succeed(
@@ -107,15 +109,17 @@ interface HttpClientType {
   readonly get: <T>(url: string) => Effect.Effect<T, HttpErrorType>;
 }
 
-class HttpClient extends Effect.Service<HttpClientType>()("HttpClient", {
-  sync: () => ({
+class HttpClient extends Context.Service<HttpClient, HttpClientType>()("HttpClient", {
+  make: Effect.sync(() => ({
     get: <T>(url: string): Effect.Effect<T, HttpErrorType> =>
       Effect.tryPromise({
         try: () => fetch(url).then((res) => res.json()),
         catch: (error) => HttpError({ error }),
       }),
-  }),
-}) {}
+  })),
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 // Test implementation
 const TestLayer = Layer.succeed(

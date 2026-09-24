@@ -30,7 +30,7 @@ import { Schema, Effect } from "effect"
 // 1. Define branded URL type
 const HttpUrl = Schema.String.pipe(
   Schema.trimmed(),
-  Schema.filter((s) => {
+  Schema.check(Schema.makeFilter((s) => {
     try {
       const url = new URL(s)
       // Only allow http/https
@@ -40,7 +40,7 @@ const HttpUrl = Schema.String.pipe(
     } catch {
       return false
     }
-  }).pipe(
+  })).pipe(
     Schema.annotations({
       description: "Valid HTTP/HTTPS URL",
     })
@@ -53,14 +53,14 @@ type HttpUrl = typeof HttpUrl.Type
 // 2. Alternative: Allow multiple protocols
 const WebUrl = Schema.String.pipe(
   Schema.trimmed(),
-  Schema.filter((s) => {
+  Schema.check(Schema.makeFilter((s) => {
     try {
       new URL(s)
       return true
     } catch {
       return false
     }
-  }).pipe(
+  })).pipe(
     Schema.annotations({
       description: "Valid URL (any protocol)",
     })
@@ -75,10 +75,10 @@ const WebhookConfig = Schema.Struct({
   name: Schema.String,
   url: HttpUrl,
   events: Schema.Array(
-    Schema.Literal("user.created", "user.deleted")
+    Schema.Literals(["user.created", "user.deleted"])
   ),
   retryLimit: Schema.Number.pipe(
-    Schema.between(0, 10)
+    Schema.check(Schema.isBetween(0, 10))
   ).pipe(Schema.withDefault(3)),
 })
 
@@ -87,7 +87,7 @@ type WebhookConfig = typeof WebhookConfig.Type
 // 4. Validate and extract URL parts
 const configureWebhook = (input: unknown) =>
   Effect.gen(function* () {
-    const config = yield* Schema.decodeUnknown(
+    const config = yield* Schema.decodeUnknownEffect(
       WebhookConfig
     )(input).pipe(
       Effect.mapError((error) => ({

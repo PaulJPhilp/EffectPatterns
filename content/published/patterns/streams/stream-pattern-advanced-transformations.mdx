@@ -282,7 +282,7 @@ const program = Effect.gen(function* () {
           );
         }
       }).pipe(
-        Effect.catchAll((error) =>
+        Effect.catch((error) =>
           Effect.gen(function* () {
             yield* Effect.log(`[PARSE ERROR] ${error.message}`);
 

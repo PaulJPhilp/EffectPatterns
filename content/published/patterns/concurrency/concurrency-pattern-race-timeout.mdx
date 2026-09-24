@@ -124,12 +124,12 @@ const program = Effect.gen(function* () {
 
   const slowOp = fetchFromSource({ name: "Slow Op", latencyMs: 2000 }).pipe(
     Effect.timeout("500 millis"),
-    Effect.either
+    Effect.result
   );
 
   const timeoutResult = yield* slowOp;
 
-  if (timeoutResult._tag === "Left") {
+  if (timeoutResult._tag === "Failure") {
     console.log(`✗ Operation timed out after 500ms\n`);
   }
 
@@ -142,7 +142,7 @@ const program = Effect.gen(function* () {
 
   const raceWithFallback = primary.pipe(
     Effect.timeout("150 millis"),
-    Effect.catchAll(() =>
+    Effect.catch(() =>
       Effect.gen(function* () {
         yield* Effect.log(`[PRIMARY] Timed out, using fallback`);
         return yield* fallback;
@@ -215,10 +215,10 @@ const circuitBreakerWithTimeout = (
         // Execute with timeout
         const result = yield* op.pipe(
           Effect.timeout(`${timeoutMs} millis`),
-          Effect.either
+          Effect.result
         );
 
-        if (result._tag === "Right") {
+        if (result._tag === "Success") {
           failureCount = 0;
 
           if (state === CircuitState.HalfOpen) {
@@ -232,7 +232,7 @@ const circuitBreakerWithTimeout = (
             }
           }
 
-          return result.right;
+          return result.success;
         }
 
         // Failure
@@ -247,7 +247,7 @@ const circuitBreakerWithTimeout = (
           );
         }
 
-        yield* Effect.fail(result.left);
+        yield* Effect.fail(result.failure);
       });
   });
 ```
@@ -273,14 +273,14 @@ const retryWithTimeoutAndBackoff = <A,>(
     for (let attempt = 0; attempt < config.maxRetries; attempt++) {
       const result = yield* effect.pipe(
         Effect.timeout(`${config.timeoutMs} millis`),
-        Effect.either
+        Effect.result
       );
 
-      if (result._tag === "Right") {
-        return result.right;
+      if (result._tag === "Success") {
+        return result.success;
       }
 
-      lastError = result.left as Error;
+      lastError = result.failure as Error;
 
       if (attempt < config.maxRetries - 1) {
         const backoff = config.initialBackoffMs * Math.pow(2, attempt);
@@ -329,16 +329,16 @@ const timeoutWithCleanup = <A,>(
     const result = yield* effect.pipe(
       Effect.timeout(`${timeoutMs} millis`),
       Effect.ensuring(cleanup),
-      Effect.either
+      Effect.result
     );
 
-    if (result._tag === "Left") {
+    if (result._tag === "Failure") {
       yield* Effect.fail(
         new Error(`Operation timed out after ${timeoutMs}ms`)
       );
     }
 
-    return result.right;
+    return result.success;
   });
 
 // Usage: Timeout with resource cleanup
@@ -370,13 +370,13 @@ const firstToSucceed = <A,>(
     let lastError: Error | undefined;
 
     for (const effect of effects) {
-      const result = yield* effect.pipe(Effect.either);
+      const result = yield* effect.pipe(Effect.result);
 
-      if (result._tag === "Right") {
-        return result.right;
+      if (result._tag === "Success") {
+        return result.success;
       }
 
-      lastError = result.left as Error;
+      lastError = result.failure as Error;
     }
 
     yield* Effect.fail(

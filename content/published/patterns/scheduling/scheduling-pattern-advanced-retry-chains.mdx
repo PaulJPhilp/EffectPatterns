@@ -87,7 +87,7 @@ Solutions:
 This example demonstrates circuit breaker and fallback chain patterns.
 
 ```typescript
-import { Effect, Schedule, Ref, Data } from "effect";
+import { Duration, Effect, Schedule, Ref, Data } from "effect";
 
 // Error classification
 class RetryableError extends Data.TaggedError("RetryableError")<{
@@ -252,7 +252,7 @@ const program = Effect.gen(function* () {
 
   for (const shouldFail of failSequence) {
     yield* callWithCircuitBreaker(shouldFail).pipe(
-      Effect.catchAll((error) =>
+      Effect.catch((error) =>
         Effect.gen(function* () {
           if (error._tag === "CircuitBreakerOpenError") {
             yield* Effect.log(
@@ -399,27 +399,23 @@ const createComplexRetryStrategy = (config: {
   maxDelayMs: number;
   timeoutMs: number;
 }) =>
-  Schedule.recurse<number, number>((attempt) => {
-    if (attempt >= config.maxAttempts) {
-      return Schedule.stop;
-    }
-
-    // Exponential backoff with jitter
-    const delay = Math.min(
-      config.maxDelayMs,
-      config.baseDelayMs * Math.pow(2, attempt) +
-        Math.random() * config.baseDelayMs
-    );
-
-    // Add jitter to prevent thundering herd
-    const jitter = Math.random() * 0.1 * delay;
-
-    return Schedule.delay(
-      Duration.millis(Math.ceil(delay + jitter))
-    );
-  }).pipe(
-    Schedule.upTo(Duration.millis(config.timeoutMs)),
+  Schedule.max([
+    Schedule.exponential(config.baseDelayMs).pipe(
+      // Exponential backoff with cap and jitter
+      Schedule.modifyDelay((meta) =>
+        Effect.succeed(
+          Duration.millis(
+            Math.min(
+              config.maxDelayMs,
+              Duration.toMillis(meta.duration) + Math.random() * config.baseDelayMs
+            )
+          )
+        )
+      )
+    ),
     Schedule.recurs(config.maxAttempts)
+  ]).pipe(
+    Schedule.upTo({ duration: Duration.millis(config.timeoutMs) })
   );
 
 // Usage with error filtering
@@ -431,7 +427,7 @@ const robustCall = operation.pipe(
       maxDelayMs: 5000,
       timeoutMs: 30000,
     }).pipe(
-      Schedule.filter((error) => {
+      Schedule.while(({ input: error }) => {
         // Don't retry non-retryable errors
         if (error instanceof NonRetryableError) {
           return false;
@@ -472,7 +468,7 @@ const createHealthAwareRetry = (config: {
       return healthy;
     }).pipe(
       Effect.timeout(Duration.millis(config.healthCheckTimeoutMs)),
-      Effect.catchAll(() =>
+      Effect.catch(() =>
         Effect.gen(function* () {
           yield* Effect.log("[HEALTH] Check timed out, assuming unhealthy");
           return false;
@@ -511,25 +507,22 @@ const trackRetryMetrics = (operation: Effect.Effect<string>) =>
 
     const result = yield* operation.pipe(
       Effect.retry(
-        Schedule.exponential("100 millis").pipe(
-          Schedule.compose(
-            Schedule.recurs(3),
-            Schedule.tapOutput((delay) =>
-              Effect.gen(function* () {
-                yield* Ref.modify(metrics, (m) => [
-                  undefined,
-                  {
-                    ...m,
-                    attempts: m.attempts + 1,
-                    totalDelayMs: m.totalDelayMs + delay.millis,
-                  },
-                ]);
-              })
-            )
+        Schedule.max([Schedule.exponential("100 millis"), Schedule.recurs(3)]).pipe(
+          Schedule.tap(({ output: delay }) =>
+            Effect.gen(function* () {
+              yield* Ref.modify(metrics, (m) => [
+                undefined,
+                {
+                  ...m,
+                  attempts: m.attempts + 1,
+                  totalDelayMs: m.totalDelayMs + Duration.toMillis(delay)
+                }
+              ]);
+            })
           )
         )
       ),
-      Effect.catchAll((error) =>
+      Effect.catch((error) =>
         Effect.gen(function* () {
           yield* Ref.modify(metrics, (m) => [
             undefined,

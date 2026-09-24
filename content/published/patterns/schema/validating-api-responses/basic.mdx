@@ -43,7 +43,7 @@ const User = Schema.Struct({
 type User = typeof User.Type
 
 // 3. Create a decoder Effect
-const parseUser = Schema.decodeUnknown(User)
+const parseUser = Schema.decodeUnknownEffect(User)
 
 // 4. Use in an Effect pipeline
 const fetchUser = (id: number) =>
@@ -75,7 +75,7 @@ await Effect.runPromise(main)
 | Concept | Explanation |
 |---------|-------------|
 | **Schema.Struct** | Defines expected object shape with runtime + compile-time types—single source of truth |
-| **Schema.decodeUnknown** | Returns `Effect<A, ParseError>` — validation errors flow through Effect's error channel, never thrown |
+| **Schema.decodeUnknownEffect** | Returns `Effect<A, ParseError>` — validation errors flow through Effect's error channel, never thrown |
 | **typeof User.Type** | Extracts the TypeScript type from the schema—keeps type and validation in sync |
 | **Effect.gen** | Sequences async operations cleanly, errors propagate automatically through the pipeline |
 | **ParseError** | Contains detailed error info: what field failed, what was expected, what was received |

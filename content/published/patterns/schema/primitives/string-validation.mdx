@@ -41,33 +41,33 @@ const Trimmed = Schema.Trimmed
 
 // Min/max length
 const Username = Schema.String.pipe(
-  Schema.minLength(3),
-  Schema.maxLength(20)
+  Schema.check(Schema.isMinLength(3)),
+  Schema.check(Schema.isMaxLength(20))
 )
 
 // Exact length
-const ZipCode = Schema.String.pipe(Schema.length(5))
+const ZipCode = Schema.String.pipe(Schema.check(Schema.isMinLength(5), Schema.isMaxLength(5)))
 
 // ============================================
 // PATTERN MATCHING (REGEX)
 // ============================================
 
 const Email = Schema.String.pipe(
-  Schema.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, {
+  Schema.check(Schema.isPattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, {
     message: () => "Invalid email format"
-  })
+  }))
 )
 
 const PhoneUS = Schema.String.pipe(
-  Schema.pattern(/^\d{3}-\d{3}-\d{4}$/, {
+  Schema.check(Schema.isPattern(/^\d{3}-\d{3}-\d{4}$/, {
     message: () => "Phone must be XXX-XXX-XXXX"
-  })
+  }))
 )
 
 const Slug = Schema.String.pipe(
-  Schema.pattern(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
+  Schema.check(Schema.isPattern(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
     message: () => "Slug must be lowercase with hyphens"
-  })
+  }))
 )
 
 // ============================================
@@ -75,11 +75,11 @@ const Slug = Schema.String.pipe(
 // ============================================
 
 const Password = Schema.String.pipe(
-  Schema.minLength(8, { message: () => "Password must be at least 8 characters" }),
-  Schema.maxLength(100),
-  Schema.pattern(/[A-Z]/, { message: () => "Must contain uppercase letter" }),
-  Schema.pattern(/[a-z]/, { message: () => "Must contain lowercase letter" }),
-  Schema.pattern(/[0-9]/, { message: () => "Must contain a number" })
+  Schema.check(Schema.isMinLength(8, { message: () => "Password must be at least 8 characters" })),
+  Schema.check(Schema.isMaxLength(100)),
+  Schema.check(Schema.isPattern(/[A-Z]/, { message: () => "Must contain uppercase letter" })),
+  Schema.check(Schema.isPattern(/[a-z]/, { message: () => "Must contain lowercase letter" })),
+  Schema.check(Schema.isPattern(/[0-9]/, { message: () => "Must contain a number" }))
 )
 
 // ============================================

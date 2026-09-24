@@ -171,7 +171,7 @@ const program = Effect.gen(function* () {
       }
     }
   }).pipe(
-    Effect.catchAll((error) =>
+    Effect.catch((error) =>
       Effect.gen(function* () {
         yield* Effect.log(`[ERROR] Caught: ${error.message}`);
         yield* Effect.log(`[CHECK] Closed handles: ${closedHandles} (verifying cleanup)\n`);
@@ -295,7 +295,7 @@ const program = Effect.gen(function* () {
       return { level: 1, data: innerData };
     })
   ).pipe(
-    Effect.catchAll(() => Effect.succeed({ level: 0, data: null }))
+    Effect.catch(() => Effect.succeed({ level: 0, data: null }))
   );
 
   yield* Effect.log(`[SCOPES] Cleanup order: inner → outer\n`);
@@ -348,12 +348,9 @@ const program = Effect.gen(function* () {
 
   // Retry with guaranteed cleanup
   const result2 = yield* safeRead(1).pipe(
-    Effect.retry(
-      Schedule.recurs(2).pipe(
-        Schedule.compose(Schedule.fixed("10 millis"))
-      )
+    Effect.retry(Schedule.max([Schedule.recurs(2), Schedule.fixed("10 millis")])
     ),
-    Effect.catchAll((error) =>
+    Effect.catch((error) =>
       Effect.gen(function* () {
         yield* Effect.log(`[FINAL] All retries failed: ${error.message}`);
         return "fallback";
@@ -499,7 +496,7 @@ const createGracefulStream = <A,>(
 
         yield* config.shutdown.pipe(
           Effect.timeout(config.timeout),
-          Effect.catchAll((error) =>
+          Effect.catch((error) =>
             Effect.gen(function* () {
               yield* Effect.log(
                 `[STREAM] Shutdown timeout or failed: ${error.message}`

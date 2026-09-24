@@ -1,0 +1,70 @@
+---
+title: Inspect Flattened Causes via reasons Array
+id: cause-flattened-reasons-array
+skillLevel: intermediate
+applicationPatternId: error-management
+summary: >-
+  Cause is flat in v4: iterate cause.reasons (Fail/Die/Interrupt). Empty,
+  Sequential and Parallel variants are gone.
+tags:
+  - cause
+  - error-handling
+  - v4
+rule:
+  description: >-
+    Match on cause.reasons with isFailReason/isDieReason/isInterruptReason;
+    use hasFails/hasDies/findFail/findDefect instead of failures/defects.
+related:
+  - error-management-extract-cause
+  - handle-unexpected-errors-with-cause
+author: effect_website
+lessonOrder: 5
+---
+
+# Problem
+
+v3 matched `Cause` as a tree (`Empty | Fail | Die | Sequential | Parallel`). That code does not compile in v4, and `Cause.failures/defects` are `undefined`.
+
+# Solution
+
+```typescript
+import { Cause, Effect } from "effect"
+
+const handle = (cause: Cause.Cause<string>) => {
+  for (const reason of cause.reasons) {
+    switch (reason._tag) {
+      case "Fail":
+        return `fail: ${reason.error}`
+      case "Die":
+        return `die: ${reason.defect}`
+      case "Interrupt":
+        return `interrupt`
+    }
+  }
+  return "empty"
+}
+
+const program = Effect.die("bug").pipe(
+  Effect.catchCause((cause) =>
+    Effect.gen(function*() {
+      const failures = cause.reasons.filter(Cause.isFailReason).map((r) => r.error)
+      const defects = cause.reasons.filter(Cause.isDieReason).map((r) => r.defect)
+      yield* Effect.log(`hasFails: ${Cause.hasFails(cause)}, hasDies: ${Cause.hasDies(cause)}`)
+      yield* Effect.log(`failures: ${JSON.stringify(failures)}, defects: ${defects.length}`)
+      return handle(cause)
+    })
+  )
+)
+
+Effect.runPromise(program)
+```
+
+# Why This Works
+
+- `cause.reasons.length === 0` replaces `isEmptyType`.
+- `Cause.isFailReason/isDieReason/isInterruptReason` replace type-level guards.
+- `Cause.findFail/findDefect`, `hasFails/hasDies`, `Cause.pretty` still exist.
+
+# Related Patterns
+
+- [Extract Failures and Defects](./error-management-extract-cause.mdx)

@@ -23,7 +23,7 @@ You're familiar with Zod (or similar libraries) and want to understand how Effec
 # Solution
 
 ```typescript
-import { Schema } from "effect"
+import { Schema, SchemaTransformation } from "effect"
 
 // ============================================
 // BASIC SCHEMA DEFINITION
@@ -68,10 +68,10 @@ const List = Schema.Array(Schema.String)
 // const StatusZ = z.union([z.literal("active"), z.literal("inactive")])
 
 // Effect Schema:
-const Status = Schema.Union(
+const Status = Schema.Union([
   Schema.Literal("active"),
   Schema.Literal("inactive")
-)
+])
 
 // ============================================
 // REFINEMENTS (custom validation)
@@ -82,7 +82,7 @@ const Status = Schema.Union(
 
 // Effect Schema:
 const Positive = Schema.Number.pipe(
-  Schema.filter((n) => n > 0, { message: () => "Must be positive" })
+  Schema.check(Schema.makeFilter((n) => n > 0, { message: () => "Must be positive" }))
 )
 
 // ============================================
@@ -93,14 +93,10 @@ const Positive = Schema.Number.pipe(
 // const TrimmedZ = z.string().transform(s => s.trim())
 
 // Effect Schema (bidirectional!):
-const Trimmed = Schema.transform(
-  Schema.String,
-  Schema.String,
-  {
+const Trimmed = Schema.String.pipe(Schema.decodeTo(Schema.String, SchemaTransformation.transform({
     decode: (s) => s.trim(),
     encode: (s) => s,
-  }
-)
+  })))
 
 // ============================================
 // KEY DIFFERENCES
@@ -114,18 +110,21 @@ const user = decode({ name: "Alice", age: 30 })
 const json = encode(user)  // Zod can't do this!
 
 // 2. EFFECT INTEGRATION: Returns Effect for async composition
-const parseAsync = Schema.decodeUnknown(User)
+const parseAsync = Schema.decodeUnknownEffect(User)
 // Returns Effect<User, ParseError> - composable with Effect ecosystem
 
 // 3. DEFECTS VS ERRORS: Schema distinguishes recoverable vs non-recoverable
 // ParseError is typed and trackable through Effect's error channel
 
-// 4. ASYNC VALIDATION: Built-in support
+// 4. ASYNC VALIDATION: compose sync decode + async Effect checks
+import { SchemaGetter } from "effect"
 const UsernameAvailable = Schema.String.pipe(
-  Schema.filterEffect((username) =>
-    // Check database asynchronously
-    Effect.succeed(true)  // Placeholder
-  )
+  Schema.decodeTo(Schema.String, {
+    decode: SchemaGetter.transformEffect((username) =>
+      // Check database asynchronously
+      Effect.succeed(username)
+    )
+  })
 )
 
 console.log("✅ Effect Schema and Zod both validate at runtime")

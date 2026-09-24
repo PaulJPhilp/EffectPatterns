@@ -41,7 +41,7 @@ Property-based testing finds bugs that example tests miss:
 
 ```typescript
 import { describe, it, expect } from "vitest"
-import { Effect, Option, Either, Schema } from "effect"
+import { Effect, Option, Result, Schema } from "effect"
 import * as fc from "fast-check"
 
 describe("Property-Based Testing with Effect", () => {
@@ -127,7 +127,7 @@ describe("Property-Based Testing with Effect", () => {
   it("should roundtrip through Schema", async () => {
     const UserSchema = Schema.Struct({
       name: Schema.String,
-      age: Schema.Number.pipe(Schema.int(), Schema.positive()),
+      age: Schema.Number.pipe(Schema.check(Schema.isInt()), Schema.check(Schema.isGreaterThan(0))),
     })
 
     const userArbitrary = fc.record({
@@ -137,8 +137,8 @@ describe("Property-Based Testing with Effect", () => {
 
     await fc.assert(
       fc.asyncProperty(userArbitrary, async (user) => {
-        const encode = Schema.encode(UserSchema)
-        const decode = Schema.decode(UserSchema)
+        const encode = Schema.encodeEffect(UserSchema)
+        const decode = Schema.decodeEffect(UserSchema)
 
         // Encode then decode should return equivalent value
         const encoded = await Effect.runPromise(encode(user))
@@ -163,7 +163,7 @@ describe("Property-Based Testing with Effect", () => {
 
           const result = await Effect.runPromise(
             failing.pipe(
-              Effect.catchAll(() => Effect.succeed(fallback))
+              Effect.catch(() => Effect.succeed(fallback))
             )
           )
 

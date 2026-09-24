@@ -33,12 +33,12 @@ const MovieReview = Schema.Struct({
     Schema.description("Movie title from the review text")
   ),
   rating: Schema.Number.pipe(
-    Schema.between(1, 10),
+    Schema.check(Schema.isBetween(1, 10)),
     Schema.description(
       "Rating on scale of 1-10. Be precise: 7.5 is better than 8"
     )
   ),
-  reviewSentiment: Schema.Literal("positive", "mixed", "negative").pipe(
+  reviewSentiment: Schema.Literals(["positive", "mixed", "negative"]).pipe(
     Schema.description(
       "Overall sentiment: positive (recommends watching), " +
       "mixed (has pros and cons), negative (don't watch)"

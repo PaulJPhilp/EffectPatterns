@@ -13,7 +13,7 @@ This module introduces the most important data types in the Effect ecosystem, ex
 
 | ----------------| -------------------------------------------------------| ----------------------------------------------|
 | `Option` | Represent presence or absence of a value | [Model Optional Values Safely with Option](./ patterns / data - option) |
-| `Either` | Represent a value that can be one of two types(e.g., error or success) | [Accumulate Multiple Errors with Either](./ patterns / data - either) |
+| `Result` | Represent a value that can be one of two types(e.g., error or success) | [Accumulate Multiple Errors with Result](./ patterns / data - either) |
 | `Chunk` | High - performance, immutable collections | [Use Chunk for High - Performance Collections](./ patterns / data - chunk) |
 | `HashSet` | Immutable, high - performance set | [Work with Immutable Sets using HashSet](./ patterns / data - hashset) |
 | `BigDecimal` | Arbitrary - precision decimal arithmetic | [Work with Arbitrary - Precision Numbers using BigDecimal](./ patterns / data - bigdecimal) |
@@ -23,10 +23,10 @@ This module introduces the most important data types in the Effect ecosystem, ex
 | `Exit` | Represent the result(success or failure) of an Effect | [Modeling Effect Results with Exit](./ patterns / data - exit) |
 | `Cause` | Rich, structured error causes for debugging | [Handle Unexpected Errors by Inspecting the Cause](./patterns/data - cause) |
 | `Redacted` | Securely handle sensitive data | [Redact and Handle Sensitive Data](./patterns/data - redacted) |
-| `Data.struct` | Create immutable, structurally - typed objects | [Comparing Data by Value with Data.struct](./ patterns / data - struct) |
+| Plain objects | Create immutable, structurally - typed values | [Comparing Data by Value](./ patterns / data - struct) |
 | `Data.tuple` | Create immutable, typed tuples | [Working with Tuples using Data.tuple](./ patterns / data - tuple) |
 | `Data.array` | Immutable, type - safe arrays | [Working with Immutable Arrays using Data.array](./ patterns / data - array) |
-| `Data.case` | Create tagged unions and ADTs | [Modeling Tagged Unions with Data.case](./ patterns / data -case) |
+| `Data.taggedEnum` | Create tagged unions and ADTs | [Modeling Tagged Unions](./ patterns / data -case) |
 | `Data.Class` | Type classes for equality, ordering, and hashing | [Type Classes for Equality, Ordering, and Hashing with Data.Class](./ patterns / data - class) |
 
     ---
@@ -34,7 +34,7 @@ This module introduces the most important data types in the Effect ecosystem, ex
 ## Learning Path
 
 1.  ####[Model Optional Values Safely with Option](./ patterns / data - option)
-2.  ####[Accumulate Multiple Errors with Either](./ patterns / data - either)
+2.  ####[Accumulate Multiple Errors with Result](./ patterns / data - either)
 3.  ####[Use Chunk for High - Performance Collections](./ patterns / data - chunk)
 4.  ####[Work with Immutable Sets using HashSet](./ patterns / data - hashset)
 5.  ####[Work with Arbitrary - Precision Numbers using BigDecimal](./ patterns / data - bigdecimal)
@@ -44,10 +44,10 @@ This module introduces the most important data types in the Effect ecosystem, ex
 9.  ####[Modeling Effect Results with Exit](./ patterns / data - exit)
 10. ####[Handle Unexpected Errors by Inspecting the Cause](./ patterns / data - cause)
 11. ####[Redact and Handle Sensitive Data](./ patterns / data - redacted)
-12. ####[Comparing Data by Value with Data.struct](./ patterns / data - struct)
+12. ####[Comparing Data by Value](./ patterns / data - struct)
 13. ####[Working with Tuples using Data.tuple](./ patterns / data - tuple)
 14. ####[Working with Immutable Arrays using Data.array](./ patterns / data - array)
-15. ####[Modeling Tagged Unions with Data.case](./ patterns / data -case)
+15. ####[Modeling Tagged Unions](./ patterns / data -case)
 16. ####[Type Classes for Equality, Ordering, and Hashing with Data.Class](./ patterns / data - class)
 
 ---

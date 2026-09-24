@@ -4,7 +4,7 @@ id: combinator-map
 skillLevel: beginner
 applicationPatternId: core-concepts
 summary: >-
-  Use map to transform the result of an Effect, Stream, Option, or Either in a
+  Use map to transform the result of an Effect, Stream, Option, or Result in a
   declarative, type-safe way.
 tags:
   - map
@@ -13,11 +13,11 @@ tags:
   - effect
   - stream
   - option
-  - either
+  - result
 rule:
   description: >-
     Use map to apply a pure function to the value inside an Effect, Stream,
-    Option, or Either.
+    Option, or Result.
 related:
   - combinator-flatmap
   - combinator-filter
@@ -29,7 +29,7 @@ lessonOrder: 20
 
 ## Guideline
 
-Use the `map` combinator to apply a pure function to the value inside an `Effect`, `Stream`, `Option`, or `Either`.  
+Use the `map` combinator to apply a pure function to the value inside an `Effect`, `Stream`, `Option`, or `Result`.  
 This lets you transform results without changing the structure or error-handling behavior of the original type.
 
 ## Rationale
@@ -41,7 +41,7 @@ The same mental model applies across all major Effect types.
 ## Good Example
 
 ```typescript
-import { Effect, Stream, Option, Either } from "effect";
+import { Effect, Stream, Option, Result } from "effect";
 
 // Effect: Transform the result of an effect
 const effect = Effect.succeed(2).pipe(Effect.map((n) => n * 10)); // Effect<number>
@@ -49,8 +49,8 @@ const effect = Effect.succeed(2).pipe(Effect.map((n) => n * 10)); // Effect<numb
 // Option: Transform an optional value
 const option = Option.some(2).pipe(Option.map((n) => n * 10)); // Option<number>
 
-// Either: Transform a value that may be an error
-const either = Either.right(2).pipe(Either.map((n) => n * 10)); // Either<never, number>
+// Result: Transform a value that may be an error
+const either = Result.succeed(2).pipe(Result.map((n) => n * 10)); // Result<number, never>
 
 // Stream: Transform every value in a stream
 const stream = Stream.fromIterable([1, 2, 3]).pipe(Stream.map((n) => n * 10)); // Stream<number>

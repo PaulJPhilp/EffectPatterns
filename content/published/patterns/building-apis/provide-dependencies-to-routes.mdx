@@ -5,7 +5,7 @@ skillLevel: intermediate
 applicationPatternId: building-apis
 summary: >-
   Inject services like database connections into HTTP route handlers using Layer
-  and Effect.Service.
+  and Context.Service.
 tags:
   - http
   - server
@@ -15,7 +15,7 @@ tags:
   - context
 rule:
   description: >-
-    Define dependencies with Effect.Service and provide them to your HTTP server
+    Define dependencies with Context.Service and provide them to your HTTP server
     using a Layer.
 author: PaulJPhilp
 related:
@@ -27,7 +27,7 @@ lessonOrder: 7
 
 ## Guideline
 
-Define your application's services using `class MyService extends Effect.Service("MyService")`, provide a live implementation via a `Layer`, and use `Effect.provide` to make the service available to your entire HTTP application.
+Define your application's services using `class MyService extends Context.Service("MyService")`, provide a live implementation via a `Layer`, and use `Effect.provide` to make the service available to your entire HTTP application.
 
 ---
 
@@ -37,7 +37,7 @@ As applications grow, route handlers need to perform complex tasks like accessin
 
 Effect's dependency injection system (`Service` and `Layer`) solves this by decoupling a service's interface from its implementation. This is the cornerstone of building scalable, maintainable applications in Effect.
 
-1.  **Modern and Simple**: `Effect.Service` is the modern, idiomatic way to define services. It combines the service's definition and its access tag into a single, clean class structure, reducing boilerplate.
+1.  **Modern and Simple**: `Context.Service` is the modern, idiomatic way to define services. It combines the service's definition and its access tag into a single, clean class structure, reducing boilerplate.
 2.  **Testability**: By depending on a service interface, you can easily provide a mock implementation in your tests (e.g., `Database.Test`) instead of the real one (`Database.Live`), allowing for fast, isolated unit tests of your route logic.
 3.  **Decoupling**: Route handlers don't know or care _how_ the database connection is created or managed. They simply ask for the `Database` service from the context, and the runtime provides the configured implementation.
 4.  **Composability**: `Layer`s are composable. You can build complex dependency graphs (e.g., a `Database` layer that itself requires a `Config` layer) that Effect will automatically construct and wire up for you.
@@ -49,22 +49,24 @@ Effect's dependency injection system (`Service` and `Layer`) solves this by deco
 This example defines a `Database` service. The route handler for `/users/:userId` requires this service to fetch a user. We then provide a "live" implementation of the `Database` to the entire server using a `Layer`.
 
 ```typescript
-import * as HttpRouter from "@effect/platform/HttpRouter";
-import * as HttpResponse from "@effect/platform/HttpServerResponse";
-import * as HttpServer from "@effect/platform/HttpServer";
+import * as HttpRouter from "effect/http/HttpRouter";
+import * as HttpResponse from "effect/http/HttpServerResponse";
+import * as HttpServer from "effect/http/HttpServer";
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node";
-import { Effect, Duration, Fiber } from "effect/index";
-import { Data } from "effect";
+import { Effect, Duration, Fiber } from "effect";
+import { Data, Context, Layer, Fiber } from "effect";
 
-// 1. Define the service interface using Effect.Service
-export class Database extends Effect.Service<Database>()("Database", {
-  sync: () => ({
+// 1. Define the service interface using Context.Service
+export class Database extends Context.Service<Database>()("Database", {
+  make: Effect.sync(() => ({
     getUser: (id: string) =>
       id === "123"
         ? Effect.succeed({ name: "Paul" })
         : Effect.fail(new UserNotFoundError({ id })),
-  }),
-}) {}
+  })),
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 class UserNotFoundError extends Data.TaggedError("UserNotFoundError")<{
   id: string;
@@ -84,7 +86,7 @@ const app = HttpRouter.empty.pipe(
 
 // Create the server effect with all dependencies
 const serverEffect = HttpServer.serveEffect(app).pipe(
-  Effect.provide(Database.Default),
+  Effect.provide(Database.layer),
   Effect.provide(
     NodeHttpServer.layer(() => require("node:http").createServer(), {
       port: 3458,
@@ -96,7 +98,7 @@ const serverEffect = HttpServer.serveEffect(app).pipe(
 const program = Effect.gen(function* () {
   yield* Effect.logInfo("Starting server on port 3458...");
 
-  const serverFiber = yield* Effect.scoped(serverEffect).pipe(Effect.fork);
+  const serverFiber = yield* Effect.scoped(serverEffect).pipe(Effect.forkChild);
 
   yield* Effect.logInfo("Server started successfully on http://localhost:3458");
   yield* Effect.logInfo("Try: curl http://localhost:3458/users/123");
@@ -120,7 +122,9 @@ The anti-pattern is to manually instantiate and pass dependencies through functi
 
 ```typescript
 import { Effect } from "effect";
-import { Http, NodeHttpServer, NodeRuntime } from "@effect/platform-node";
+import { HttpRouter, HttpServerResponse } from "effect/http";
+import { NodeHttpServer, NodeRuntime } from "@effect/platform-node";
+import { createServer } from "node:http";
 
 // Manual implementation of a database client
 class LiveDatabase {
@@ -134,13 +138,13 @@ class LiveDatabase {
 
 // The dependency must be passed explicitly to the route definition
 const createGetUserRoute = (db: LiveDatabase) =>
-  Http.router.get(
+  HttpRouter.route("GET", 
     "/users/:userId",
-    Effect.flatMap(Http.request.ServerRequest, (req) =>
-      db.getUser(req.params.userId)
+    Effect.flatMap(HttpRouter.params, (params) =>
+      db.getUser(params.userId)
     ).pipe(
-      Effect.map(Http.response.json),
-      Effect.catchAll(() => Http.response.empty({ status: 404 }))
+      Effect.map(HttpServerResponse.json),
+      Effect.catch(() => HttpServerResponse.empty({ status: 404 }))
     )
   );
 
@@ -148,11 +152,13 @@ const createGetUserRoute = (db: LiveDatabase) =>
 const db = new LiveDatabase();
 const getUserRoute = createGetUserRoute(db);
 
-const app = Http.router.empty.pipe(Http.router.addRoute(getUserRoute));
+const app = HttpRouter.addAll([getUserRoute]);
 
-const program = Http.server
-  .serve(app)
-  .pipe(Effect.provide(NodeHttpServer.layer({ port: 3000 })));
+const ServerLive = HttpRouter.serve(app).pipe(
+  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 }))
+);
+
+Layer.launch(ServerLive).pipe(NodeRuntime.runMain);
 
 NodeRuntime.runMain(program);
 ```

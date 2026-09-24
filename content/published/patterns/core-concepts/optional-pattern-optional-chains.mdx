@@ -404,9 +404,9 @@ const complexChain = pipe(
 
 // Or with effect.gen syntax
 const withGen = Effect.gen(function* () {
-  const user = yield* Option.fromNullable(findUser("user-42"));
-  const profile = yield* Option.fromNullable(getProfile(user.id));
-  const settings = yield* Option.fromNullable(getSettings(user.id));
+  const user = yield* Option.fromNullishOr(findUser("user-42"));
+  const profile = yield* Option.fromNullishOr(getProfile(user.id));
+  const settings = yield* Option.fromNullishOr(getSettings(user.id));
 
   return { user, profile, settings };
 });

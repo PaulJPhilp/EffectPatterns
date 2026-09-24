@@ -258,7 +258,7 @@ const program = Effect.gen(function* () {
           return "retry-with-backoff";
         })
       ),
-      Effect.catchAll((error) =>
+      Effect.catch((error) =>
         Effect.gen(function* () {
           yield* Effect.log(`[SUCCESS] Got response`);
 
@@ -330,7 +330,7 @@ const program = Effect.gen(function* () {
           return null; // Signal to retry
         })
       ),
-      Effect.catchAll((error) =>
+      Effect.catch((error) =>
         Effect.gen(function* () {
           yield* Effect.log(`[ERROR] Unhandled: ${error}`);
 
@@ -338,7 +338,7 @@ const program = Effect.gen(function* () {
         })
       )
     ).pipe(
-      Effect.catchAll(() => Effect.succeed(null))
+      Effect.catch(() => Effect.succeed(null))
     );
 
     if (result3 !== null) {
@@ -478,7 +478,7 @@ const program = Effect.gen(function* () {
         return yield* Effect.fail(error);
       })
     ),
-    Effect.catchAll((error) =>
+    Effect.catch((error) =>
       Effect.gen(function* () {
         yield* Effect.log(`[STEP 3] Final fallback`);
 
@@ -515,7 +515,7 @@ const applyErrorHandlers = (
   return sorted.reduce(
     (current, handler) =>
       current.pipe(
-        Effect.catchAll((error) =>
+        Effect.catch((error) =>
           Effect.gen(function* () {
             if (handler.canHandle(error as Error)) {
               return yield* handler.handle(error as Error);

@@ -50,20 +50,20 @@ This example shows a `BaseLayer` with a `Logger`, a `UserModule` that uses the `
 
 ```typescript
 // src/core/Logger.ts
-import { Effect } from "effect";
+import { Effect, Context } from "effect";
 
-export class Logger extends Effect.Service<Logger>()("App/Core/Logger", {
-  sync: () => ({
+export class Logger extends Context.Service<Logger>()("App/Core/Logger", {
+  make: Effect.sync(() => ({
     log: (msg: string) => Effect.log(`[LOG] ${msg}`),
-  }),
-}) {}
+  })),
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 // src/features/User/UserRepository.ts
-export class UserRepository extends Effect.Service<UserRepository>()(
-  "App/User/UserRepository",
-  {
+export class UserRepository extends Context.Service<UserRepository>()("App/User/UserRepository", {
     // Define implementation that uses Logger
-    effect: Effect.gen(function* () {
+    make: Effect.gen(function* () {
       const logger = yield* Logger;
       return {
         findById: (id: number) =>
@@ -74,9 +74,11 @@ export class UserRepository extends Effect.Service<UserRepository>()(
       };
     }),
     // Declare Logger dependency
-    dependencies: [Logger.Default],
-  }
-) {}
+}) {
+  static readonly layer = Layer.effect(this, this.make).pipe(
+    Layer.provide(Logger.layer)
+  )
+}
 
 // Example usage
 const program = Effect.gen(function* () {
@@ -86,7 +88,7 @@ const program = Effect.gen(function* () {
 });
 
 // Run with default implementations
-Effect.runPromise(Effect.provide(program, UserRepository.Default));
+Effect.runPromise(Effect.provide(program, UserRepository.layer));
 
 const programWithLogging = Effect.gen(function* () {
   const result = yield* program;
@@ -94,7 +96,7 @@ const programWithLogging = Effect.gen(function* () {
   return result;
 });
 
-Effect.runPromise(Effect.provide(programWithLogging, UserRepository.Default));
+Effect.runPromise(Effect.provide(programWithLogging, UserRepository.layer));
 ```
 
 ### 2. The Feature Module Layer
@@ -103,18 +105,18 @@ Effect.runPromise(Effect.provide(programWithLogging, UserRepository.Default));
 // src/core/Logger.ts
 import { Effect } from "effect";
 
-export class Logger extends Effect.Service<Logger>()("App/Core/Logger", {
-  sync: () => ({
+export class Logger extends Context.Service<Logger>()("App/Core/Logger", {
+  make: Effect.sync(() => ({
     log: (msg: string) => Effect.sync(() => console.log(`[LOG] ${msg}`)),
-  }),
-}) {}
+  })),
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 // src/features/User/UserRepository.ts
-export class UserRepository extends Effect.Service<UserRepository>()(
-  "App/User/UserRepository",
-  {
+export class UserRepository extends Context.Service<UserRepository>()("App/User/UserRepository", {
     // Define implementation that uses Logger
-    effect: Effect.gen(function* () {
+    make: Effect.gen(function* () {
       const logger = yield* Logger;
       return {
         findById: (id: number) =>
@@ -125,9 +127,11 @@ export class UserRepository extends Effect.Service<UserRepository>()(
       };
     }),
     // Declare Logger dependency
-    dependencies: [Logger.Default],
-  }
-) {}
+}) {
+  static readonly layer = Layer.effect(this, this.make).pipe(
+    Layer.provide(Logger.layer)
+  )
+}
 
 // Example usage
 const program = Effect.gen(function* () {
@@ -137,7 +141,7 @@ const program = Effect.gen(function* () {
 });
 
 // Run with default implementations
-Effect.runPromise(Effect.provide(program, UserRepository.Default)).then(
+Effect.runPromise(Effect.provide(program, UserRepository.layer)).then(
   console.log
 );
 ```

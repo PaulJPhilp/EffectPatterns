@@ -43,7 +43,7 @@ Schema validation catches these issues immediately.
 ```typescript
 import { Effect, Console } from "effect"
 import { Schema } from "effect"
-import { HttpClient, HttpClientRequest, HttpClientResponse } from "@effect/platform"
+import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/http"
 import { NodeHttpClient, NodeRuntime } from "@effect/platform-node"
 
 // ============================================
@@ -72,10 +72,10 @@ const getPost = (id: number) =>
     const response = yield* client.get(
       `https://jsonplaceholder.typicode.com/posts/${id}`
     )
-    const json = yield* HttpClientResponse.json(response)
+    const json = yield* response.json
 
     // Validate against schema - fails if data doesn't match
-    const post = yield* Schema.decodeUnknown(PostSchema)(json)
+    const post = yield* Schema.decodeUnknownEffect(PostSchema)(json)
 
     return post
   })
@@ -90,10 +90,10 @@ const getPosts = Effect.gen(function* () {
   const response = yield* client.get(
     "https://jsonplaceholder.typicode.com/posts"
   )
-  const json = yield* HttpClientResponse.json(response)
+  const json = yield* response.json
 
   // Validate array of posts
-  const posts = yield* Schema.decodeUnknown(PostArraySchema)(json)
+  const posts = yield* Schema.decodeUnknownEffect(PostArraySchema)(json)
 
   return posts
 })
@@ -138,9 +138,9 @@ const getUser = (id: number) =>
     const response = yield* client.get(
       `https://jsonplaceholder.typicode.com/users/${id}`
     )
-    const json = yield* HttpClientResponse.json(response)
+    const json = yield* response.json
 
-    return yield* Schema.decodeUnknown(UserSchema)(json)
+    return yield* Schema.decodeUnknownEffect(UserSchema)(json)
   })
 
 // ============================================

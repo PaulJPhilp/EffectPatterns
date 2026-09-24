@@ -38,7 +38,7 @@ compile-time static types and runtime validation.
 ## Good Example
 
 ```typescript
-import { Schema, Effect, Data } from "effect";
+import { Schema, Effect, Data, Context, Layer } from "effect";
 
 // Define User schema and type
 const UserSchema = Schema.Struct({
@@ -54,14 +54,16 @@ class UserNotFound extends Data.TaggedError("UserNotFound")<{
 }> {}
 
 // Create database service implementation
-export class Database extends Effect.Service<Database>()("Database", {
-  sync: () => ({
+export class Database extends Context.Service<Database>()("Database", {
+  make: Effect.sync(() => ({
     getUser: (id: number) =>
       id === 1
         ? Effect.succeed({ id: 1, name: "John" })
         : Effect.fail(new UserNotFound({ id })),
-  }),
-}) {}
+  })),
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 // Create a program that demonstrates schema and error handling
 const program = Effect.gen(function* () {
@@ -79,7 +81,7 @@ const program = Effect.gen(function* () {
     const user = yield* db.getUser(999);
     yield* Effect.logInfo(`Found user: ${JSON.stringify(user)}`);
   }).pipe(
-    Effect.catchAll((error) => {
+    Effect.catch((error) => {
       if (error instanceof UserNotFound) {
         return Effect.logInfo(`Error: User with id ${error.id} not found`);
       }
@@ -91,17 +93,17 @@ const program = Effect.gen(function* () {
   yield* Effect.logInfo("\nTrying to decode invalid user data...");
   const invalidUser = { id: "not-a-number", name: 123 } as any;
   yield* Effect.gen(function* () {
-    const user = yield* Schema.decode(UserSchema)(invalidUser);
+    const user = yield* Schema.decodeEffect(UserSchema)(invalidUser);
     yield* Effect.logInfo(`Decoded user: ${JSON.stringify(user)}`);
   }).pipe(
-    Effect.catchAll((error) =>
+    Effect.catch((error) =>
       Effect.logInfo(`Validation failed:\n${JSON.stringify(error, null, 2)}`)
     )
   );
 });
 
 // Run the program
-Effect.runPromise(Effect.provide(program, Database.Default));
+Effect.runPromise(Effect.provide(program, Database.layer));
 ```
 
 **Explanation:**  

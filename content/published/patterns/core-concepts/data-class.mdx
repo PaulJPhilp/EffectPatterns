@@ -44,15 +44,15 @@ This is essential for using your types in sets, maps, and for sorting or dedupli
 import { Data, Equal, HashSet } from "effect";
 
 // Define custom data types with structural equality
-const user1 = Data.struct({ id: 1, name: "Alice" });
-const user2 = Data.struct({ id: 1, name: "Alice" });
-const user3 = Data.struct({ id: 2, name: "Bob" });
+const user1 = { id: 1, name: "Alice" };
+const user2 = { id: 1, name: "Alice" };
+const user3 = { id: 2, name: "Bob" };
 
-// Data.struct provides automatic structural equality
+// Plain objects have automatic structural equality in Effect v4
 console.log(Equal.equals(user1, user2)); // true (same structure)
 console.log(Equal.equals(user1, user3)); // false (different values)
 
-// Use in a HashSet (works because Data.struct implements Equal)
+// Use in a HashSet (works because plain objects have structural equality in Effect v4)
 const set = HashSet.make(user1);
 console.log(HashSet.has(set, user2)); // true (structural equality)
 

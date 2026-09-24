@@ -49,34 +49,39 @@ By providing a mock `Layer` in your test, you replace a real dependency (like an
 We want to test a `Notifier` service that uses an `EmailClient` to send emails. In our test, we provide a mock `EmailClient` that doesn't actually send emails but just returns a success value.
 
 ```typescript
-import { Effect, Layer } from "effect";
+import { Effect, Layer, Context } from "effect";
 
 // --- The Services ---
 interface EmailClientService {
   send: (address: string, body: string) => Effect.Effect<void>;
 }
 
-class EmailClient extends Effect.Service<EmailClientService>()("EmailClient", {
-  sync: () => ({
+class EmailClient extends Context.Service<EmailClient, EmailClientService>()("EmailClient", {
+  make: Effect.sync(() => ({
     send: (address: string, body: string) =>
       Effect.sync(() => Effect.log(`Sending email to ${address}: ${body}`)),
-  }),
-}) {}
+  })),
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 interface NotifierService {
   notifyUser: (userId: number, message: string) => Effect.Effect<void>;
 }
 
-class Notifier extends Effect.Service<NotifierService>()("Notifier", {
-  effect: Effect.gen(function* () {
+class Notifier extends Context.Service<Notifier, NotifierService>()("Notifier", {
+  make: Effect.gen(function* () {
     const emailClient = yield* EmailClient;
     return {
       notifyUser: (userId: number, message: string) =>
         emailClient.send(`user-${userId}@example.com`, message),
     };
   }),
-  dependencies: [EmailClient.Default],
-}) {}
+}) {
+  static readonly layer = Layer.effect(this, this.make).pipe(
+    Layer.provide(EmailClient.layer)
+  )
+}
 
 // Create a program that uses the Notifier service
 const program = Effect.gen(function* () {
@@ -100,7 +105,7 @@ const program = Effect.gen(function* () {
 });
 
 // Run the program
-Effect.runPromise(Effect.provide(program, Notifier.Default));
+Effect.runPromise(Effect.provide(program, Notifier.layer));
 ```
 
 ---

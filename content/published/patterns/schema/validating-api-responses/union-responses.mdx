@@ -55,15 +55,15 @@ const PendingResponse = Schema.Struct({
 })
 
 // Union: Response is one of these three shapes
-const Response = Schema.Union(
+const Response = Schema.Union([
   SuccessResponse,
   ErrorResponse,
   PendingResponse
-)
+])
 
 type Response = typeof Response.Type
 
-const parseResponse = Schema.decodeUnknown(Response)
+const parseResponse = Schema.decodeUnknownEffect(Response)
 
 // Use in a pipeline with pattern matching
 const createUser = (name: string, email: string) =>
@@ -138,7 +138,7 @@ const createUserWithMatch = (name: string, email: string) =>
   })
 
 // Handling discriminated unions with explicit discriminator
-const PaymentResult = Schema.Union(
+const PaymentResult = Schema.Union([
   Schema.Struct({
     type: Schema.Literal("approved"),
     transactionId: Schema.String,
@@ -152,11 +152,11 @@ const PaymentResult = Schema.Union(
     type: Schema.Literal("requires-auth"),
     authUrl: Schema.String,
   })
-)
+])
 
 type PaymentResult = typeof PaymentResult.Type
 
-const parsePayment = Schema.decodeUnknown(PaymentResult)
+const parsePayment = Schema.decodeUnknownEffect(PaymentResult)
 
 const processPayment = (amount: number) =>
   Effect.gen(function* () {

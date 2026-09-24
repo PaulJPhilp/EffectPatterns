@@ -25,32 +25,32 @@ Raw data is messy: extra whitespace, inconsistent casing, duplicates, mixed form
 # Solution
 
 ```typescript
-import { Schema, Effect } from "effect"
+import { Schema, Effect, SchemaTransformation } from "effect"
 
 // ============================================
 // 1. String normalization transformations
 // ============================================
 
 // Trim whitespace
-const Trimmed = Schema.transform(Schema.String, Schema.String, {
+const Trimmed = Schema.String.pipe(Schema.decodeTo(Schema.String, SchemaTransformation.transform({
   decode: (input) => input.trim(),
   encode: (output) => output,
-})
+})))
 
 // Lowercase normalization
-const Lowercase = Schema.transform(Schema.String, Schema.String, {
+const Lowercase = Schema.String.pipe(Schema.decodeTo(Schema.String, SchemaTransformation.transform({
   decode: (input) => input.toLowerCase(),
   encode: (output) => output,
-})
+})))
 
 // Uppercase normalization
-const Uppercase = Schema.transform(Schema.String, Schema.String, {
+const Uppercase = Schema.String.pipe(Schema.decodeTo(Schema.String, SchemaTransformation.transform({
   decode: (input) => input.toUpperCase(),
   encode: (output) => output,
-})
+})))
 
 // Title case normalization
-const TitleCase = Schema.transform(Schema.String, Schema.String, {
+const TitleCase = Schema.String.pipe(Schema.decodeTo(Schema.String, SchemaTransformation.transform({
   decode: (input) =>
     input
       .toLowerCase()
@@ -58,18 +58,18 @@ const TitleCase = Schema.transform(Schema.String, Schema.String, {
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" "),
   encode: (output) => output,
-})
+})))
 
 // ============================================
 // 2. Email normalization (trim + lowercase)
 // ============================================
 
 const Email = Schema.String.pipe(
-  Schema.transform(Schema.String, Schema.String, {
+  Schema.String.pipe(Schema.decodeTo(Schema.String, SchemaTransformation.transform({
     decode: (input) => input.trim().toLowerCase(),
     encode: (output) => output,
-  }),
-  Schema.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/),
+  }))),
+  Schema.check(Schema.isPattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)),
   Schema.brand("Email")
 )
 
@@ -79,10 +79,7 @@ type Email = typeof Email.Type
 // 3. Phone number normalization (remove non-digits, format)
 // ============================================
 
-const PhoneNumber = Schema.transform(
-  Schema.String,
-  Schema.String,
-  {
+const PhoneNumber = Schema.String.pipe(Schema.decodeTo(Schema.String, SchemaTransformation.transform({
     decode: (input) => {
       // Remove all non-digit characters
       const digits = input.replace(/\D/g, "")
@@ -101,17 +98,13 @@ const PhoneNumber = Schema.transform(
       return digits
     },
     encode: (output) => output,
-  }
-)
+  })))
 
 // ============================================
 // 4. URL normalization (lowercase, trailing slash)
 // ============================================
 
-const NormalizedUrl = Schema.transform(
-  Schema.String,
-  Schema.String,
-  {
+const NormalizedUrl = Schema.String.pipe(Schema.decodeTo(Schema.String, SchemaTransformation.transform({
     decode: (input) => {
       let url = input.toLowerCase()
       // Remove trailing slash for consistency
@@ -121,17 +114,13 @@ const NormalizedUrl = Schema.transform(
       return url
     },
     encode: (output) => output,
-  }
-)
+  })))
 
 // ============================================
 // 5. Tag/category normalization (trim, lowercase, deduplication)
 // ============================================
 
-const Tags = Schema.transform(
-  Schema.Array(Schema.String),
-  Schema.Array(Schema.String),
-  {
+const Tags = Schema.Array(Schema.String).pipe(Schema.decodeTo(Schema.Array(Schema.String), SchemaTransformation.transform({
     decode: (input) => {
       // Trim each tag, lowercase, remove duplicates
       const normalized = Array.from(
@@ -144,8 +133,7 @@ const Tags = Schema.transform(
       return normalized.sort() // Sort for canonical order
     },
     encode: (output) => output,
-  }
-)
+  })))
 
 // ============================================
 // 6. Complex entity normalization
@@ -166,16 +154,16 @@ type Product = typeof Product.Type
 // ============================================
 
 const Address = Schema.Struct({
-  street: Schema.transform(Schema.String, Schema.String, {
+  street: Schema.String.pipe(Schema.decodeTo(Schema.String, SchemaTransformation.transform({
     decode: (input) => input.trim().toUpperCase(),
     encode: (output) => output,
-  }),
+  }))),
   city: TitleCase,
-  state: Uppercase.pipe(Schema.maxLength(2)),
-  zip: Schema.transform(Schema.String, Schema.String, {
+  state: Uppercase.pipe(Schema.check(Schema.isMaxLength(2))),
+  zip: Schema.String.pipe(Schema.decodeTo(Schema.String, SchemaTransformation.transform({
     decode: (input) => input.replace(/\D/g, ""), // Only digits
     encode: (output) => output,
-  }),
+  }))),
 })
 
 type Address = typeof Address.Type
@@ -185,23 +173,23 @@ type Address = typeof Address.Type
 // ============================================
 
 class NormalizationService {
-  normalizeProduct = Schema.decodeUnknown(Product)
-  normalizeAddress = Schema.decodeUnknown(Address)
+  normalizeProduct = Schema.decodeUnknownEffect(Product)
+  normalizeAddress = Schema.decodeUnknownEffect(Address)
 
   async normalizeEmail(email: string): Promise<Email> {
-    return Schema.decodeUnknown(Email)(email)
+    return Schema.decodeUnknownEffect(Email)(email)
   }
 
   async normalizePhoneNumber(phone: string): Promise<string> {
-    return Schema.decodeUnknown(PhoneNumber)(phone)
+    return Schema.decodeUnknownEffect(PhoneNumber)(phone)
   }
 
   async normalizeUrl(url: string): Promise<string> {
-    return Schema.decodeUnknown(NormalizedUrl)(url)
+    return Schema.decodeUnknownEffect(NormalizedUrl)(url)
   }
 
   async normalizeTags(tags: string[]): Promise<string[]> {
-    return Schema.decodeUnknown(Tags)(tags)
+    return Schema.decodeUnknownEffect(Tags)(tags)
   }
 }
 

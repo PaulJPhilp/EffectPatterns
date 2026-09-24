@@ -88,10 +88,7 @@ const withBasicRetry = fetchData.pipe(
 // ============================================
 
 const withDelayedRetry = fetchData.pipe(
-  Effect.retry(
-    Schedule.spaced("500 millis").pipe(
-      Schedule.intersect(Schedule.recurs(5))
-    )
+  Effect.retry(Schedule.max([Schedule.spaced("500 millis"), Schedule.recurs(5)])
   )
 )
 
@@ -130,9 +127,10 @@ const retryTransientOnly = fetchWithErrors(true).pipe(
 
 const withExponentialBackoff = fetchData.pipe(
   Effect.retry(
-    Schedule.exponential("100 millis", 2).pipe(  // 100ms, 200ms, 400ms...
-      Schedule.intersect(Schedule.recurs(5))      // Max 5 retries
-    )
+    Schedule.max([
+      Schedule.exponential("100 millis", 2),  // 100ms, 200ms, 400ms...
+      Schedule.recurs(5)      // Max 5 retries
+    ])
   )
 )
 

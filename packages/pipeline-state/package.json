@@ -45,15 +45,11 @@
   "author": "Effect Patterns Team",
   "license": "MIT",
   "dependencies": {
-    "@effect/platform": "0.94.5",
-    "effect": "3.19.19"
+    "effect": "4.0.0-rc.117"
   },
   "devDependencies": {
-    "@effect/schema": "^0.75.5",
     "typescript": "^5.9.3",
     "vitest": "^4.0.17"
   },
-  "peerDependencies": {
-    "@effect/schema": "^0.75.5"
-  }
+  "peerDependencies": {}
 }

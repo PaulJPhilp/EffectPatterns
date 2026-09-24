@@ -45,7 +45,7 @@ const someValue = Option.some(42); // Option<number>
 const noValue = Option.none(); // Option<never>
 
 // Safely convert a nullable value to Option
-const fromNullable = Option.fromNullable(Math.random() > 0.5 ? "hello" : null); // Option<string>
+const fromNullishOr = Option.fromNullishOr(Math.random() > 0.5 ? "hello" : null); // Option<string>
 
 // Pattern match on Option
 const result = someValue.pipe(
@@ -65,7 +65,7 @@ function findUser(id: number): Option.Option<{ id: number; name: string }> {
 
 - `Option.some(value)` represents a present value.
 - `Option.none()` represents absence.
-- `Option.fromNullable` safely lifts nullable values into Option.
+- `Option.fromNullishOr` safely lifts nullable values into Option.
 - Pattern matching ensures all cases are handled.
 
 ## Anti-Pattern

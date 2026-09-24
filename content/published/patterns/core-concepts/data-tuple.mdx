@@ -1,13 +1,12 @@
 ---
-title: Working with Tuples using Data.tuple
+title: Working with Tuples and Structural Equality
 id: data-tuple
 skillLevel: beginner
 applicationPatternId: core-concepts
 summary: >-
-  Use Data.tuple to create immutable, type-safe tuples that support value-based
+  Use plain tuples to create immutable, type-safe values that support value-based
   equality and pattern matching.
 tags:
-  - Data.tuple
   - tuple
   - structural-equality
   - immutable
@@ -15,7 +14,7 @@ tags:
   - effect
 rule:
   description: >-
-    Use Data.tuple to define tuples whose equality is based on their contents,
+    Use plain tuples to define values whose equality is based on their contents,
     enabling safe and predictable comparisons and pattern matching.
 related:
   - data-struct
@@ -24,26 +23,26 @@ author: PaulJPhilp
 lessonOrder: 25
 ---
 
-# Working with Tuples using `Data.tuple`
+# Working with Tuples and Structural Equality
 
 ## Guideline
 
-Use `Data.tuple` to create immutable, type-safe tuples that support value-based equality and pattern matching.  
+Use plain tuples to create immutable, type-safe values that support value-based equality and pattern matching.
 This is useful for modeling fixed-size, heterogeneous collections of values in a safe and expressive way.
 
 ## Rationale
 
-JavaScript arrays are mutable and compared by reference, which can lead to bugs in value-based logic.  
-`Data.tuple` provides immutable tuples with structural equality, making them ideal for domain modeling and functional programming patterns.
+JavaScript arrays are mutable and compared by reference, which can lead to bugs in value-based logic.
+In Effect v4, `Equal.equals` compares plain tuples structurally, making them ideal for domain modeling and functional programming patterns.
 
 ## Good Example
 
 ```typescript
-import { Data, Equal } from "effect";
+import { Equal } from "effect";
 
 // Create two structurally equal tuples
-const t1 = Data.tuple(1, "Alice");
-const t2 = Data.tuple(1, "Alice");
+const t1 = [1, "Alice"] as const;
+const t2 = [1, "Alice"] as const;
 
 // Compare by value, not reference
 const areEqual = Equal.equals(t1, t2); // true
@@ -59,10 +58,10 @@ const [id, name] = t1; // id: number, name: string
 
 **Explanation:**
 
-- `Data.tuple` creates immutable tuples with value-based equality.
+- Plain tuples have value-based equality with `Equal.equals` in Effect v4.
 - Useful for modeling pairs, coordinates, or any fixed-size, heterogeneous data.
 - Supports safe pattern matching and collection operations.
 
 ## Anti-Pattern
 
-Using plain arrays for value-based logic or as keys in sets/maps, which compares by reference and can lead to incorrect behavior.
+Prefer `as const` tuples or readonly arrays for value-based logic. Reference comparison (`===`) on distinct instances will not behave as expected.

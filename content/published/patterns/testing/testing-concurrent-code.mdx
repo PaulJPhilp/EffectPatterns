@@ -70,7 +70,7 @@ describe("Concurrent Code Testing", () => {
     // Use TestClock to control time
     const result = await Effect.runPromise(
       Effect.gen(function* () {
-        const fiber = yield* Effect.fork(program)
+        const fiber = yield* Effect.forkChild(program)
 
         // Advance time to trigger both tasks
         yield* TestClock.adjust("100 millis")
@@ -119,7 +119,7 @@ describe("Concurrent Code Testing", () => {
     const events: string[] = []
 
     const program = Effect.gen(function* () {
-      const fiber = yield* Effect.fork(
+      const fiber = yield* Effect.forkChild(
         Effect.gen(function* () {
           events.push("started")
           yield* Effect.sleep("1 second")
@@ -156,7 +156,7 @@ describe("Concurrent Code Testing", () => {
 
     const result = await Effect.runPromise(
       Effect.gen(function* () {
-        const fiber = yield* Effect.fork(
+        const fiber = yield* Effect.forkChild(
           slowOperation.pipe(Effect.timeout("1 second"))
         )
 
@@ -182,7 +182,7 @@ describe("Concurrent Code Testing", () => {
         const results: string[] = []
 
         // Consumer waits for producer
-        const consumer = Effect.fork(
+        const consumer = Effect.forkChild(
           Effect.gen(function* () {
             const value = yield* Deferred.await(deferred)
             results.push(`consumed: ${value}`)
@@ -222,14 +222,14 @@ describe("Concurrent Code Testing", () => {
         const ref2 = yield* Ref.make(0)
 
         // Two fibers accessing refs in same order (no deadlock)
-        const fiber1 = yield* Effect.fork(
+        const fiber1 = yield* Effect.forkChild(
           Effect.gen(function* () {
             yield* Ref.update(ref1, (n) => n + 1)
             yield* Ref.update(ref2, (n) => n + 1)
           })
         )
 
-        const fiber2 = yield* Effect.fork(
+        const fiber2 = yield* Effect.forkChild(
           Effect.gen(function* () {
             yield* Ref.update(ref1, (n) => n + 1)
             yield* Ref.update(ref2, (n) => n + 1)

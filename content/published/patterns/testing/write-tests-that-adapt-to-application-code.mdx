@@ -33,7 +33,7 @@ Treating application code as immutable during testing prevents the introduction 
 ## Good Example
 
 ```typescript
-import { Effect } from "effect";
+import { Effect, Context, Layer } from "effect";
 
 // Define our types
 interface User {
@@ -54,10 +54,8 @@ interface DatabaseServiceApi {
 }
 
 // Implement the service with mock data
-class DatabaseService extends Effect.Service<DatabaseService>()(
-  "DatabaseService",
-  {
-    sync: () => ({
+class DatabaseService extends Context.Service<DatabaseService>()("DatabaseService", {
+    make: Effect.sync(() => ({
       getUserById: (id: number) => {
         // Simulate database lookup
         if (id === 404) {
@@ -65,15 +63,14 @@ class DatabaseService extends Effect.Service<DatabaseService>()(
         }
         return Effect.succeed({ id, name: `User ${id}` });
       },
-    }),
-  }
-) {}
+    })),
+  }) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 // Test service implementation for testing
-class TestDatabaseService extends Effect.Service<TestDatabaseService>()(
-  "TestDatabaseService",
-  {
-    sync: () => ({
+class TestDatabaseService extends Context.Service<TestDatabaseService>()("TestDatabaseService", {
+    make: Effect.sync(() => ({
       getUserById: (id: number) => {
         // Test data with predictable responses
         const testUsers = [
@@ -88,9 +85,10 @@ class TestDatabaseService extends Effect.Service<TestDatabaseService>()(
         }
         return Effect.fail(new NotFoundError(id));
       },
-    }),
-  }
-) {}
+    })),
+  }) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 // Business logic that uses the database service
 const getUserWithFallback = (id: number) =>
@@ -100,7 +98,7 @@ const getUserWithFallback = (id: number) =>
       const user = yield* db.getUserById(id);
       return user;
     }).pipe(
-      Effect.catchAll((error) =>
+      Effect.catch((error) =>
         Effect.gen(function* () {
           if (error instanceof NotFoundError) {
             yield* Effect.logInfo(`User ${id} not found, using fallback`);
@@ -193,7 +191,7 @@ const program = Effect.gen(function* () {
       });
       yield* Effect.logInfo(`Test result: ${JSON.stringify(testUser404)}`);
     }),
-    TestDatabaseService.Default
+    TestDatabaseService.layer
   );
 
   yield* Effect.logInfo(
@@ -206,7 +204,7 @@ const program = Effect.gen(function* () {
 
 // Run the program with the default database service
 Effect.runPromise(
-  Effect.provide(program, DatabaseService.Default) as Effect.Effect<
+  Effect.provide(program, DatabaseService.layer) as Effect.Effect<
     void,
     never,
     never

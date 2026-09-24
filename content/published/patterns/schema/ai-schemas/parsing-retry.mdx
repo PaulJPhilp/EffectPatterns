@@ -51,7 +51,7 @@ const isRetryable = (error: ParseError): boolean => {
 const Response = Schema.Struct({
   result: Schema.String,
   confidence: Schema.Number.pipe(
-    Schema.between(0, 1)
+    Schema.check(Schema.isBetween(0, 1))
   ),
 })
 
@@ -61,7 +61,7 @@ type Response = typeof Response.Type
 const parseResponse = (data: unknown) =>
   Effect.gen(function* () {
     try {
-      const parsed = yield* Schema.decodeUnknown(
+      const parsed = yield* Schema.decodeUnknownEffect(
         Response
       )(data)
       return { _tag: "Success" as const, data: parsed }
@@ -107,26 +107,19 @@ const callLLMWithRetry = (prompt: string) =>
   Effect.gen(function* () {
     const client = new Anthropic()
 
-    // Exponential backoff: 100ms → 200ms → 400ms → 800ms (max 5s)
-    const schedule = Schedule.exponential(
-      "100 millis"
-    ).pipe(
-      Schedule.map(() =>
-        Effect.gen(function* () {
-          // Add jitter to prevent thundering herd
-          const jitter = yield* Random.nextIntBetween(
-            0,
-            100
-          )
-          return jitter
-        }).pipe(Effect.runSync())
-      ),
-      Schedule.compose(
-        Schedule.recurUntil(
-          (attempt) => attempt >= 3
+    // Exponential backoff: 100ms → 200ms → 400ms (max 3 attempts)
+    const schedule = Schedule.max([
+      Schedule.exponential("100 millis").pipe(
+        Schedule.map(() =>
+          Effect.gen(function* () {
+            // Add jitter to prevent thundering herd
+            const jitter = yield* Random.nextIntBetween(0, 100)
+            return jitter
+          }).pipe(Effect.runSync())
         )
-      )
-    )
+      ),
+      Schedule.recurs(3)
+    ])
 
     const callLLM = () =>
       Effect.gen(function* () {
@@ -172,9 +165,7 @@ const callLLMWithRetry = (prompt: string) =>
     const result = yield* callLLM().pipe(
       Effect.retry(
         schedule.pipe(
-          Schedule.whileInput((error) =>
-            isRetryable(error)
-          )
+          Schedule.while(({ input: error }) => isRetryable(error))
         )
       ),
       Effect.catchTag("Timeout", (error) =>

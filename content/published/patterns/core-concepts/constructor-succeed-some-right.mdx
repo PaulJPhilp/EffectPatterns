@@ -5,7 +5,7 @@ skillLevel: beginner
 applicationPatternId: core-concepts
 summary: >-
   Use succeed, some, and right to lift plain values into Effect, Option, or
-  Either, making them composable and type-safe.
+  Result, making them composable and type-safe.
 tags:
   - succeed
   - some
@@ -13,11 +13,11 @@ tags:
   - constructor
   - effect
   - option
-  - either
+  - result
   - lifting
 rule:
   description: >-
-    Use succeed, some, and right to create Effect, Option, or Either from plain
+    Use succeed, some, and right to create Effect, Option, or Result from plain
     values.
 related:
   - constructor-fail-none-left
@@ -30,7 +30,7 @@ lessonOrder: 15
 
 ## Guideline
 
-Use the `succeed`, `some`, and `right` constructors to lift plain values into the Effect, Option, or Either world.  
+Use the `succeed`, `some`, and `right` constructors to lift plain values into the Effect, Option, or Result world.  
 This is the foundation for building composable, type-safe programs.
 
 ## Rationale
@@ -40,7 +40,7 @@ Lifting values into these structures allows you to compose them with other effec
 ## Good Example
 
 ```typescript
-import { Effect, Option, Either } from "effect";
+import { Effect, Option, Result } from "effect";
 
 // Effect: Lift a value into an Effect that always succeeds
 const effect = Effect.succeed(42); // Effect<never, number, never>
@@ -48,17 +48,17 @@ const effect = Effect.succeed(42); // Effect<never, number, never>
 // Option: Lift a value into an Option that is always Some
 const option = Option.some("hello"); // Option<string>
 
-// Either: Lift a value into an Either that is always Right
-const either = Either.right({ id: 1 }); // Either<never, { id: number }>
+// Result: Lift a value into an Result that is always Right
+const either = Result.succeed({ id: 1 }); // Result<{ id: number }, never>
 ```
 
 **Explanation:**
 
 - `Effect.succeed(value)` creates an effect that always succeeds with `value`.
 - `Option.some(value)` creates an option that is always present.
-- `Either.right(value)` creates an either that always represents success.
+- `Result.succeed(value)` creates an either that always represents success.
 
 ## Anti-Pattern
 
-Passing plain values around outside the Effect, Option, or Either world, or using `null`/`undefined` to represent absence or success.  
+Passing plain values around outside the Effect, Option, or Result world, or using `null`/`undefined` to represent absence or success.  
 This leads to less composable, less type-safe code and makes error handling harder.

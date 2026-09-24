@@ -31,10 +31,10 @@ import { Schema, Effect } from "effect"
 // ============================================
 
 // A response is either a number or a string
-const NumberOrString = Schema.Union(
+const NumberOrString = Schema.Union([
   Schema.Number,
   Schema.String
-)
+])
 
 type NumberOrString = typeof NumberOrString.Type
 
@@ -55,7 +55,7 @@ const GuestUser = Schema.Struct({
   sessionId: Schema.String,
 })
 
-const User = Schema.Union(AuthenticatedUser, GuestUser)
+const User = Schema.Union([AuthenticatedUser, GuestUser])
 
 type User = typeof User.Type
 
@@ -67,7 +67,7 @@ const PaymentSuccess = Schema.Struct({
   status: Schema.Literal("success"),
   transactionId: Schema.String,
   amount: Schema.Number,
-  timestamp: Schema.Date,
+  timestamp: Schema.DateFromString,
 })
 
 const PaymentFailure = Schema.Struct({
@@ -76,7 +76,7 @@ const PaymentFailure = Schema.Struct({
   retryable: Schema.Boolean,
 })
 
-const PaymentResult = Schema.Union(PaymentSuccess, PaymentFailure)
+const PaymentResult = Schema.Union([PaymentSuccess, PaymentFailure])
 
 type PaymentResult = typeof PaymentResult.Type
 
@@ -95,7 +95,7 @@ const ErrorResponse = Schema.Struct({
   code: Schema.Number,
 })
 
-const ApiResponse = Schema.Union(SuccessResponse, ErrorResponse)
+const ApiResponse = Schema.Union([SuccessResponse, ErrorResponse])
 
 type ApiResponse = typeof ApiResponse.Type
 
@@ -131,7 +131,7 @@ const parsePaymentResult = (
   raw: unknown
 ): Effect.Effect<PaymentResult, Error> =>
   Effect.tryPromise({
-    try: () => Schema.decodeUnknown(PaymentResult)(raw),
+    try: () => Schema.decodeUnknownEffect(PaymentResult)(raw),
     catch: (error) => {
       const msg = error instanceof Error ? error.message : String(error)
       return new Error(`Invalid payment result: ${msg}`)
@@ -167,7 +167,7 @@ const appLogic = Effect.gen(function* () {
   console.log("=== Scenario 1: Parse simple union ===\n")
 
   const value1 = yield* Effect.tryPromise({
-    try: () => Schema.decodeUnknown(NumberOrString)("hello"),
+    try: () => Schema.decodeUnknownEffect(NumberOrString)("hello"),
     catch: (error) => new Error(String(error)),
   })
 
@@ -183,7 +183,7 @@ const appLogic = Effect.gen(function* () {
   }
 
   const authenticated = yield* Effect.tryPromise({
-    try: () => Schema.decodeUnknown(User)(authenticatedData),
+    try: () => Schema.decodeUnknownEffect(User)(authenticatedData),
     catch: (error) => new Error(String(error)),
   })
 
@@ -195,7 +195,7 @@ const appLogic = Effect.gen(function* () {
   }
 
   const guest = yield* Effect.tryPromise({
-    try: () => Schema.decodeUnknown(User)(guestData),
+    try: () => Schema.decodeUnknownEffect(User)(guestData),
     catch: (error) => new Error(String(error)),
   })
 
@@ -230,7 +230,7 @@ const appLogic = Effect.gen(function* () {
   }
 
   const apiOk = yield* Effect.tryPromise({
-    try: () => Schema.decodeUnknown(ApiResponse)(okResponse),
+    try: () => Schema.decodeUnknownEffect(ApiResponse)(okResponse),
     catch: (error) => new Error(String(error)),
   })
 
@@ -245,7 +245,7 @@ const appLogic = Effect.gen(function* () {
   }
 
   const apiError = yield* Effect.tryPromise({
-    try: () => Schema.decodeUnknown(ApiResponse)(errorResponse),
+    try: () => Schema.decodeUnknownEffect(ApiResponse)(errorResponse),
     catch: (error) => new Error(String(error)),
   })
 

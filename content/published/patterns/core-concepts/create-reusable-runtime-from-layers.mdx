@@ -38,16 +38,18 @@ long-running applications.
 ## Good Example
 
 ```typescript
-import { Effect, Layer, Runtime } from "effect";
+import { Effect, Layer, Runtime, Context } from "effect";
 
-class GreeterService extends Effect.Service<GreeterService>()("Greeter", {
-  sync: () => ({
+class GreeterService extends Context.Service<GreeterService>()("Greeter", {
+  make: Effect.sync(() => ({
     greet: (name: string) => Effect.sync(() => `Hello ${name}`),
-  }),
-}) {}
+  })),
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 const runtime = Effect.runSync(
-  Layer.toRuntime(GreeterService.Default).pipe(Effect.scoped)
+  Layer.toRuntime(GreeterService.layer).pipe(Effect.scoped)
 );
 
 // In a server, you would reuse `run` for every request.

@@ -43,7 +43,7 @@ Learn why runtime validation is critical and how Schema provides a unified appro
   - 🟣 **Documentation**: Self-documenting contracts
 
 - **3. The Schema → Effect Integration** `(Intermediate)`
-  - 🟣 How Schema.decode returns an Effect
+  - 🟣 How Schema.decodeEffect returns an Effect
   - 🟣 Error handling built into the validation pipeline
   - 🟣 Composing validation with other Effect operations
 
@@ -125,10 +125,10 @@ Transform data during validation to get exactly what you need.
 
 ### Parsing Operations
 
-- **12. Parse and Validate with Schema.decode** `(Intermediate)`
-  - 🟣 [Using Schema.decode](./content/published/patterns/core/parse-with-schema-decode.mdx)
-  - 🟣 `Schema.decodeUnknown` for untrusted data
-  - 🟣 `Schema.validate` for validation without parsing
+- **12. Parse and Validate with Schema.decodeEffect** `(Intermediate)`
+  - 🟣 [Using Schema.decodeEffect](./content/published/patterns/core/parse-with-schema-decode.mdx)
+  - 🟣 `Schema.decodeUnknownEffect` for untrusted data
+  - 🟣 `Schema.decode*` + `Schema.toType` for validation without full parsing
   - 🟣 Error handling in the parse pipeline
 
 ### Transformation

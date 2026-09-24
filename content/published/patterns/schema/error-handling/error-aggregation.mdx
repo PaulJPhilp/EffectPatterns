@@ -44,20 +44,20 @@ type ValidationErrors = FieldError[]
 
 const SignUpForm = Schema.Struct({
   username: Schema.String.pipe(
-    Schema.minLength(3),
-    Schema.maxLength(20),
-    Schema.pattern(/^[a-zA-Z0-9_-]+$/)
+    Schema.check(Schema.isMinLength(3)),
+    Schema.check(Schema.isMaxLength(20)),
+    Schema.check(Schema.isPattern(/^[a-zA-Z0-9_-]+$/))
   ),
   email: Schema.String.pipe(
-    Schema.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)
+    Schema.check(Schema.isPattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/))
   ),
   password: Schema.String.pipe(
-    Schema.minLength(8)
+    Schema.check(Schema.isMinLength(8))
   ),
   confirmPassword: Schema.String,
   age: Schema.Number.pipe(
-    Schema.int(),
-    Schema.between(13, 120)
+    Schema.check(Schema.isInt()),
+    Schema.check(Schema.isBetween(13, 120))
   ),
 })
 
@@ -173,30 +173,30 @@ const validateFormErrors = (
     // Validate each field and collect errors
     let username = ""
     const usernameResult = yield* validateUsername(parsed.username).pipe(
-      Effect.either
+      Effect.result
     )
-    if (usernameResult._tag === "Left") {
-      errors.push(usernameResult.left)
+    if (usernameResult._tag === "Failure") {
+      errors.push(usernameResult.failure)
     } else {
-      username = usernameResult.right
+      username = usernameResult.success
     }
 
     let email = ""
-    const emailResult = yield* validateEmail(parsed.email).pipe(Effect.either)
-    if (emailResult._tag === "Left") {
-      errors.push(emailResult.left)
+    const emailResult = yield* validateEmail(parsed.email).pipe(Effect.result)
+    if (emailResult._tag === "Failure") {
+      errors.push(emailResult.failure)
     } else {
-      email = emailResult.right
+      email = emailResult.success
     }
 
     let password = ""
     const passwordResult = yield* validatePassword(parsed.password).pipe(
-      Effect.either
+      Effect.result
     )
-    if (passwordResult._tag === "Left") {
-      errors.push(passwordResult.left)
+    if (passwordResult._tag === "Failure") {
+      errors.push(passwordResult.failure)
     } else {
-      password = passwordResult.right
+      password = passwordResult.success
     }
 
     // Validate password match only if both passwords valid
@@ -204,18 +204,18 @@ const validateFormErrors = (
       const matchResult = yield* validatePasswordMatch(
         password,
         parsed.confirmPassword
-      ).pipe(Effect.either)
-      if (matchResult._tag === "Left") {
-        errors.push(matchResult.left)
+      ).pipe(Effect.result)
+      if (matchResult._tag === "Failure") {
+        errors.push(matchResult.failure)
       }
     }
 
     let age = 0
-    const ageResult = yield* validateAge(parsed.age).pipe(Effect.either)
-    if (ageResult._tag === "Left") {
-      errors.push(ageResult.left)
+    const ageResult = yield* validateAge(parsed.age).pipe(Effect.result)
+    if (ageResult._tag === "Failure") {
+      errors.push(ageResult.failure)
     } else {
-      age = ageResult.right
+      age = ageResult.success
     }
 
     // Return all errors if any found
@@ -270,12 +270,12 @@ const appLogic = Effect.gen(function* () {
   }
 
   const result1 = yield* validateFormErrors(badFormData).pipe(
-    Effect.either
+    Effect.result
   )
 
-  if (result1._tag === "Left") {
+  if (result1._tag === "Failure") {
     console.log("❌ Validation failed with multiple errors:\n")
-    console.log(formatErrorSummary(result1.left))
+    console.log(formatErrorSummary(result1.failure))
   }
 
   console.log("=== Scenario 2: Form with some errors ===\n")
@@ -289,12 +289,12 @@ const appLogic = Effect.gen(function* () {
   }
 
   const result2 = yield* validateFormErrors(partialFormData).pipe(
-    Effect.either
+    Effect.result
   )
 
-  if (result2._tag === "Left") {
+  if (result2._tag === "Failure") {
     console.log("❌ Validation failed:\n")
-    console.log(formatErrorSummary(result2.left))
+    console.log(formatErrorSummary(result2.failure))
   }
 
   console.log("=== Scenario 3: Valid form ===\n")
@@ -308,12 +308,12 @@ const appLogic = Effect.gen(function* () {
   }
 
   const result3 = yield* validateFormErrors(goodFormData).pipe(
-    Effect.either
+    Effect.result
   )
 
-  if (result3._tag === "Right") {
+  if (result3._tag === "Success") {
     console.log("✅ Form valid!")
-    console.log(result3.right)
+    console.log(result3.success)
   }
 
   return result3
@@ -330,7 +330,7 @@ Effect.runPromise(appLogic)
 | Concept | Explanation |
 |---------|-------------|
 | **Collect all errors** | Don't stop at first error; validate entire form |
-| **Effect.either** | Convert error to value for collection without failing |
+| **Effect.result** | Convert error to value for collection without failing |
 | **Array accumulation** | Push errors into array as they occur |
 | **Error summary** | Group by field for clear UI presentation |
 | **No early exit** | All fields validated independently |

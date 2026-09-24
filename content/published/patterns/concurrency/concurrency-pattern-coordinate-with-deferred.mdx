@@ -139,12 +139,12 @@ const program = Effect.gen(function* () {
 
   // Start initializing services in background
   const initFibers = yield* Effect.all(
-    services.map((service) => initializeService(service).pipe(Effect.fork))
+    services.map((service) => initializeService(service).pipe(Effect.forkChild))
   );
 
   // Start workers that wait for services
   const workerFibers = yield* Effect.all(
-    [1, 2, 3].map((id) => createWorker(id, services).pipe(Effect.fork))
+    [1, 2, 3].map((id) => createWorker(id, services).pipe(Effect.forkChild))
   );
 
   // Wait for all workers to complete
@@ -182,7 +182,7 @@ const initializeServiceWithTimeout = (
     const timeoutDeferred = yield* Deferred.make<"timeout">();
     const timeoutFiber = yield* Effect.sleep(`${timeoutMs} millis`).pipe(
       Effect.andThen(() => Deferred.succeed(timeoutDeferred, "timeout" as const)),
-      Effect.fork
+      Effect.forkChild
     );
 
     const result = yield* Effect.race(
@@ -209,7 +209,7 @@ const createWorkerWithFallback = (
       services.map((service) =>
         Deferred.await(service.isReady).pipe(
           Effect.map(() => service.name),
-          Effect.catchAll(() => Effect.succeed("unavailable"))
+          Effect.catch(() => Effect.succeed("unavailable"))
         )
       )
     );
@@ -259,15 +259,15 @@ const initializeServiceWithErrorHandling = (
       } catch (error) {
         return { success: false as const, error };
       }
-    }).pipe(Effect.either);
+    }).pipe(Effect.result);
 
-    if (result._tag === "Right" && result.right.success) {
+    if (result._tag === "Success" && result.success.success) {
       yield* Effect.log(`[${service.name}] Ready`);
       yield* Deferred.succeed(service.isReady, undefined);
     } else {
       const error = new InitializationError(
         service.name,
-        result._tag === "Left" ? result.left : result.right.error
+        result._tag === "Failure" ? result.failure : result.success.error
       );
 
       yield* Effect.log(
@@ -289,11 +289,11 @@ const createWorkerWithErrorHandling = (
 
     const result = yield* Effect.all(
       services.map((service) => Deferred.await(service.isReady))
-    ).pipe(Effect.either);
+    ).pipe(Effect.result);
 
-    if (result._tag === "Left") {
-      yield* Effect.log(`[Worker ${id}] Service initialization failed: ${result.left.message}`);
-      yield* Effect.fail(result.left);
+    if (result._tag === "Failure") {
+      yield* Effect.log(`[Worker ${id}] Service initialization failed: ${result.failure.message}`);
+      yield* Effect.fail(result.failure);
     }
 
     yield* Effect.log(`[Worker ${id}] All services ready`);
@@ -327,7 +327,7 @@ const createStagedStartup = (): Effect.Effect<void> =>
       yield* Effect.sleep("500 millis");
       yield* Effect.log(`[Stage 1] Config loaded`);
       yield* Deferred.succeed(stages[0].ready, undefined);
-    }).pipe(Effect.fork);
+    }).pipe(Effect.forkChild);
 
     // Stage 2: Wait for config, then connect database
     yield* Effect.gen(function* () {
@@ -336,7 +336,7 @@ const createStagedStartup = (): Effect.Effect<void> =>
       yield* Effect.sleep("1 second");
       yield* Effect.log(`[Stage 2] Database connected`);
       yield* Deferred.succeed(stages[1].ready, undefined);
-    }).pipe(Effect.fork);
+    }).pipe(Effect.forkChild);
 
     // Stage 3: Wait for database, then start services
     yield* Effect.gen(function* () {
@@ -345,14 +345,14 @@ const createStagedStartup = (): Effect.Effect<void> =>
       yield* Effect.sleep("500 millis");
       yield* Effect.log(`[Stage 3] Services started`);
       yield* Deferred.succeed(stages[2].ready, undefined);
-    }).pipe(Effect.fork);
+    }).pipe(Effect.forkChild);
 
     // Stage 4: Wait for services, then ready to serve
     yield* Effect.gen(function* () {
       yield* Deferred.await(stages[2].ready);
       yield* Effect.log(`[Stage 4] Ready to serve!`);
       yield* Deferred.succeed(stages[3].ready, undefined);
-    }).pipe(Effect.fork);
+    }).pipe(Effect.forkChild);
 
     // Wait for final stage
     yield* Deferred.await(stages[3].ready);

@@ -52,21 +52,21 @@ const Int = Schema.Int
 
 // Between values (inclusive)
 const Percentage = Schema.Number.pipe(
-  Schema.between(0, 100, {
+  Schema.check(Schema.isBetween(0, 100, {
     message: () => "Percentage must be 0-100"
-  })
+  }))
 )
 
 // Greater than
 const OverEighteen = Schema.Number.pipe(
-  Schema.greaterThan(18, {
+  Schema.check(Schema.isGreaterThan(18, {
     message: () => "Must be over 18"
-  })
+  }))
 )
 
 // Less than or equal
 const MaxItems = Schema.Number.pipe(
-  Schema.lessThanOrEqualTo(1000)
+  Schema.check(Schema.isLessThanOrEqualTo(1000))
 )
 
 // ============================================
@@ -75,23 +75,23 @@ const MaxItems = Schema.Number.pipe(
 
 // Positive integer
 const PositiveInt = Schema.Number.pipe(
-  Schema.int(),
-  Schema.positive()
+  Schema.check(Schema.isInt()),
+  Schema.check(Schema.isGreaterThan(0))
 )
 
 // Valid age
 const Age = Schema.Number.pipe(
-  Schema.int({ message: () => "Age must be a whole number" }),
-  Schema.between(0, 150, { message: () => "Invalid age" })
+  Schema.check(Schema.isInt({ message: () => "Age must be a whole number" })),
+  Schema.check(Schema.isBetween(0, 150, { message: () => "Invalid age" }))
 )
 
 // Price (positive with 2 decimal places max)
 const Price = Schema.Number.pipe(
-  Schema.positive({ message: () => "Price must be positive" }),
-  Schema.filter(
+  Schema.check(Schema.isGreaterThan(0, { message: () => "Price must be positive" })),
+  Schema.check(Schema.makeFilter(
     (n) => Number.isFinite(n) && Math.round(n * 100) === n * 100,
     { message: () => "Price must have at most 2 decimal places" }
-  )
+  ))
 )
 
 // ============================================
@@ -100,7 +100,7 @@ const Price = Schema.Number.pipe(
 
 // Finite only (no Infinity)
 const Finite = Schema.Number.pipe(
-  Schema.finite({ message: () => "Must be a finite number" })
+  Schema.check(Schema.isFinite({ message: () => "Must be a finite number" }))
 )
 
 // ============================================

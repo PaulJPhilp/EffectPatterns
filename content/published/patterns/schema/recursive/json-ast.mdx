@@ -40,7 +40,7 @@ type JsonValue =
   | { type: "object"; properties: Record<string, JsonValue> }
 
 const JsonValue: Schema.Schema<JsonValue> = Schema.suspend(() =>
-  Schema.Union(
+  Schema.Union([
     Schema.Struct({ type: Schema.Literal("null") }),
     Schema.Struct({
       type: Schema.Literal("boolean"),
@@ -62,7 +62,7 @@ const JsonValue: Schema.Schema<JsonValue> = Schema.suspend(() =>
       type: Schema.Literal("object"),
       properties: Schema.Record(Schema.String, JsonValue),
     })
-  )
+  ])
 )
 
 // ============================================
@@ -305,7 +305,7 @@ const appLogic = Effect.gen(function* () {
 
   // Validate AST structure
   const validationResult = yield* Effect.tryPromise({
-    try: () => Schema.decodeUnknown(JsonValue)(ast),
+    try: () => Schema.decodeUnknownEffect(JsonValue)(ast),
     catch: (error) => {
       const msg = error instanceof Error ? error.message : String(error)
       return new Error(`AST validation failed: ${msg}`)

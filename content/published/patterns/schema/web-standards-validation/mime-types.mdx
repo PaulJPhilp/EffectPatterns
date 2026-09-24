@@ -28,47 +28,47 @@ Your application accepts file uploads or specifies content types. Users submit u
 import { Schema, Effect } from "effect"
 
 // 1. Define known MIME types as literals
-const ImageMimeType = Schema.Literal(
+const ImageMimeType = Schema.Literals([
   "image/jpeg",
   "image/png",
   "image/webp",
   "image/gif"
-)
+])
 
 type ImageMimeType = typeof ImageMimeType.Type
 
-const DocumentMimeType = Schema.Literal(
+const DocumentMimeType = Schema.Literals([
   "application/pdf",
   "text/plain",
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-)
+])
 
 type DocumentMimeType = typeof DocumentMimeType.Type
 
 // 2. Create branded MIME types
-const ValidMimeType = Schema.Union(
+const ValidMimeType = Schema.Union([
   ImageMimeType,
   DocumentMimeType,
-  Schema.Literal(
+  Schema.Literals([
     "application/json",
     "text/html",
     "application/xml"
-  )
-).pipe(Schema.brand("ValidMimeType"))
+  ])
+]).pipe(Schema.brand("ValidMimeType"))
 
 type ValidMimeType = typeof ValidMimeType.Type
 
 // 3. File upload schema
 const FileUpload = Schema.Struct({
   filename: Schema.String.pipe(
-    Schema.minLength(1),
-    Schema.maxLength(255)
+    Schema.check(Schema.isMinLength(1)),
+    Schema.check(Schema.isMaxLength(255))
   ),
   mimeType: ValidMimeType,
   size: Schema.Number.pipe(
-    Schema.int(),
-    Schema.between(1, 10 * 1024 * 1024) // 10MB limit
+    Schema.check(Schema.isInt()),
+    Schema.check(Schema.isBetween(1, 10 * 1024 * 1024)) // 10MB limit
   ),
 })
 
@@ -99,7 +99,7 @@ const getMimeTypeFromExtension = (
 // 5. File handler with validation
 const handleFileUpload = (input: unknown) =>
   Effect.gen(function* () {
-    const file = yield* Schema.decodeUnknown(
+    const file = yield* Schema.decodeUnknownEffect(
       FileUpload
     )(input).pipe(
       Effect.mapError((error) => ({
@@ -136,7 +136,7 @@ const selectOutputFormat = (
     // Validate accepted types
     const validated = yield* Effect.all(
       accepted.map((type) =>
-        Schema.decodeUnknown(ValidMimeType)(type).pipe(
+        Schema.decodeUnknownEffect(ValidMimeType)(type).pipe(
           Effect.catchTag("ParseError", () =>
             Effect.none()
           )
@@ -153,9 +153,9 @@ const selectOutputFormat = (
 
 // 7. Media type with parameters
 const MediaTypeWithParams = Schema.String.pipe(
-  Schema.pattern(
+  Schema.check(Schema.isPattern(
     /^[\w\-]+\/[\w\.\+\-]+(\s*;\s*[\w\-]+\s*=\s*[\w\-]+)*$/
-  ).pipe(
+  )).pipe(
     Schema.annotations({
       description:
         "MIME type with optional parameters (e.g., text/html; charset=utf-8)",
@@ -169,7 +169,7 @@ type MediaTypeWithParams =
 
 const parseMediaType = (raw: string) =>
   Effect.gen(function* () {
-    const media = yield* Schema.decodeUnknown(
+    const media = yield* Schema.decodeUnknownEffect(
       MediaTypeWithParams
     )(raw).pipe(
       Effect.mapError((error) => ({

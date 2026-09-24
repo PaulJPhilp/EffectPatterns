@@ -5,7 +5,7 @@ skillLevel: intermediate
 applicationPatternId: core-concepts
 summary: >-
   Use andThen, tap, and flatten to sequence computations, run side effects, and
-  flatten nested structures in Effect, Stream, Option, and Either.
+  flatten nested structures in Effect, Stream, Option, and Result.
 tags:
   - sequencing
   - andThen
@@ -41,7 +41,7 @@ Use sequencing combinators to run computations in order, perform side effects, o
 - `tap` runs a side-effecting computation with the result, without changing the value.
 - `flatten` removes one level of nesting from nested structures.
 
-These work for `Effect`, `Stream`, `Option`, and `Either`.
+These work for `Effect`, `Stream`, `Option`, and `Result`.
 
 ## Rationale
 
@@ -57,7 +57,7 @@ All while preserving composability, error handling, and type safety.
 ## Good Example
 
 ```typescript
-import { Effect, Stream, Option, Either } from "effect";
+import { Effect, Stream, Option, Result } from "effect";
 
 // andThen: Run one effect, then another, ignore the first result
 const logThenCompute = Effect.log("Starting...").pipe(

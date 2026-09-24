@@ -77,7 +77,7 @@ const demo = Effect.gen(function* () {
     Effect.flatMap((n) =>
       n > 0 ? Effect.succeed(n) : Effect.fail(new Error("Negative number"))
     ),
-    Effect.catchAll((error) =>
+    Effect.catch((error) =>
       Effect.succeed("Handled error: " + error.message)
     ),
     Effect.tap((result) => Effect.log(`Error handled: ${result}`))

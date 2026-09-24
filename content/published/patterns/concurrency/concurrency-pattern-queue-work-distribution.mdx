@@ -127,14 +127,14 @@ const consumer = (
 
     while (true) {
       // Dequeue - will block if queue is empty
-      const item = yield* Queue.take(queue).pipe(Effect.either);
+      const item = yield* Queue.take(queue).pipe(Effect.result);
 
-      if (item._tag === "Left") {
+      if (item._tag === "Failure") {
         yield* Effect.log(`[CONSUMER ${consumerId}] Queue closed, stopping`);
         return;
       }
 
-      const workItem = item.right;
+      const workItem = item.success;
       const startTime = Date.now();
 
       yield* Effect.log(
@@ -168,11 +168,11 @@ const program = Effect.gen(function* () {
   console.log(`\n[MAIN] Starting producer-consumer pipeline with queue size 3\n`);
 
   // Spawn producer
-  const producerFiber = yield* producer(queue, 10).pipe(Effect.fork);
+  const producerFiber = yield* producer(queue, 10).pipe(Effect.forkChild);
 
   // Spawn 2 consumers
-  const consumer1 = yield* consumer(queue, 1, results).pipe(Effect.fork);
-  const consumer2 = yield* consumer(queue, 2, results).pipe(Effect.fork);
+  const consumer1 = yield* consumer(queue, 1, results).pipe(Effect.forkChild);
+  const consumer2 = yield* consumer(queue, 2, results).pipe(Effect.forkChild);
 
   // Wait for producer to finish
   yield* Fiber.join(producerFiber);
@@ -347,15 +347,15 @@ const batchConsumer = (
       for (let i = 0; i < batchSize; i++) {
         const item = yield* Queue.take(queue).pipe(
           Effect.timeout("100 millis"),
-          Effect.either
+          Effect.result
         );
 
-        if (item._tag === "Left") {
+        if (item._tag === "Failure") {
           // Timeout - process whatever we have
           break;
         }
 
-        batch.push(item.right);
+        batch.push(item.success);
       }
 
       if (batch.length > 0) {

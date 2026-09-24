@@ -31,13 +31,13 @@ import * as fs from "fs"
 // 1. Define configuration schema
 const DatabaseConfig = Schema.Struct({
   host: Schema.String,
-  port: Schema.pipe(Schema.Number, Schema.int(), Schema.between(1024, 65535)),
+  port: Schema.pipe(Schema.Number, Schema.check(Schema.isInt()), Schema.check(Schema.isBetween(1024, 65535))),
   database: Schema.String,
-  maxConnections: Schema.pipe(Schema.Number, Schema.int(), Schema.between(1, 1000)),
+  maxConnections: Schema.pipe(Schema.Number, Schema.check(Schema.isInt()), Schema.check(Schema.isBetween(1, 1000))),
 })
 
 const CacheConfig = Schema.Struct({
-  ttl: Schema.pipe(Schema.Number, Schema.int(), Schema.between(0, 86400)),
+  ttl: Schema.pipe(Schema.Number, Schema.check(Schema.isInt()), Schema.check(Schema.isBetween(0, 86400))),
   enabled: Schema.Boolean,
 })
 
@@ -154,7 +154,7 @@ const loadConfig = (configFilePath?: string): Effect.Effect<AppConfig, Error> =>
 
     // Validate merged config
     const validated = yield* Effect.tryPromise({
-      try: () => Schema.decodeUnknown(AppConfig)(merged),
+      try: () => Schema.decodeUnknownEffect(AppConfig)(merged),
       catch: (error) => {
         const msg = error instanceof Error ? error.message : String(error)
         return new Error(`Config validation failed: ${msg}`)

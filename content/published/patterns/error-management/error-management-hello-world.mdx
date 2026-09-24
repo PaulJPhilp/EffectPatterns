@@ -3,15 +3,15 @@ title: Your First Error Handler
 id: error-management-hello-world
 skillLevel: beginner
 applicationPatternId: error-management
-summary: Learn the basics of handling errors in Effect with catchAll and catchTag.
+summary: Learn the basics of handling errors in Effect with catch and catchTag.
 tags:
   - error-handling
-  - catchAll
+  - catch
   - catchTag
   - getting-started
 rule:
   description: >-
-    Use catchAll or catchTag to recover from errors and keep your program
+    Use catch or catchTag to recover from errors and keep your program
     running.
 author: PaulJPhilp
 related:
@@ -22,7 +22,7 @@ lessonOrder: 4
 
 ## Guideline
 
-Handle errors in Effect using `catchAll` to catch any error, or `catchTag` to handle specific error types.
+Handle errors in Effect using `catch` to catch any error, or `catchTag` to handle specific error types.
 
 ---
 
@@ -69,11 +69,11 @@ const findUser = (id: string): Effect.Effect<{ id: string; name: string }, NotFo
     : Effect.fail(new NotFoundError({ resource: `user:${id}` }))
 
 // ============================================
-// 3. Handle ALL errors with catchAll
+// 3. Handle ALL errors with catch
 // ============================================
 
 const withFallback = fetchData("invalid-url").pipe(
-  Effect.catchAll((error) => {
+  Effect.catch((error) => {
     console.log(`Failed: ${error.url}, using fallback`)
     return Effect.succeed("Fallback data")
   })
@@ -116,7 +116,7 @@ const robustFetchUser = (url: string, id: string) =>
 // ============================================
 
 const program = Effect.gen(function* () {
-  // catchAll example
+  // catch example
   const data = yield* withFallback
   yield* Effect.log(`Got data: ${data}`)
 
@@ -136,7 +136,7 @@ Effect.runPromise(program)
 
 | Method | Use When |
 |--------|----------|
-| `catchAll` | Handle any error the same way |
+| `catch` | Handle any error the same way |
 | `catchTag` | Handle one specific error type |
 | `catchTags` | Handle multiple error types differently |
 | `orElse` | Provide an alternative Effect |
@@ -146,7 +146,7 @@ Effect.runPromise(program)
 
 ```typescript
 // Only typed errors get caught
-Effect.fail(new MyError())  // ✅ Caught by catchAll/catchTag
+Effect.fail(new MyError())  // ✅ Caught by catch/catchTag
 
 // Defects (bugs) are NOT caught
 Effect.die("crash")         // ❌ Not caught - propagates up

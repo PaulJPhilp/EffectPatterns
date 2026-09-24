@@ -24,7 +24,7 @@ Internal error: "TypeError: Cannot read property 'value' of undefined at line 34
 # Solution
 
 ```typescript
-import { Data, Effect } from "effect"
+import { Data, Effect, Schema } from "effect"
 
 // ============================================
 // 1. Define errors with multiple representations
@@ -252,11 +252,11 @@ const appLogic = Effect.gen(function* () {
   console.log("=== Scenario 1: Validation Error ===\n")
 
   const validationResult = yield* validateEmail("invalid-email").pipe(
-    Effect.either
+    Effect.result
   )
 
-  if (validationResult._tag === "Left") {
-    const error = validationResult.left
+  if (validationResult._tag === "Failure") {
+    const error = validationResult.failure
     console.log("📧 User sees:", error.userMessage())
     console.log("🔧 Dev sees:", error.techMessage())
     Logger.error(error, { context: "email_validation" })
@@ -266,11 +266,11 @@ const appLogic = Effect.gen(function* () {
   console.log("=== Scenario 2: Network Error ===\n")
 
   const networkResult = yield* fetchUserData().pipe(
-    Effect.either
+    Effect.result
   )
 
-  if (networkResult._tag === "Left") {
-    const error = networkResult.left
+  if (networkResult._tag === "Failure") {
+    const error = networkResult.failure
     console.log("👤 User sees:", error.userMessage())
     console.log("🔧 Dev sees:", error.techMessage())
     Logger.error(error, { context: "user_data_fetch" })
@@ -280,11 +280,11 @@ const appLogic = Effect.gen(function* () {
   console.log("=== Scenario 3: Payment Error ===\n")
 
   const paymentResult = yield* processPayment(50000).pipe(
-    Effect.either
+    Effect.result
   )
 
-  if (paymentResult._tag === "Left") {
-    const error = paymentResult.left
+  if (paymentResult._tag === "Failure") {
+    const error = paymentResult.failure
     console.log("💳 User sees:", error.userMessage())
     console.log("🔧 Dev sees:", error.techMessage())
     Logger.error(error, { context: "payment_processing", userId: "user_123" })
@@ -295,11 +295,11 @@ const appLogic = Effect.gen(function* () {
 
   const errors: (ValidationError | NetworkError | PaymentError)[] = []
 
-  const emailErr = yield* validateEmail("bad").pipe(Effect.either)
-  if (emailErr._tag === "Left") errors.push(emailErr.left)
+  const emailErr = yield* validateEmail("bad").pipe(Effect.result)
+  if (emailErr._tag === "Failure") errors.push(emailErr.failure)
 
-  const paymentErr = yield* processPayment(15000).pipe(Effect.either)
-  if (paymentErr._tag === "Left") errors.push(paymentErr.left)
+  const paymentErr = yield* processPayment(15000).pipe(Effect.result)
+  if (paymentErr._tag === "Failure") errors.push(paymentErr.failure)
 
   console.log("📤 API Response to client:")
   console.log(

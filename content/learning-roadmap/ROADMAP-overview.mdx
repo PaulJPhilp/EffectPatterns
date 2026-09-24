@@ -39,7 +39,7 @@ you have the foundation to understand them.
 - Creating and executing Effects
 - Composing Effects with `pipe`, `map`, `flatMap`, and `Effect.gen`
 - Type-safe error handling with `Data.TaggedError`
-- Working with Effect's data types: `Option`, `Either`, `Chunk`
+- Working with Effect's data types: `Option`, `Result`, `Chunk`
 - Time management with `Duration`, `Schedule`, and `Clock`
 - Domain modeling with `Schema` and `Brand`
 - Observability with structured logging, metrics, and tracing
@@ -63,7 +63,7 @@ you have the foundation to understand them.
 - Validating request bodies with Schema
 - Sending JSON responses with proper status codes
 - Translating application errors to HTTP error responses
-- Dependency injection for routes using Layer and Effect.Service
+- Dependency injection for routes using Layer and Context.Service
 - Making outgoing HTTP client requests
 
 **Key Patterns**: 8 patterns covering the complete HTTP request lifecycle
@@ -120,13 +120,13 @@ you have the foundation to understand them.
 - Chaining computations with `flatMap`
 - Filtering results with `filter`
 - Conditional branching with `if`, `when`, and `cond`
-- Error handling with `catchAll`, `orElse`, and `match`
+- Error handling with `catch`, `orElse`, and `match`
 - Working with collections using `forEach` and `all`
 - Combining values with `zip`
 - Sequencing with `andThen`, `tap`, and `flatten`
 
 **Key Insight**: The same combinators work across `Effect`, `Stream`,
-`Option`, and `Either`
+`Option`, and `Result`
 
 ---
 
@@ -143,7 +143,7 @@ you have the foundation to understand them.
 - Wrapping computations with `try` and `tryPromise`
 - Creating from synchronous and callback code
 - Creating from collections and iterables
-- Converting from nullable values, `Option`, and `Either`
+- Converting from nullable values, `Option`, and `Result`
 
 **Key Skill**: Bringing any value, error, or computation into the Effect world
 
@@ -161,7 +161,7 @@ you have the foundation to understand them.
 - Matching tagged unions with `matchTag` and `matchTags`
 - Effectful pattern matching with `matchEffect`
 - Handling specific errors with `catchTag` and `catchTags`
-- Pattern matching on `Option` and `Either`
+- Pattern matching on `Option` and `Result`
 - Simple case checks with predicates
 
 **Key Benefit**: Replace nested if/else and switch statements with
@@ -214,7 +214,7 @@ types
 **What You'll Learn**:
 
 - Optional values with `Option`
-- Error accumulation with `Either`
+- Error accumulation with `Result`
 - High-performance collections with `Chunk` and `HashSet`
 - Arbitrary-precision arithmetic with `BigDecimal`
 - Time-zone-aware dates with `DateTime`
@@ -222,8 +222,8 @@ types
 - Safe concurrent state with `Ref`
 - Effect results with `Exit` and `Cause`
 - Sensitive data handling with `Redacted`
-- Immutable structures with `Data.struct`, `Data.tuple`, and `Data.array`
-- Tagged unions with `Data.case`
+- Structural equality for plain objects, tuples, and arrays with `Equal.equals`
+- Tagged unions with `Data.taggedEnum`
 - Type classes with `Data.Class`
 
 **Key Benefit**: Practical, robust functional programming in TypeScript
@@ -239,7 +239,7 @@ types
 **What You'll Learn**:
 
 - Defining data contracts upfront with `Schema.Struct`
-- Validating and parsing unknown data with `Schema.decode`
+- Validating and parsing unknown data with `Schema.decodeEffect`
 - Adding constraints: string length, numeric ranges, custom predicates
 - Transforming data during validation (string → Date, raw → Branded types)
 - Handling validation errors gracefully and user-friendly

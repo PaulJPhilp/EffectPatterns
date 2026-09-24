@@ -24,14 +24,14 @@ Dates arrive in many formats: ISO strings, Unix timestamps, Date objects. JavaSc
 # Solution
 
 ```typescript
-import { Schema } from "effect"
+import { Schema, SchemaTransformation } from "effect"
 
 // ============================================
 // BUILT-IN DATE SCHEMAS
 // ============================================
 
 // Date object validation
-const DateSchema = Schema.Date
+const DateSchema = Schema.DateFromString
 // ✅ new Date() → Date
 // ❌ "not a date" → ParseError
 
@@ -45,62 +45,54 @@ const DateFromString = Schema.DateFromString
 // ============================================
 
 // Unix timestamp (seconds) to Date
-const DateFromUnix = Schema.transform(
-  Schema.Number,
-  Schema.DateFromSelf,
-  {
+const DateFromUnix = Schema.Number.pipe(Schema.decodeTo(Schema.Date, SchemaTransformation.transform({
     decode: (timestamp) => new Date(timestamp * 1000),
     encode: (date) => Math.floor(date.getTime() / 1000),
-  }
-)
+  })))
 
 // Unix timestamp (milliseconds) to Date
-const DateFromMillis = Schema.transform(
-  Schema.Number,
-  Schema.DateFromSelf,
-  {
+const DateFromMillis = Schema.Number.pipe(Schema.decodeTo(Schema.Date, SchemaTransformation.transform({
     decode: (ms) => new Date(ms),
     encode: (date) => date.getTime(),
-  }
-)
+  })))
 
 // ============================================
 // DATE REFINEMENTS
 // ============================================
 
 // Valid date (not "Invalid Date")
-const ValidDate = Schema.Date.pipe(
-  Schema.filter(
+const ValidDate = Schema.DateFromString.pipe(
+  Schema.check(Schema.makeFilter(
     (d) => !isNaN(d.getTime()),
     { message: () => "Invalid date" }
-  )
+  ))
 )
 
 // Date must be in the future
-const FutureDate = Schema.Date.pipe(
-  Schema.filter(
+const FutureDate = Schema.DateFromString.pipe(
+  Schema.check(Schema.makeFilter(
     (d) => d.getTime() > Date.now(),
     { message: () => "Date must be in the future" }
-  )
+  ))
 )
 
 // Date must be in the past
-const PastDate = Schema.Date.pipe(
-  Schema.filter(
+const PastDate = Schema.DateFromString.pipe(
+  Schema.check(Schema.makeFilter(
     (d) => d.getTime() < Date.now(),
     { message: () => "Date must be in the past" }
-  )
+  ))
 )
 
 // Date within range
-const RecentDate = Schema.Date.pipe(
-  Schema.filter(
+const RecentDate = Schema.DateFromString.pipe(
+  Schema.check(Schema.makeFilter(
     (d) => {
       const oneYearAgo = Date.now() - 365 * 24 * 60 * 60 * 1000
       return d.getTime() >= oneYearAgo && d.getTime() <= Date.now()
     },
     { message: () => "Date must be within the last year" }
-  )
+  ))
 )
 
 // ============================================
@@ -147,11 +139,11 @@ console.log(`✅ Created: ${payload.createdAt.toISOString()}`)
 
 | Schema | Purpose |
 |--------|---------|
-| **Schema.Date** | Validates Date objects |
+| **Schema.Date** | Validates Date instances |
 | **Schema.DateFromString** | Parses ISO strings to Date |
-| **Schema.DateFromSelf** | Date-to-Date (for transforms) |
-| **transform** | Convert timestamps to Date |
-| **filter** | Custom date constraints |
+| **Schema.Date** | Date-to-Date (for transforms) |
+| **decodeTo** | Convert timestamps to Date |
+| **check** | Custom date constraints |
 
 # When to Use
 

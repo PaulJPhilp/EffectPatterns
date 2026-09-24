@@ -38,7 +38,7 @@ Caching provides:
 
 ```typescript
 import { Effect, Ref, HashMap, Option, Duration } from "effect"
-import { HttpClient, HttpClientResponse } from "@effect/platform"
+import { HttpClient, HttpClientResponse } from "effect/http"
 
 // ============================================
 // 1. Simple in-memory cache
@@ -93,7 +93,7 @@ const makeCache = <T>() =>
 interface CachedHttpClient {
   readonly get: <T>(
     url: string,
-    options?: { ttl?: Duration.DurationInput }
+    options?: { ttl?: Duration.Input }
   ) => Effect.Effect<T, Error>
   readonly invalidate: (url: string) => Effect.Effect<void>
 }
@@ -103,8 +103,8 @@ const makeCachedHttpClient = Effect.gen(function* () {
   const cache = yield* makeCache<unknown>()
 
   const client: CachedHttpClient = {
-    get: <T>(url: string, options?: { ttl?: Duration.DurationInput }) => {
-      const ttl = options?.ttl ? Duration.toMillis(Duration.decode(options.ttl)) : 60000
+    get: <T>(url: string, options?: { ttl?: Duration.Input }) => {
+      const ttl = options?.ttl ? Duration.toMillis(Duration.fromInputUnsafe(options.ttl)) : 60000
 
       return Effect.gen(function* () {
         // Check cache first
@@ -118,7 +118,7 @@ const makeCachedHttpClient = Effect.gen(function* () {
 
         // Fetch from network
         const response = yield* httpClient.get(url)
-        const data = yield* HttpClientResponse.json(response) as Effect.Effect<T>
+        const data = yield* response.json as Effect.Effect<T>
 
         // Store in cache
         yield* cache.set(url, data, ttl)
@@ -152,14 +152,14 @@ const makeSWRClient = Effect.gen(function* () {
     get: <T>(
       url: string,
       options: {
-        staleAfter: Duration.DurationInput
-        expireAfter: Duration.DurationInput
+        staleAfter: Duration.Input
+        expireAfter: Duration.Input
       }
     ) =>
       Effect.gen(function* () {
         const now = Date.now()
-        const staleMs = Duration.toMillis(Duration.decode(options.staleAfter))
-        const expireMs = Duration.toMillis(Duration.decode(options.expireAfter))
+        const staleMs = Duration.toMillis(Duration.fromInputUnsafe(options.staleAfter))
+        const expireMs = Duration.toMillis(Duration.fromInputUnsafe(options.expireAfter))
 
         const cached = yield* Ref.get(cache).pipe(
           Effect.map((map) => HashMap.get(map, url))
@@ -176,9 +176,9 @@ const makeSWRClient = Effect.gen(function* () {
 
           if (age < expireMs) {
             // Stale - return cached, revalidate in background
-            yield* Effect.fork(
+            yield* Effect.forkChild(
               httpClient.get(url).pipe(
-                Effect.flatMap((r) => HttpClientResponse.json(r)),
+                Effect.flatMap((r) => r.json),
                 Effect.flatMap((data) =>
                   Ref.update(cache, (map) =>
                     HashMap.set(map, url, {
@@ -189,7 +189,7 @@ const makeSWRClient = Effect.gen(function* () {
                     })
                   )
                 ),
-                Effect.catchAll(() => Effect.void)  // Ignore errors
+                Effect.catch(() => Effect.void)  // Ignore errors
               )
             )
             return entry.data as T
@@ -198,7 +198,7 @@ const makeSWRClient = Effect.gen(function* () {
 
         // Expired or missing - fetch fresh
         const response = yield* httpClient.get(url)
-        const data = yield* HttpClientResponse.json(response) as Effect.Effect<T>
+        const data = yield* response.json as Effect.Effect<T>
 
         yield* Ref.update(cache, (map) =>
           HashMap.set(map, url, {
@@ -244,7 +244,7 @@ const makeDeduplicatedClient = Effect.gen(function* () {
 
         // Make the request
         const request = httpClient.get(url).pipe(
-          Effect.flatMap((r) => HttpClientResponse.json(r)),
+          Effect.flatMap((r) => r.json),
           Effect.tap((data) => cache.set(url, data, ttl)),
           Effect.ensuring(
             Ref.update(inFlight, (map) => HashMap.remove(map, url))

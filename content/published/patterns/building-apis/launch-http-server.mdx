@@ -11,7 +11,7 @@ tags:
   - node
 rule:
   description: >-
-    Use Http.server.serve with a platform-specific layer to run an HTTP
+    Use HttpRouter.serve with a platform-specific layer to run an HTTP
     application.
 author: PaulJPhilp
 related:
@@ -22,7 +22,7 @@ lessonOrder: 1
 
 ## Guideline
 
-To create and run a web server, define your application as an `Http.App` and execute it using `Http.server.serve`, providing a platform-specific layer like `NodeHttpServer.layer`.
+To create and run a web server, define your application as an `HttpEffect` and execute it using `HttpRouter.serve`, providing a platform-specific layer like `NodeHttpServer.layer`.
 
 ---
 
@@ -30,27 +30,27 @@ To create and run a web server, define your application as an `Http.App` and exe
 
 In Effect, an HTTP server is not just a side effect; it's a managed, effectful process. The `@effect/platform` package provides a platform-agnostic API for defining HTTP applications, while packages like `@effect/platform-node` provide the concrete implementation.
 
-The core function `Http.server.serve(app)` takes your application logic and returns an `Effect` that, when run, starts the server. This `Effect` is designed to run indefinitely, only terminating if the server crashes or is gracefully shut down.
+The core function `HttpRouter.serve(routes)` takes your route layers and returns a `Layer` that, when launched, starts the server. This `Effect` is designed to run indefinitely, only terminating if the server crashes or is gracefully shut down.
 
 This approach provides several key benefits:
 
 1.  **Lifecycle Management**: The server's lifecycle is managed by the Effect runtime. This means structured concurrency applies, ensuring graceful shutdowns and proper resource handling automatically.
 2.  **Integration**: The server is a first-class citizen in the Effect ecosystem. It can seamlessly access dependencies provided by `Layer`, use `Config` for configuration, and integrate with `Logger`.
-3.  **Platform Agnosticism**: By coding to the `Http.App` interface, your application logic remains portable across different JavaScript runtimes (Node.js, Bun, Deno) by simply swapping out the platform layer.
+3.  **Platform Agnosticism**: By coding to the `HttpEffect` interface, your application logic remains portable across different JavaScript runtimes (Node.js, Bun, Deno) by simply swapping out the platform layer.
 
 ---
 
 ## Good Example
 
-This example creates a minimal server that responds to all requests with "Hello, World!". The application logic is a simple `Effect` that returns an `Http.response`. We use `NodeRuntime.runMain` to execute the server effect, which is the standard way to launch a long-running application.
+This example creates a minimal server that responds to all requests with "Hello, World!". The application logic is a simple `Effect` that returns an `HttpServerResponse`. We use `NodeRuntime.runMain` to execute the server effect, which is the standard way to launch a long-running application.
 
 ```typescript
-import { Effect, Duration } from "effect";
+import { Effect, Duration, Context, Layer } from "effect";
 import * as http from "http";
 
 // Create HTTP server service
-class HttpServer extends Effect.Service<HttpServer>()("HttpServer", {
-  sync: () => ({
+class HttpServer extends Context.Service<HttpServer>()("HttpServer", {
+  make: Effect.sync(() => ({
     start: () =>
       Effect.gen(function* () {
         const server = http.createServer(
@@ -69,14 +69,14 @@ class HttpServer extends Effect.Service<HttpServer>()("HttpServer", {
         );
 
         // Start server with timeout
-        yield* Effect.async<void, Error>((resume) => {
+        yield* Effect.callback<void, Error>((resume) => {
           server.on("error", (error) => resume(Effect.fail(error)));
           server.listen(3456, "localhost", () => {
             resume(Effect.succeed(void 0));
           });
         }).pipe(
           Effect.timeout(Duration.seconds(5)),
-          Effect.catchAll((error) =>
+          Effect.catch((error) =>
             Effect.gen(function* () {
               yield* Effect.logError(`Failed to start server: ${error}`);
               return yield* Effect.fail(error);
@@ -90,8 +90,10 @@ class HttpServer extends Effect.Service<HttpServer>()("HttpServer", {
         yield* Effect.sleep(Duration.seconds(3));
         yield* Effect.logInfo("Server demonstration complete");
       }),
-  }),
-}) {}
+  })),
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 // Create program with proper error handling
 const program = Effect.gen(function* () {
@@ -107,9 +109,9 @@ const program = Effect.gen(function* () {
 // Run the server with proper error handling
 const programWithErrorHandling = Effect.provide(
   program,
-  HttpServer.Default
+  HttpServer.layer
 ).pipe(
-  Effect.catchAll((error) =>
+  Effect.catch((error) =>
     Effect.gen(function* () {
       yield* Effect.logError(`Program failed: ${error}`);
       return yield* Effect.fail(error);
@@ -136,6 +138,7 @@ The common anti-pattern is to use the raw Node.js `http` module directly, outsid
 
 ```typescript
 import * as http from "http";
+import { createServer } from "node:http";
 
 // Manually create a server using the Node.js built-in module.
 const server = http.createServer((req, res) => {

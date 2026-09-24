@@ -29,16 +29,16 @@ import { Schema, Effect } from "effect"
 
 // 1. Define branded types with validation
 const UserId = Schema.String.pipe(
-  Schema.minLength(1),
-  Schema.pattern(/^user_[a-z0-9]{12}$/),
+  Schema.check(Schema.isMinLength(1)),
+  Schema.check(Schema.isPattern(/^user_[a-z0-9]{12}$/)),
   Schema.brand("UserId")
 )
 
 type UserId = typeof UserId.Type
 
 const ProductId = Schema.String.pipe(
-  Schema.minLength(1),
-  Schema.pattern(/^prod_[a-z0-9]{12}$/),
+  Schema.check(Schema.isMinLength(1)),
+  Schema.check(Schema.isPattern(/^prod_[a-z0-9]{12}$/)),
   Schema.brand("ProductId")
 )
 
@@ -46,7 +46,7 @@ type ProductId = typeof ProductId.Type
 
 // 2. Email branded type
 const Email = Schema.String.pipe(
-  Schema.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/),
+  Schema.check(Schema.isPattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)),
   Schema.brand("Email")
 )
 
@@ -54,9 +54,9 @@ type Email = typeof Email.Type
 
 // 3. UUID branded type
 const UUID = Schema.String.pipe(
-  Schema.pattern(
+  Schema.check(Schema.isPattern(
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-  ),
+  )),
   Schema.brand("UUID")
 )
 
@@ -64,8 +64,8 @@ type UUID = typeof UUID.Type
 
 // 4. Positive integer branded type
 const PositiveInt = Schema.Number.pipe(
-  Schema.int(),
-  Schema.greaterThan(0),
+  Schema.check(Schema.isInt()),
+  Schema.check(Schema.isGreaterThan(0)),
   Schema.brand("PositiveInt")
 )
 
@@ -73,8 +73,8 @@ type PositiveInt = typeof PositiveInt.Type
 
 // 5. Slug branded type (URL-safe string)
 const Slug = Schema.String.pipe(
-  Schema.pattern(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-  Schema.maxLength(50),
+  Schema.check(Schema.isPattern(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)),
+  Schema.check(Schema.isMaxLength(50)),
   Schema.brand("Slug")
 )
 
@@ -99,11 +99,11 @@ const Product = Schema.Struct({
 type Product = typeof Product.Type
 
 // 7. Create validators
-const validateUserId = Schema.decodeUnknown(UserId)
-const validateEmail = Schema.decodeUnknown(Email)
-const validateUUID = Schema.decodeUnknown(UUID)
-const validateUser = Schema.decodeUnknown(User)
-const validateProduct = Schema.decodeUnknown(Product)
+const validateUserId = Schema.decodeUnknownEffect(UserId)
+const validateEmail = Schema.decodeUnknownEffect(Email)
+const validateUUID = Schema.decodeUnknownEffect(UUID)
+const validateUser = Schema.decodeUnknownEffect(User)
+const validateProduct = Schema.decodeUnknownEffect(Product)
 
 // 8. Database access with branded types
 class UserRepository {

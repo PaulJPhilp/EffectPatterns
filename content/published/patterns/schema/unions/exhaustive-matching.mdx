@@ -30,7 +30,7 @@ import { Schema, Effect } from "effect"
 // 1. Define comprehensive union
 // ============================================
 
-const OrderStatusEvent = Schema.Union(
+const OrderStatusEvent = Schema.Union([
   Schema.Struct({
     _tag: Schema.Literal("OrderCreated"),
     orderId: Schema.String,
@@ -49,14 +49,14 @@ const OrderStatusEvent = Schema.Union(
   Schema.Struct({
     _tag: Schema.Literal("OrderDelivered"),
     orderId: Schema.String,
-    deliveryDate: Schema.Date,
+    deliveryDate: Schema.DateFromString,
   }),
   Schema.Struct({
     _tag: Schema.Literal("OrderCancelled"),
     orderId: Schema.String,
     reason: Schema.String,
   })
-)
+])
 
 type OrderStatusEvent = typeof OrderStatusEvent.Type
 

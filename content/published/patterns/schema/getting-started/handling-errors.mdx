@@ -23,7 +23,7 @@ When validation fails, you need to know what went wrong. The default parse error
 # Solution
 
 ```typescript
-import { Schema, Effect, ParseResult } from "effect"
+import { Schema, Effect } from "effect"
 
 const User = Schema.Struct({
   name: Schema.String,
@@ -40,35 +40,35 @@ function parseUserSync(data: unknown) {
   try {
     return decodeSync(data)
   } catch (error) {
-    if (ParseResult.isParseError(error)) {
-      console.log("Parse error:", ParseResult.TreeFormatter.formatErrorSync(error))
+    if (Schema.isSchemaError(error)) {
+      console.log("Parse error:", error.message)
     }
     throw error
   }
 }
 
-// 2. SYNC RETURNING EITHER (no exceptions)
-const decodeEither = Schema.decodeUnknownEither(User)
+// 2. SYNC RETURNING Result (no exceptions)
+const decodeEither = Schema.decodeUnknownExit(User)
 
 function parseUserSafe(data: unknown) {
   const result = decodeEither(data)
   
-  if (result._tag === "Left") {
-    const message = ParseResult.TreeFormatter.formatErrorSync(result.left)
+  if (result._tag === "Failure") {
+    const message = result.failure.message
     return { success: false, error: message }
   }
   
-  return { success: true, user: result.right }
+  return { success: true, user: result.success }
 }
 
 // 3. ASYNC WITH EFFECT (recommended)
-const decodeEffect = Schema.decodeUnknown(User)
+const decodeEffect = Schema.decodeUnknownEffect(User)
 
 const parseUserEffect = (data: unknown) =>
   decodeEffect(data).pipe(
     Effect.mapError((error) => ({
       _tag: "ValidationError" as const,
-      message: ParseResult.TreeFormatter.formatErrorSync(error),
+      message: error.message,
     }))
   )
 
@@ -80,7 +80,7 @@ try {
   // Error already logged
 }
 
-console.log("\n=== Sync returning Either ===")
+console.log("\n=== Sync returning Result ===")
 const result = parseUserSafe({ name: 123, age: 30, email: "a@b.com" })
 if (!result.success) {
   console.log("Validation failed:", result.error)
@@ -101,9 +101,9 @@ Effect.runPromise(
 
 | Concept | Explanation |
 |---------|-------------|
-| **ParseResult.isParseError** | Type guard to check if error is from Schema |
+| **Schema.isSchemaError** | Type guard to check if error is from Schema |
 | **TreeFormatter** | Human-readable error messages |
-| **decodeUnknownEither** | Returns Either instead of throwing |
+| **decodeUnknownEither** | Returns Result instead of throwing |
 | **decodeUnknown** | Returns Effect for async composition |
 | **Effect.mapError** | Transform error into your error type |
 

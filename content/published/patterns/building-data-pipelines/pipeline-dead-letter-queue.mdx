@@ -152,7 +152,7 @@ const processWithRetryAndDLQ = (
           for (let attempt = 1; attempt <= maxRetries; attempt++) {
             const result = yield* processOrder(order).pipe(
               Effect.map((r) => new Success(order, r)),
-              Effect.catchAll((error) =>
+              Effect.catch((error) =>
                 Effect.gen(function* () {
                   yield* Effect.log(`Attempt ${attempt}/${maxRetries} failed for ${order.id}`)
                   lastError = error
@@ -210,7 +210,7 @@ const reprocessDLQ = <T>(
     for (const dlqItem of dlqItems) {
       const result = yield* processor(dlqItem.item).pipe(
         Effect.map(() => "success" as const),
-        Effect.catchAll(() => Effect.succeed("failed" as const))
+        Effect.catch(() => Effect.succeed("failed" as const))
       )
 
       yield* Effect.log(

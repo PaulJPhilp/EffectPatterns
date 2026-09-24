@@ -68,7 +68,7 @@ const withFork = Effect.gen(function* () {
   yield* Effect.log("Main fiber starting")
   
   // Fork creates a new fiber that runs independently
-  const fiber = yield* Effect.fork(
+  const fiber = yield* Effect.forkChild(
     Effect.gen(function* () {
       yield* Effect.log("Child fiber running")
       yield* Effect.sleep("200 millis")
@@ -102,7 +102,7 @@ Got result: child result
 // ============================================
 
 const fiberOps = Effect.gen(function* () {
-  const fiber = yield* Effect.fork(
+  const fiber = yield* Effect.forkChild(
     Effect.gen(function* () {
       yield* Effect.sleep("1 second")
       return "done"
@@ -136,7 +136,7 @@ const fiberOps = Effect.gen(function* () {
 
 | Operation | What it does |
 |-----------|--------------|
-| `Effect.fork(effect)` | Start effect on new fiber |
+| `Effect.forkChild(effect)` | Start effect on new fiber |
 | `Fiber.join(fiber)` | Wait for fiber to complete |
 | `Fiber.interrupt(fiber)` | Cancel the fiber |
 | `Fiber.poll(fiber)` | Check status without waiting |

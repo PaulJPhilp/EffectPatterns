@@ -30,7 +30,7 @@ lessonOrder: 2
 
 ## Guideline
 
-Use the `flatMap` combinator to chain together computations where each step may itself return an `Effect`, `Stream`, `Option`, or `Either`.  
+Use the `flatMap` combinator to chain together computations where each step may itself return an `Effect`, `Stream`, `Option`, or `Result`.  
 `flatMap` ensures that the result is always "flattened"—you never get nested types.
 
 ## Rationale
@@ -41,7 +41,7 @@ It allows you to express workflows where each step may fail, be optional, or pro
 ## Good Example
 
 ```typescript
-import { Effect, Stream, Option, Either } from "effect";
+import { Effect, Stream, Option, Result } from "effect";
 
 // Effect: Chain two effectful computations
 const effect = Effect.succeed(2).pipe(
@@ -51,10 +51,10 @@ const effect = Effect.succeed(2).pipe(
 // Option: Chain two optional computations
 const option = Option.some(2).pipe(Option.flatMap((n) => Option.some(n * 10))); // Option<number>
 
-// Either: Chain two computations that may fail
-const either = Either.right(2).pipe(
-  Either.flatMap((n) => Either.right(n * 10))
-); // Either<never, number>
+// Result: Chain two computations that may fail
+const either = Result.succeed(2).pipe(
+  Result.flatMap((n) => Result.succeed(n * 10))
+); // Result<number, never>
 
 // Stream: Chain streams (flattening)
 const stream = Stream.fromIterable([1, 2]).pipe(

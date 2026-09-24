@@ -35,15 +35,17 @@ This pattern is the key to testability. It allows you to provide a `Live` implem
 ## Good Example
 
 ```typescript
-import { Effect } from "effect";
+import { Effect, Context, Layer } from "effect";
 
 // Define Random service with production implementation as default
-export class Random extends Effect.Service<Random>()("Random", {
+export class Random extends Context.Service<Random>()("Random", {
   // Default production implementation
-  sync: () => ({
+  make: Effect.sync(() => ({
     next: Effect.sync(() => Math.random()),
-  }),
-}) {}
+  })),
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 // Example usage
 const program = Effect.gen(function* () {
@@ -54,7 +56,7 @@ const program = Effect.gen(function* () {
 
 // Run with default implementation
 const programWithLogging = Effect.gen(function* () {
-  const value = yield* Effect.provide(program, Random.Default);
+  const value = yield* Effect.provide(program, Random.layer);
   yield* Effect.log(`Random value: ${value}`);
   return value;
 });

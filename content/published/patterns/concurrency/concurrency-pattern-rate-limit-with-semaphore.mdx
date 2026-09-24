@@ -151,7 +151,7 @@ const program = Effect.gen(function* () {
   // Execute all queries with concurrency limit
   const results = yield* Effect.all(
     queries.map((q) =>
-      executor(q.id, Math.round(q.duration)).pipe(Effect.fork)
+      executor(q.id, Math.round(q.duration)).pipe(Effect.forkChild)
     )
   ).pipe(
     Effect.andThen((fibers) =>
@@ -207,10 +207,10 @@ const createTimedRateLimitedExecutor = (
         // Try to acquire with timeout
         const acquired = yield* Semaphore.acquire(semaphore).pipe(
           Effect.timeout(`${config.acquireTimeoutMs} millis`),
-          Effect.either
+          Effect.result
         );
 
-        if (acquired._tag === "Left") {
+        if (acquired._tag === "Failure") {
           yield* Effect.log(
             `[Query ${queryId}] ❌ No connection available within timeout`
           );
@@ -262,7 +262,7 @@ const createPrioritySemaphore = (
           // Try immediate acquisition
           const available = yield* semaphore.pipe(
             Effect.flatMap(() => Effect.succeed(true)),
-            Effect.catchAll(() => Effect.succeed(false))
+            Effect.catch(() => Effect.succeed(false))
           );
 
           if (available) {

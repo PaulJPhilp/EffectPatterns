@@ -1,6 +1,6 @@
 # Module 5: Composing with Combinators
 
-Combinators are the heart of functional programming with Effect—they let you build complex, robust workflows by composing simple building blocks. The same combinators (`map`, `flatMap`, `filter`, etc.) work across many types: `Effect`, `Stream`, `Option`, and `Either`.  
+Combinators are the heart of functional programming with Effect—they let you build complex, robust workflows by composing simple building blocks. The same combinators (`map`, `flatMap`, `filter`, etc.) work across many types: `Effect`, `Stream`, `Option`, and `Result`.  
 Mastering these will make your code more expressive, maintainable, and safe.
 
 This module will teach you the most important combinators, how they work, and how to use them to compose computations, handle errors, branch conditionally, and work with collections and streams. You’ll see that the same mental model applies everywhere.
@@ -15,7 +15,7 @@ This module will teach you the most important combinators, how they work, and ho
 | `flatMap`                     | Chain computations that may themselves be effectful      | [Chaining Computations with flatMap](./patterns/combinator-flatmap)                             |
 | `filter`                      | Keep/discard values based on a predicate                 | [Filtering Results with filter](./patterns/combinator-filter)                                   |
 | `if`, `when`, `cond`          | Declarative conditional branching                        | [Conditional Branching with if, when, and cond](./patterns/combinator-conditional)              |
-| `catchAll`, `orElse`, `match` | Handle errors, provide fallbacks                         | [Handling Errors with catchAll, orElse, and match](./patterns/combinator-error-handling)        |
+| `catch`, `orElse`, `match` | Handle errors, provide fallbacks                         | [Handling Errors with catch, orElse, and match](./patterns/combinator-error-handling)        |
 | `forEach`, `all`              | Apply effectful functions to collections, batch/parallel | [Mapping and Chaining over Collections with forEach and all](./patterns/combinator-foreach-all) |
 | `zip`                         | Pair results of two computations                         | [Combining Values with zip](./patterns/combinator-zip)                                          |
 | `andThen`, `tap`, `flatten`   | Sequence, run side effects, flatten nesting              | [Sequencing with andThen, tap, and flatten](./patterns/combinator-sequencing)                   |
@@ -28,7 +28,7 @@ Follow these patterns in order to build a comprehensive understanding of combina
 
 1.  #### [Transforming Values with map](./patterns/combinator-map)
 
-    **Goal**: Learn how to transform the result of an `Effect`, `Stream`, `Option`, or `Either` using `map`.
+    **Goal**: Learn how to transform the result of an `Effect`, `Stream`, `Option`, or `Result` using `map`.
 
 2.  #### [Chaining Computations with flatMap](./patterns/combinator-flatmap)
 
@@ -42,7 +42,7 @@ Follow these patterns in order to build a comprehensive understanding of combina
 
     **Goal**: Express conditional logic and branching workflows using combinators instead of imperative `if` statements.
 
-5.  #### [Handling Errors with catchAll, orElse, and match](./patterns/combinator-error-handling)
+5.  #### [Handling Errors with catch, orElse, and match](./patterns/combinator-error-handling)
 
     **Goal**: Recover from errors, provide fallbacks, or transform errors using combinators.
 
@@ -61,7 +61,7 @@ Follow these patterns in order to build a comprehensive understanding of combina
 
 **By the end of this module, you’ll be able to:**
 
-- Recognize and use the most important combinators in Effect, Stream, Option, and Either.
+- Recognize and use the most important combinators in Effect, Stream, Option, and Result.
 - Write expressive, declarative, and robust code by composing small building blocks.
 - Understand the universal mental model behind functional combinators.
 

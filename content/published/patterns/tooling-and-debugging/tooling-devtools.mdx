@@ -39,7 +39,7 @@ Effect DevTools help you:
 ### 1. Enable Debug Mode
 
 ```typescript
-import { Effect, Logger, LogLevel, FiberRef, Cause } from "effect"
+import { Effect, Logger, LogLevel, References, Cause } from "effect"
 
 // ============================================
 // 1. Verbose logging for development
@@ -68,8 +68,8 @@ const runWithDebug = debugProgram.pipe(
 
 const inspectFibers = Effect.gen(function* () {
   // Fork some fibers
-  const fiber1 = yield* Effect.fork(Effect.sleep("1 second"))
-  const fiber2 = yield* Effect.fork(Effect.sleep("2 seconds"))
+  const fiber1 = yield* Effect.forkChild(Effect.sleep("1 second"))
+  const fiber2 = yield* Effect.forkChild(Effect.sleep("2 seconds"))
 
   // Get fiber IDs
   yield* Effect.log(`Fiber 1 ID: ${fiber1.id()}`)
@@ -117,16 +117,16 @@ const debugErrors = Effect.gen(function* () {
   )
 
   yield* failingEffect.pipe(
-    Effect.catchAllCause((cause) =>
+    Effect.catchCause((cause) =>
       Effect.gen(function* () {
         yield* Effect.log("=== Error Cause Analysis ===")
         yield* Effect.log(`Pretty printed:\n${Cause.pretty(cause)}`)
-        yield* Effect.log(`Is failure: ${Cause.isFailure(cause)}`)
-        yield* Effect.log(`Is interrupted: ${Cause.isInterrupted(cause)}`)
+        yield* Effect.log(`Is failure: ${Cause.hasFails(cause)}`)
+        yield* Effect.log(`Is interrupted: ${Cause.hasInterrupts(cause)}`)
 
-        // Extract all failures
-        const failures = Cause.failures(cause)
-        yield* Effect.log(`Failures: ${JSON.stringify([...failures])}`)
+        // Extract all failures (v4: Cause is a flat reasons array)
+        const failures = cause.reasons.filter(Cause.isFailReason).map((r) => r.error)
+        yield* Effect.log(`Failures: ${JSON.stringify(failures)}`)
 
         return "recovered"
       })
@@ -140,7 +140,7 @@ const debugErrors = Effect.gen(function* () {
 
 import { Context } from "effect"
 
-class Config extends Context.Tag("Config")<Config, { debug: boolean }>() {}
+class Config extends Context.Service<Config, { debug: boolean }>()("Config") {}
 
 const inspectContext = Effect.gen(function* () {
   const context = yield* Effect.context<Config>()
@@ -176,13 +176,14 @@ const withDevLogger = <A, E, R>(effect: Effect.Effect<A, E, R>) =>
 // ============================================
 
 const showRuntimeMetrics = Effect.gen(function* () {
-  const runtime = yield* Effect.runtime()
+  const services = yield* Effect.context<never>()
 
   yield* Effect.log("=== Runtime Info ===")
-  // Access runtime configuration
-  const fiberRefs = runtime.fiberRefs
-
-  yield* Effect.log("FiberRefs available")
+  // v4: FiberRef / Runtime<R> removed. Fiber-local state lives in Context.Reference.
+  // Read built-in references directly, e.g. `yield* References.CurrentLogLevel`.
+  const level = yield* References.CurrentLogLevel
+  yield* Effect.log(`Current log level: ${level.label}`)
+  void services
 })
 
 // ============================================

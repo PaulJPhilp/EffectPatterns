@@ -77,4 +77,4 @@ const effect2 = Effect.fail(new NotFoundError() as MyError).pipe(
 
 ## Anti-Pattern
 
-Catching all errors generically (e.g., with `catchAll`) and using manual type checks or property inspection, which is less safe and more error-prone than using tagged error combinators.
+Catching all errors generically (e.g., with `catch`) and using manual type checks or property inspection, which is less safe and more error-prone than using tagged error combinators.

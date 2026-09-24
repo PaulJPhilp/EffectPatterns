@@ -83,7 +83,7 @@ const program3 = Effect.gen(function* () {
     },
   });
 }).pipe(
-  Effect.catchAll((error) => Effect.logInfo(`Error occurred: ${error.message}`))
+  Effect.catch((error) => Effect.logInfo(`Error occurred: ${error.message}`))
 );
 
 // Run with error handling

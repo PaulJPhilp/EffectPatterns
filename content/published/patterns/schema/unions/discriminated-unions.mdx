@@ -34,13 +34,13 @@ const UserCreatedEvent = Schema.Struct({
   _tag: Schema.Literal("UserCreated"),
   userId: Schema.String,
   email: Schema.String,
-  createdAt: Schema.Date,
+  createdAt: Schema.DateFromString,
 })
 
 const UserDeletedEvent = Schema.Struct({
   _tag: Schema.Literal("UserDeleted"),
   userId: Schema.String,
-  deletedAt: Schema.Date,
+  deletedAt: Schema.DateFromString,
   reason: Schema.String,
 })
 
@@ -52,11 +52,11 @@ const UserEmailChangedEvent = Schema.Struct({
   verificationRequired: Schema.Boolean,
 })
 
-const UserEvent = Schema.Union(
+const UserEvent = Schema.Union([
   UserCreatedEvent,
   UserDeletedEvent,
   UserEmailChangedEvent
-)
+])
 
 type UserEvent = typeof UserEvent.Type
 
@@ -76,7 +76,7 @@ const OrderPlacedEvent = Schema.Struct({
     })
   ),
   totalAmount: Schema.Number,
-  timestamp: Schema.Date,
+  timestamp: Schema.DateFromString,
 })
 
 const OrderShippedEvent = Schema.Struct({
@@ -84,7 +84,7 @@ const OrderShippedEvent = Schema.Struct({
   orderId: Schema.String,
   trackingNumber: Schema.String,
   carrier: Schema.String,
-  estimatedDelivery: Schema.Date,
+  estimatedDelivery: Schema.DateFromString,
 })
 
 const OrderCancelledEvent = Schema.Struct({
@@ -92,14 +92,14 @@ const OrderCancelledEvent = Schema.Struct({
   orderId: Schema.String,
   reason: Schema.String,
   refundAmount: Schema.Number,
-  refundProcessedAt: Schema.Date,
+  refundProcessedAt: Schema.DateFromString,
 })
 
-const OrderEvent = Schema.Union(
+const OrderEvent = Schema.Union([
   OrderPlacedEvent,
   OrderShippedEvent,
   OrderCancelledEvent
-)
+])
 
 type OrderEvent = typeof OrderEvent.Type
 
@@ -218,7 +218,7 @@ const parseEvent = (
   Effect.tryPromise({
     try: async () => {
       const schema = eventType === "user" ? UserEvent : OrderEvent
-      return await Schema.decodeUnknown(schema)(raw)
+      return await Schema.decodeUnknownEffect(schema)(raw)
     },
     catch: (error) => {
       const msg = error instanceof Error ? error.message : String(error)

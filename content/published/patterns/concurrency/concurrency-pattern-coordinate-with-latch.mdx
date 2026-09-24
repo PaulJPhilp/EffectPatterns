@@ -129,7 +129,7 @@ const fanOutFanIn = Effect.gen(function* () {
 
   const workerFibers = yield* Effect.all(
     Array.from({ length: numWorkers }, (_, i) =>
-      createWorker(i + 1).pipe(Effect.fork)
+      createWorker(i + 1).pipe(Effect.forkChild)
     )
   );
 
@@ -218,7 +218,7 @@ const barrierSynchronization = (workers: WorkerConfig[]) =>
     // Spawn all workers with barrier coordination
     const fibers = yield* Effect.all(
       workers.map((w) =>
-        createBarrierWorker(w, barrierLatches).pipe(Effect.fork)
+        createBarrierWorker(w, barrierLatches).pipe(Effect.forkChild)
       )
     );
 
@@ -294,7 +294,7 @@ const treeJoinCoordination = (config: TreeJoinConfig) =>
     // Start all workers at stage 0
     const fibers = yield* Effect.all(
       Array.from({ length: config.workersPerStage }, (_, i) =>
-        createStageWorker(0, i + 1).pipe(Effect.fork)
+        createStageWorker(0, i + 1).pipe(Effect.forkChild)
       )
     );
 
@@ -351,7 +351,7 @@ const coordinatedWithErrorHandling = (
 
     // Execute all tasks
     const fibers = yield* Effect.all(
-      tasks.map((t) => executeTask(t).pipe(Effect.fork))
+      tasks.map((t) => executeTask(t).pipe(Effect.forkChild))
     );
 
     // Wait for all to complete
@@ -401,7 +401,7 @@ const coordinatedWithTimeout = (
         );
 
         yield* Effect.sleep(`${delay} millis`).pipe(
-          Effect.catchAll(() => Effect.void)
+          Effect.catch(() => Effect.void)
         );
 
         yield* Ref.update(completed, (c) => c + 1);
@@ -413,17 +413,17 @@ const coordinatedWithTimeout = (
     // Spawn tasks
     const fibers = yield* Effect.all(
       Array.from({ length: taskCount }, (_, i) =>
-        unreliableTask(i + 1).pipe(Effect.fork)
+        unreliableTask(i + 1).pipe(Effect.forkChild)
       )
     );
 
     // Wait with timeout
     const waitResult = yield* Latch.await(completionLatch).pipe(
       Effect.timeout(`${timeoutMs} millis`),
-      Effect.either
+      Effect.result
     );
 
-    if (waitResult._tag === "Left") {
+    if (waitResult._tag === "Failure") {
       yield* Effect.log(
         `⚠ Coordination timeout after ${timeoutMs}ms`
       );

@@ -4,7 +4,7 @@ id: comparing-data-by-value-with-structural-equality
 skillLevel: beginner
 applicationPatternId: core-concepts
 summary: >-
-  Use Data.struct and Equal.equals to safely compare objects by their value
+  Use plain objects and Equal.equals to safely compare objects by their value
   instead of their reference, avoiding common JavaScript pitfalls.
 tags:
   - equality
@@ -15,7 +15,7 @@ tags:
   - structural-equality
 rule:
   description: >-
-    Use Data.struct or implement the Equal interface for value-based comparison
+    Use plain objects or implement the Equal interface for value-based comparison
     of objects and classes.
 related:
   - high-performance-collections-with-chunk
@@ -28,7 +28,7 @@ lessonOrder: 5
 
 To compare objects or classes by their contents rather than by their memory reference, use one of two methods:
 
-1.  **For plain data objects:** Define them with `Data.struct`.
+1.  **For plain data objects:** Use plain objects — `Equal.equals` compares them structurally by default in Effect v4.
 2.  **For classes:** Extend `Data.Class` or implement the `Equal.Equal` interface.
 
 Then, compare instances using the `Equal.equals(a, b)` function.
@@ -43,16 +43,16 @@ In JavaScript, comparing two non-primitive values with `===` checks for _referen
 { a: 1 } === { a: 1 } // false!
 ```
 
-Effect solves this with **structural equality**. All of Effect's built-in data structures (`Option`, `Either`, `Chunk`, etc.) can be compared by their structure and values. By using helpers like `Data.struct`, you can easily give your own data structures this same powerful and predictable behavior.
+Effect solves this with **structural equality**. All of Effect's built-in data structures (`Option`, `Result`, `Chunk`, etc.) can be compared by their structure and values. Plain objects and arrays are compared structurally by default in Effect v4, giving your own data structures this same powerful and predictable behavior.
 
 ---
 
 ## Good Example
 
-We define two points using `Data.struct`. Even though `p1` and `p2` are different instances in memory, `Equal.equals` correctly reports them as equal because their contents match.
+We define two points as plain objects. Even though `p1` and `p2` are different instances in memory, `Equal.equals` correctly reports them as equal because their contents match.
 
 ```typescript
-import { Data, Equal, Effect } from "effect";
+import { Equal, Effect } from "effect";
 
 // Define a Point type with structural equality
 interface Point {
@@ -61,7 +61,7 @@ interface Point {
   readonly y: number;
 }
 
-const Point = Data.tagged<Point>("Point");
+const Point = (args: Omit<Point, "_tag">): Point => ({ _tag: "Point", ...args });
 
 // Create a program to demonstrate structural equality
 const program = Effect.gen(function* () {

@@ -75,7 +75,7 @@ const programWithLogging = Effect.gen(function* () {
   yield* Effect.log(`\nTotal time: ${Math.round(durationMs / 1000)} seconds`);
   return duration;
 }).pipe(
-  Effect.catchAll((error) =>
+  Effect.catch((error) =>
     Effect.gen(function* () {
       yield* Effect.logError(`Program error: ${error}`);
       return null;

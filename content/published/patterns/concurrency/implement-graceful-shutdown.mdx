@@ -56,14 +56,16 @@ import { Effect, Layer, Fiber, Context, Scope } from "effect";
 import * as http from "http";
 
 // 1. A service with a finalizer for cleanup
-class Database extends Effect.Service<Database>()("Database", {
-  effect: Effect.gen(function* () {
+class Database extends Context.Service<Database>()("Database", {
+  make: Effect.gen(function* () {
     yield* Effect.log("Acquiring DB connection");
     return {
       query: () => Effect.succeed("data"),
     };
   }),
-}) {}
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 // 2. The main server logic
 const server = Effect.gen(function* () {
@@ -75,7 +77,7 @@ const server = Effect.gen(function* () {
       Effect.runFork(
         Effect.provide(
           db.query().pipe(Effect.map((data) => res.end(data))),
-          Database.Default
+          Database.layer
         )
       );
     });
@@ -91,7 +93,7 @@ const server = Effect.gen(function* () {
   );
 
   // Start server with error handling
-  yield* Effect.async<void, Error>((resume) => {
+  yield* Effect.callback<void, Error>((resume) => {
     httpServer.once("error", (err: Error) => {
       resume(Effect.fail(new Error(`Failed to start server: ${err.message}`)));
     });
@@ -109,7 +111,7 @@ const server = Effect.gen(function* () {
 });
 
 // 3. Provide the layer and launch with runFork
-const app = Effect.provide(server.pipe(Effect.scoped), Database.Default);
+const app = Effect.provide(server.pipe(Effect.scoped), Database.layer);
 
 // 4. Run the app and handle shutdown
 Effect.runPromise(app).catch((error) => {

@@ -26,13 +26,13 @@ Complex applications often need to load multiple configuration files: database c
 
 ```typescript
 import { Schema, Effect } from "effect";
-import { FileSystem } from "@effect/platform";
+import { FileSystem } from "effect";
 import { NodeFileSystem } from "@effect/platform-node";
 
 // 1. Define schemas for different config types
 const DatabaseConfig = Schema.Struct({
-  host: Schema.String.pipe(Schema.minLength(1)),
-  port: Schema.Number.pipe(Schema.int(), Schema.between(1, 65535)),
+  host: Schema.String.pipe(Schema.check(Schema.isMinLength(1))),
+  port: Schema.Number.pipe(Schema.check(Schema.isInt()), Schema.check(Schema.isBetween(1, 65535))),
   username: Schema.String,
   password: Schema.String,
   database: Schema.String,
@@ -41,12 +41,12 @@ const DatabaseConfig = Schema.Struct({
 type DatabaseConfig = typeof DatabaseConfig.Type;
 
 const ApiConfig = Schema.Struct({
-  baseUrl: Schema.String.pipe(Schema.minLength(1)),
-  apiKey: Schema.String.pipe(Schema.minLength(10)),
+  baseUrl: Schema.String.pipe(Schema.check(Schema.isMinLength(1))),
+  apiKey: Schema.String.pipe(Schema.check(Schema.isMinLength(10))),
   timeout: Schema.Number.pipe(
-    Schema.int(),
-    Schema.positive(),
-    Schema.optionalWith({ default: () => 5000 })
+    Schema.check(Schema.isInt()),
+    Schema.check(Schema.isGreaterThan(0)),
+    Schema.withDecodingDefaultKey(Effect.succeed(5000))
   ),
 });
 
@@ -54,13 +54,13 @@ type ApiConfig = typeof ApiConfig.Type;
 
 const FeatureFlags = Schema.Struct({
   enableNewUI: Schema.Boolean.pipe(
-    Schema.optionalWith({ default: () => false })
+    Schema.withDecodingDefaultKey(Effect.succeed(false))
   ),
   enableAnalytics: Schema.Boolean.pipe(
-    Schema.optionalWith({ default: () => true })
+    Schema.withDecodingDefaultKey(Effect.succeed(true))
   ),
   maintenanceMode: Schema.Boolean.pipe(
-    Schema.optionalWith({ default: () => false })
+    Schema.withDecodingDefaultKey(Effect.succeed(false))
   ),
 });
 
@@ -76,7 +76,7 @@ const loadJsonFile = <A extends Schema.Schema.Any>(
 
     const content = yield* fs.readFileString(filePath);
     let jsonData: unknown = JSON.parse(content);
-    const result = yield* Schema.decodeUnknown(schema)(jsonData);
+    const result = yield* Schema.decodeUnknownEffect(schema)(jsonData);
 
     return result;
   });
@@ -129,7 +129,7 @@ const loadConfigsWithFallback = (configDir: string) =>
       FeatureFlags,
       `${configDir}/features.json`
     ).pipe(
-      Effect.catchAll(() =>
+      Effect.catch(() =>
         Effect.succeed({
           enableNewUI: false,
           enableAnalytics: true,
@@ -221,7 +221,7 @@ Effect.runPromise(
 |---------|-------------|
 | `Effect.all([...], { concurrency: 3 })` | Load configs in parallel for speed |
 | Generic `loadJsonFile` function | Reusable for different schema types |
-| `Effect.catchAll` for optional files | Gracefully fall back if feature flags missing |
+| `Effect.catch` for optional files | Gracefully fall back if feature flags missing |
 | Typed error tags | Know exactly which config failed |
 | Required vs optional separation | Database/API required, features optional |
 | Parallel failure handling | If any required config fails, whole Effect fails |

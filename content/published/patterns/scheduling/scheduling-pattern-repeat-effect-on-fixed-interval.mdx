@@ -119,13 +119,13 @@ const checkAllServices = (
   Effect.gen(function* () {
     for (const service of config.services) {
       const status = yield* checkServiceHealth(service.url, service.name).pipe(
-        Effect.either
+        Effect.result
       );
 
-      if (status._tag === "Right") {
-        serviceStatuses.set(service.name, status.right);
+      if (status._tag === "Success") {
+        serviceStatuses.set(service.name, status.success);
         console.log(
-          `✓ ${service.name}: OK (${status.right.responseTime}ms)`
+          `✓ ${service.name}: OK (${status.success.responseTime}ms)`
         );
       } else {
         console.log(`✗ ${service.name}: FAILED`);
@@ -175,7 +175,7 @@ const program = Effect.gen(function* () {
 
   // Fork the health checker to run in background
   const checker = yield* createHealthCheckScheduler(config).pipe(
-    Effect.fork
+    Effect.forkChild
   );
 
   // Check and report status every 15 seconds for 60 seconds
@@ -223,7 +223,7 @@ const createAdaptiveHealthCheckScheduler = (
       // Run health check
       const allHealthy = yield* checkAllServices(config).pipe(
         Effect.map(() => true),
-        Effect.catchAll(() => Effect.succeed(false))
+        Effect.catch(() => Effect.succeed(false))
       );
 
       if (allHealthy) {
@@ -300,7 +300,7 @@ const createRateLimitAwareHealthCheck = (
         Effect.tap(() => {
           checksInWindow++;
         }),
-        Effect.catchAll((error) =>
+        Effect.catch((error) =>
           Effect.gen(function* () {
             if (error.message.includes("429") || error.message.includes("rate limit")) {
               if (config.backoffOnRateLimit) {
@@ -339,10 +339,10 @@ const createSmartHealthCheckScheduler = (
 
     while (true) {
       const checkResult = yield* checkAllServices(config).pipe(
-        Effect.either
+        Effect.result
       );
 
-      if (checkResult._tag === "Right") {
+      if (checkResult._tag === "Success") {
         if (state === "unhealthy") {
           state = "recovering";
           unhealthyCount = 0;

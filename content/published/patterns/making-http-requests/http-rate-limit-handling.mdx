@@ -40,7 +40,7 @@ Respecting limits prevents bans and ensures reliable access.
 
 ```typescript
 import { Effect, Schedule, Duration, Data, Ref } from "effect"
-import { HttpClient, HttpClientResponse } from "@effect/platform"
+import { HttpClient, HttpClientResponse } from "effect/http"
 
 // ============================================
 // 1. Rate limit error type
@@ -117,18 +117,20 @@ const makeRateLimitAwareClient = Effect.gen(function* () {
           }))
         }
 
-        return yield* HttpClientResponse.json(response) as Effect.Effect<T>
+        return yield* response.json as Effect.Effect<T>
       }).pipe(
         Effect.retry({
-          schedule: Schedule.recurWhile<RateLimitedError>(
-            (e) => e._tag === "RateLimitedError"
-          ).pipe(
-            Schedule.intersect(Schedule.recurs(3)),
-            Schedule.delayed((_, error) =>
-              Duration.seconds(error.retryAfter + 1)  // Add 1s buffer
+          schedule: Schedule.max([
+            Schedule.identity<RateLimitedError>().pipe(
+              Schedule.while(({ input: e }) => e._tag === "RateLimitedError")
+            ),
+            Schedule.recurs(3)
+          ]).pipe(
+            Schedule.modifyDelay(({ input: error }) =>
+              Effect.succeed(Duration.seconds(error.retryAfter + 1)) // Add 1s buffer
             )
           ),
-          while: (error) => error._tag === "RateLimitedError",
+          while: (error) => error._tag === "RateLimitedError"
         })
       ),
   }
@@ -149,7 +151,7 @@ const makeClientRateLimiter = (requestsPerSecond: number) =>
     const interval = 1000 / requestsPerSecond
 
     // Refill tokens periodically
-    yield* Effect.fork(
+    yield* Effect.forkChild(
       Effect.forever(
         Effect.gen(function* () {
           yield* Effect.sleep(Duration.millis(interval))
@@ -203,12 +205,9 @@ const makeRobustHttpClient = (requestsPerSecond: number) =>
             return yield* Effect.fail(new Error("Rate limited"))
           }
 
-          return yield* HttpClientResponse.json(response) as Effect.Effect<T>
+          return yield* response.json as Effect.Effect<T>
         }).pipe(
-          Effect.retry(
-            Schedule.exponential("1 second").pipe(
-              Schedule.intersect(Schedule.recurs(3))
-            )
+          Effect.retry(Schedule.max([Schedule.exponential("1 second"), Schedule.recurs(3)])
           )
         ),
     }
@@ -229,7 +228,7 @@ const batchRequests = <T>(
 
     for (const url of urls) {
       const response = yield* httpClient.get(url)
-      const data = yield* HttpClientResponse.json(response) as Effect.Effect<T>
+      const data = yield* response.json as Effect.Effect<T>
       results.push(data)
 
       // Wait between requests

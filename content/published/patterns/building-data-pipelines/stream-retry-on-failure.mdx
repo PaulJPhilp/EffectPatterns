@@ -87,7 +87,7 @@ const program = Effect.gen(function* () {
     (id) =>
       processItem(id).pipe(
         Effect.retry(retryPolicy),
-        Effect.catchAll((error) =>
+        Effect.catch((error) =>
           Effect.gen(function* () {
             yield* Effect.log(
               `❌ Item ${id} failed after all retries: ${error.message}`

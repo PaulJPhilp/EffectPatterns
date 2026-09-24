@@ -39,7 +39,7 @@ Effect's `Fiber`s are different. They are managed entirely by the Effect runtime
 
 This model, known as M:N threading (M fibers on N OS threads), allows for a massive level of concurrency that is impossible with traditional threads. It's what makes Effect so powerful for building highly concurrent applications like servers, data pipelines, and real-time systems.
 
-When you use operators like `Effect.fork` or `Effect.all`, you are creating new fibers.
+When you use operators like `Effect.forkChild` or `Effect.all`, you are creating new fibers.
 
 ---
 
@@ -64,10 +64,10 @@ const program = Effect.gen(function* () {
   );
 
   // Fork all of them into background fibers
-  // Effect.fork creates a new fiber for each task without blocking
+  // Effect.forkChild creates a new fiber for each task without blocking
   // This demonstrates fiber creation scalability - 100k fibers created almost instantly
   // Each fiber is much lighter than an OS thread (typically ~1KB vs ~8MB per thread)
-  const fibers = yield* Effect.forEach(tasks, Effect.fork);
+  const fibers = yield* Effect.forEach(tasks, Effect.forkChild);
 
   yield* Effect.log(
     "All fibers have been forked. Now waiting for them to complete..."

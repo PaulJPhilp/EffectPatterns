@@ -45,7 +45,7 @@ type Email = string & Brand.Brand<"Email">;
 
 // Create a Schema for Email validation
 const EmailSchema = Schema.String.pipe(
-  Schema.pattern(/^[^@]+@[^@]+\.[^@]+$/), // Simple email regex
+  Schema.check(Schema.isPattern(/^[^@]+@[^@]+\.[^@]+$/)), // Simple email regex
   Schema.brand("Email" as const) // Attach the brand
 );
 
@@ -68,7 +68,7 @@ parseEmail("user@example.com").pipe(
 **Explanation:**
 
 - `Schema` is used to define validation logic for the branded type.
-- `Brand.schema<Email>()` attaches the brand to the schema, so only validated values can be constructed as `Email`.
+- `Schema.brand("Email")` attaches the brand to the schema, so only validated values can be constructed as `Email`.
 - This pattern ensures both compile-time and runtime safety.
 
 ## Anti-Pattern

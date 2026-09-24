@@ -92,7 +92,7 @@ Solutions:
 This example demonstrates error accumulation patterns.
 
 ```typescript
-import { Effect, Data, Cause } from "effect";
+import { Effect, Data, Cause, Stream } from "effect";
 
 interface ValidationError {
   field: string;
@@ -438,7 +438,7 @@ const aggregateErrors = (effects: Array<Effect.Effect<unknown>>) =>
         ),
       { discard: false } // Collect all results
     ).pipe(
-      Effect.catchAll((causes) =>
+      Effect.catch((causes) =>
         // causes contains all accumulated errors
         Effect.gen(function* () {
           yield* Effect.log(`Collected ${causes.length} errors`);

@@ -1,23 +1,23 @@
 ---
-title: Checking Option and Either Cases
+title: Checking Option and Result Cases
 id: pattern-option-either-checks
 skillLevel: beginner
 applicationPatternId: error-management
 summary: >-
-  Use isSome, isNone, isLeft, and isRight to check Option and Either cases for
+  Use isSome, isNone, isFailure, and isSuccess to check Option and Result cases for
   simple, type-safe branching.
 tags:
   - isSome
   - isNone
-  - isLeft
-  - isRight
+  - isFailure
+  - isSuccess
   - pattern-matching
   - option
-  - either
+  - result
   - checks
 rule:
   description: >-
-    Use isSome, isNone, isLeft, and isRight to check Option and Either cases for
+    Use isSome, isNone, isFailure, and isSuccess to check Option and Result cases for
     simple, type-safe conditional logic.
 related:
   - pattern-option-either-match
@@ -26,11 +26,11 @@ author: PaulJPhilp
 lessonOrder: 1
 ---
 
-# Checking Option and Either Cases
+# Checking Option and Result Cases
 
 ## Guideline
 
-Use the `isSome`, `isNone`, `isLeft`, and `isRight` predicates to check the case of an `Option` or `Either` for simple, type-safe branching.  
+Use the `isSome`, `isNone`, `isFailure`, and `isSuccess` predicates to check the case of an `Option` or `Result` for simple, type-safe branching.  
 These are useful when you need to perform quick checks or filter collections based on presence or success.
 
 ## Rationale
@@ -40,7 +40,7 @@ These predicates provide a concise, type-safe way to check which case you have, 
 ## Good Example
 
 ```typescript
-import { Option, Either } from "effect";
+import { Option, Result } from "effect";
 
 // Option: Check if value is Some or None
 const option = Option.some(42);
@@ -52,15 +52,15 @@ if (Option.isSome(option)) {
   console.log("No value present");
 }
 
-// Either: Check if value is Right or Left
-const either = Either.left("error");
+// Result: Check if value is Right or Left
+const either = Result.fail("error");
 
-if (Either.isRight(either)) {
-  // either.right is available here
-  console.log("Success:", either.right);
-} else if (Either.isLeft(either)) {
-  // either.left is available here
-  console.log("Failure:", either.left);
+if (Result.isSuccess(either)) {
+  // either.success is available here
+  console.log("Success:", either.success);
+} else if (Result.isFailure(either)) {
+  // either.failure is available here
+  console.log("Failure:", either.failure);
 }
 
 // Filtering a collection of Options
@@ -71,7 +71,7 @@ const presentValues = options.filter(Option.isSome).map((o) => o.value); // [1, 
 **Explanation:**
 
 - `Option.isSome` and `Option.isNone` let you check for presence or absence.
-- `Either.isRight` and `Either.isLeft` let you check for success or failure.
+- `Result.isSuccess` and `Result.isFailure` let you check for success or failure.
 - These are especially useful for filtering or quick conditional logic.
 
 ## Anti-Pattern

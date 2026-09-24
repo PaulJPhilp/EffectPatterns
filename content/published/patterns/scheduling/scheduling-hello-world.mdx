@@ -82,10 +82,7 @@ const repeated = logTime.pipe(
 
 // Repeat every second, 5 times
 const polling = logTime.pipe(
-  Effect.repeat(
-    Schedule.spaced("1 second").pipe(
-      Schedule.intersect(Schedule.recurs(5))
-    )
+  Effect.repeat(Schedule.max([Schedule.spaced("1 second"), Schedule.recurs(5)])
   )
 )
 
@@ -103,9 +100,7 @@ const exponentialBackoff = Schedule.exponential("1 second")
 const limitedAttempts = Schedule.recurs(3)
 
 // Combine: exponential backoff, max 5 attempts
-const retryPolicy = Schedule.exponential("100 millis").pipe(
-  Schedule.intersect(Schedule.recurs(5))
-)
+const retryPolicy = Schedule.max([Schedule.exponential("100 millis"), Schedule.recurs(5)])
 
 // ============================================
 // 5. Run examples
@@ -131,15 +126,15 @@ Effect.runPromise(program)
 | `Schedule.spaced(duration)` | Wait duration between runs |
 | `Schedule.exponential(base)` | Double the delay each time |
 | `Schedule.forever` | Run indefinitely |
-| `Schedule.once` | Run exactly once |
+| `Schedule.duration(Duration.zero)` | Run exactly once |
 
 ## Combining Schedules
 
 | Combinator | Meaning |
 |------------|---------|
-| `intersect` | Both conditions must be true |
-| `union` | Either condition can be true |
-| `andThen` | First schedule, then second |
+| `Schedule.max([...])` | All schedules must continue (slowest delay wins) |
+| `Schedule.min([...])` | Any schedule may continue (fastest delay wins) |
+| `Schedule.concat` | First schedule, then second |
 
 ## When to Use
 

@@ -27,7 +27,7 @@ lessonOrder: 1
 ## Guideline
 
 For services that manage resources needing explicit cleanup (e.g., a database
-connection), define them in a `Layer` using `Layer.scoped`. Then, use
+connection), define them in a `Layer` using `Layer.effect`. Then, use
 `Layer.launch` to provide this layer to your application.
 
 ## Rationale
@@ -39,16 +39,18 @@ finalizers are executed upon completion or interruption.
 ## Good Example
 
 ```typescript
-import { Effect, Layer } from "effect";
+import { Effect, Layer, Context } from "effect";
 
-class DatabasePool extends Effect.Service<DatabasePool>()("DbPool", {
-  effect: Effect.gen(function* () {
+class DatabasePool extends Context.Service<DatabasePool>()("DbPool", {
+  make: Effect.gen(function* () {
     yield* Effect.log("Acquiring pool");
     return {
       query: () => Effect.succeed("result"),
     };
   }),
-}) {}
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 // Create a program that uses the DatabasePool service
 const program = Effect.gen(function* () {
@@ -59,7 +61,7 @@ const program = Effect.gen(function* () {
 
 // Run the program with the service implementation
 Effect.runPromise(
-  program.pipe(Effect.provide(DatabasePool.Default), Effect.scoped)
+  program.pipe(Effect.provide(DatabasePool.layer), Effect.scoped)
 );
 ```
 

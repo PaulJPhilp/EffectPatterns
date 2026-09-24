@@ -33,7 +33,7 @@ const FeatureFlagSchema = Schema.Struct({
   enabled: Schema.Boolean,
   rolloutPercentage: Schema.pipe(
     Schema.Number,
-    Schema.between(0, 100)
+    Schema.check(Schema.isBetween(0, 100))
   ),
   allowedUserIds: Schema.Array(Schema.String),
   allowedGroups: Schema.Array(Schema.String),
@@ -155,7 +155,7 @@ class FeatureFlagService {
 // 8. Load feature flags from configuration
 const loadFeatureFlags = (config: any): Effect.Effect<FeaturesConfig, Error> =>
   Effect.tryPromise({
-    try: () => Schema.decodeUnknown(FeaturesConfig)(config),
+    try: () => Schema.decodeUnknownEffect(FeaturesConfig)(config),
     catch: (error) => {
       const msg = error instanceof Error ? error.message : String(error)
       return new Error(`Feature flag validation failed: ${msg}`)

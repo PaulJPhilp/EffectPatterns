@@ -26,7 +26,7 @@ Your application lives in three worlds: API contracts (what clients expect), dom
 # Solution
 
 ```typescript
-import { Schema, Effect } from "effect"
+import { Schema, Effect, SchemaTransformation } from "effect"
 
 // ============================================
 // 1. Domain Layer (source of truth)
@@ -79,37 +79,34 @@ type DbUserRow = {
 const ApiUserResponseSchema = Schema.Struct({
   user_id: Schema.String,
   email: Schema.String.pipe(
-    Schema.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)
+    Schema.check(Schema.isPattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/))
   ),
   full_name: Schema.String,
-  created_at: Schema.transform(Schema.Number, Schema.Date, {
+  created_at: Schema.Number.pipe(Schema.decodeTo(Schema.Date, SchemaTransformation.transform({
     decode: (ms) => new Date(ms),
     encode: (date) => date.getTime(),
-  }),
-  updated_at: Schema.transform(Schema.Number, Schema.Date, {
+  }))),
+  updated_at: Schema.Number.pipe(Schema.decodeTo(Schema.Date, SchemaTransformation.transform({
     decode: (ms) => new Date(ms),
     encode: (date) => date.getTime(),
-  }),
+  }))),
   is_active: Schema.Boolean,
 }).pipe(
-  Schema.transform(
-    Schema.Struct({
+  Schema.Struct({
       user_id: Schema.String,
       email: Schema.String,
       full_name: Schema.String,
-      created_at: Schema.Date,
-      updated_at: Schema.Date,
+      created_at: Schema.DateFromString,
+      updated_at: Schema.DateFromString,
       is_active: Schema.Boolean,
-    }),
-    Schema.Struct({
+    }).pipe(Schema.decodeTo(Schema.Struct({
       userId: Schema.String,
       email: Schema.String,
       fullName: Schema.String,
-      createdAt: Schema.Date,
-      updatedAt: Schema.Date,
+      createdAt: Schema.DateFromString,
+      updatedAt: Schema.DateFromString,
       isActive: Schema.Boolean,
-    }),
-    {
+    }), SchemaTransformation.transform({
       decode: (api) => ({
         userId: api.user_id,
         email: api.email,
@@ -126,8 +123,7 @@ const ApiUserResponseSchema = Schema.Struct({
         updated_at: domain.updatedAt,
         is_active: domain.isActive,
       }),
-    }
-  )
+    })))
 )
 
 // ============================================
@@ -138,34 +134,31 @@ const DbUserRowSchema = Schema.Struct({
   user_id: Schema.String,
   email: Schema.String,
   full_name: Schema.String,
-  created_at: Schema.transform(Schema.String, Schema.Date, {
+  created_at: Schema.String.pipe(Schema.decodeTo(Schema.Date, SchemaTransformation.transform({
     decode: (isoString) => new Date(isoString),
     encode: (date) => date.toISOString(),
-  }),
-  updated_at: Schema.transform(Schema.String, Schema.Date, {
+  }))),
+  updated_at: Schema.String.pipe(Schema.decodeTo(Schema.Date, SchemaTransformation.transform({
     decode: (isoString) => new Date(isoString),
     encode: (date) => date.toISOString(),
-  }),
+  }))),
   is_active: Schema.Boolean,
 }).pipe(
-  Schema.transform(
-    Schema.Struct({
+  Schema.Struct({
       user_id: Schema.String,
       email: Schema.String,
       full_name: Schema.String,
-      created_at: Schema.Date,
-      updated_at: Schema.Date,
+      created_at: Schema.DateFromString,
+      updated_at: Schema.DateFromString,
       is_active: Schema.Boolean,
-    }),
-    Schema.Struct({
+    }).pipe(Schema.decodeTo(Schema.Struct({
       userId: Schema.String,
       email: Schema.String,
       fullName: Schema.String,
-      createdAt: Schema.Date,
-      updatedAt: Schema.Date,
+      createdAt: Schema.DateFromString,
+      updatedAt: Schema.DateFromString,
       isActive: Schema.Boolean,
-    }),
-    {
+    }), SchemaTransformation.transform({
       decode: (db) => ({
         userId: db.user_id,
         email: db.email,
@@ -182,8 +175,7 @@ const DbUserRowSchema = Schema.Struct({
         updated_at: domain.updatedAt,
         is_active: domain.isActive,
       }),
-    }
-  )
+    })))
 )
 
 // ============================================
@@ -203,13 +195,13 @@ class UserRepository {
       is_active: true,
     }
 
-    const decoded = await Schema.decodeUnknown(DbUserRowSchema)(dbRow)
+    const decoded = await Schema.decodeUnknownEffect(DbUserRowSchema)(dbRow)
     return decoded
   }
 
   // Encode: Domain model → DB row
   async save(user: DomainUser): Promise<void> {
-    const dbRow = await Schema.encode(DbUserRowSchema)(user)
+    const dbRow = await Schema.encodeEffect(DbUserRowSchema)(user)
     console.log("📦 Saving to database:", dbRow)
   }
 }
@@ -223,7 +215,7 @@ class UserApiHandler {
 
   // Receive API response → Domain → Store
   async handleIncomingUser(apiData: unknown): Promise<DomainUser> {
-    const domainUser = await Schema.decodeUnknown(ApiUserResponseSchema)(apiData)
+    const domainUser = await Schema.decodeUnknownEffect(ApiUserResponseSchema)(apiData)
     await this.repo.save(domainUser)
     return domainUser
   }
@@ -236,7 +228,7 @@ class UserApiHandler {
       throw new Error("User not found")
     }
 
-    const apiResponse = await Schema.encode(ApiUserResponseSchema)(domainUser)
+    const apiResponse = await Schema.encodeEffect(ApiUserResponseSchema)(domainUser)
     return apiResponse
   }
 }

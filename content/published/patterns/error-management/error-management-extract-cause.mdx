@@ -4,7 +4,7 @@ id: error-management-extract-cause
 skillLevel: intermediate
 applicationPatternId: error-management
 summary: >-
-  Use Cause.failures and Cause.defects to inspect a Cause and handle expected
+  Use Cause reason inspection to handle expected
   failures differently from unexpected defects.
 tags:
   - error management
@@ -12,7 +12,7 @@ tags:
   - defects
   - failures
 rule:
-  description: Inspect Cause to separate expected failures from defects.
+  description: Inspect Cause.reasons to separate expected failures from defects.
 related:
   - handle-unexpected-errors-with-cause
   - pattern-catchtag
@@ -24,7 +24,7 @@ lessonOrder: 4
 
 ## Guideline
 
-When you catch with `Effect.catchAllCause`, use `Cause.failures(cause)` to get expected typed errors and `Cause.defects(cause)` to get unexpected defects. Handle them differently: recover or retry failures; log and escalate defects.
+When you catch with `Effect.catchCause`, iterate `cause.reasons` (`Fail` / `Die` / `Interrupt`) or use `Cause.findFail` / `Cause.findDefect`. Handle failures differently: recover or retry failures; log and escalate defects.
 
 ## Rationale
 
@@ -36,10 +36,10 @@ Failures are part of your domain model (e.g., `UserNotFound`, `ValidationError`)
 import { Effect, Cause } from "effect"
 
 const program = Effect.die("unexpected bug").pipe(
-  Effect.catchAllCause((cause) =>
+  Effect.catchCause((cause) =>
     Effect.gen(function* () {
-      const defects = Cause.defects(cause)
-      const failures = Cause.failures(cause)
+      const defects = cause.reasons.filter(Cause.isDieReason).map((r) => r.defect)
+      const failures = cause.reasons.filter(Cause.isFailReason).map((r) => r.error)
       yield* Effect.sync(() => {
         console.log("Defects:", defects)
         console.log("Failures:", failures)
@@ -52,8 +52,8 @@ const program = Effect.die("unexpected bug").pipe(
 Effect.runPromise(program)
 ```
 
-**Explanation:** `Cause.defects` and `Cause.failures` extract the underlying values. Use them to decide: log defects, recover from failures, or return a fallback.
+**Explanation:** Filter `cause.reasons` with `Cause.isFailReason` / `Cause.isDieReason` (or use `Cause.findFail` / `Cause.findDefect`). Use them to decide: log defects, recover from failures, or return a fallback.
 
 ## Anti-Pattern
 
-Treating all errors the same, or using `Effect.catchAll` (without Cause) and losing the ability to distinguish failures from defects.
+Treating all errors the same, or using `Effect.catch` (without Cause) and losing the ability to distinguish failures from defects.

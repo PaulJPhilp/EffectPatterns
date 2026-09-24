@@ -5,7 +5,7 @@ skillLevel: beginner
 applicationPatternId: core-concepts
 summary: >-
   Use fail, none, and left to represent errors or absence in Effect, Option, or
-  Either, making failures explicit and type-safe.
+  Result, making failures explicit and type-safe.
 tags:
   - fail
   - none
@@ -13,12 +13,12 @@ tags:
   - constructor
   - effect
   - option
-  - either
+  - result
   - error
   - absence
 rule:
   description: >-
-    Use fail, none, and left to create Effect, Option, or Either that represent
+    Use fail, none, and left to create Effect, Option, or Result that represent
     failure or absence.
 related:
   - constructor-succeed-some-right
@@ -31,7 +31,7 @@ lessonOrder: 14
 
 ## Guideline
 
-Use the `fail`, `none`, and `left` constructors to represent errors or absence in the Effect, Option, or Either world.  
+Use the `fail`, `none`, and `left` constructors to represent errors or absence in the Effect, Option, or Result world.  
 This makes failures explicit, type-safe, and composable.
 
 ## Rationale
@@ -42,7 +42,7 @@ This leads to more robust and maintainable code.
 ## Good Example
 
 ```typescript
-import { Effect, Option, Either } from "effect";
+import { Effect, Option, Result } from "effect";
 
 // Effect: Represent a failure with an error value
 const effect = Effect.fail("Something went wrong"); // Effect<string, never, never>
@@ -50,17 +50,17 @@ const effect = Effect.fail("Something went wrong"); // Effect<string, never, nev
 // Option: Represent absence of a value
 const option = Option.none(); // Option<never>
 
-// Either: Represent a failure with a left value
-const either = Either.left("Invalid input"); // Either<string, never>
+// Result: Represent a failure with a left value
+const either = Result.fail("Invalid input"); // Result<never, string>
 ```
 
 **Explanation:**
 
 - `Effect.fail(error)` creates an effect that always fails with `error`.
 - `Option.none()` creates an option that is always absent.
-- `Either.left(error)` creates an either that always represents failure.
+- `Result.fail(error)` creates an either that always represents failure.
 
 ## Anti-Pattern
 
-Throwing exceptions, returning `null` or `undefined`, or using error codes outside the Effect, Option, or Either world.  
+Throwing exceptions, returning `null` or `undefined`, or using error codes outside the Effect, Option, or Result world.  
 This makes error handling ad hoc, less type-safe, and harder to compose.

@@ -66,7 +66,7 @@ Real-world example: Process log files
 This example demonstrates reading, writing, and manipulating files.
 
 ```typescript
-import { FileSystem, Effect, Stream } from "@effect/platform";
+import { FileSystem, Effect, Stream } from "effect";
 import * as fs from "fs/promises";
 
 const program = Effect.gen(function* () {
@@ -239,10 +239,10 @@ const atomicWrite = (filePath: string, content: string) =>
 
     // Backup original if exists
     const exists = yield* FileSystem.exists(filePath).pipe(
-      Effect.either
+      Effect.result
     );
 
-    if (exists._tag === "Right" && exists.right) {
+    if (exists._tag === "Success" && exists.success) {
       yield* FileSystem.copy(filePath, backupPath);
     }
 
@@ -271,11 +271,11 @@ const watchFile = (filePath: string) =>
       yield* Effect.sleep("1 second");
 
       const stats = yield* FileSystem.stat(filePath).pipe(
-        Effect.either
+        Effect.result
       );
 
-      if (stats._tag === "Right") {
-        const currentModified = stats.right.mtimeMs;
+      if (stats._tag === "Success") {
+        const currentModified = stats.success.mtimeMs;
 
         if (currentModified > lastModified) {
           lastModified = currentModified;

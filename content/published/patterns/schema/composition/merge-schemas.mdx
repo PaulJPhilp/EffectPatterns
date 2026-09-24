@@ -32,8 +32,8 @@ import { Schema, Effect } from "effect"
 
 const BaseEntity = Schema.Struct({
   id: Schema.String,
-  createdAt: Schema.Date,
-  updatedAt: Schema.Date,
+  createdAt: Schema.DateFromString,
+  updatedAt: Schema.DateFromString,
 })
 
 const Auditable = Schema.Struct({
@@ -43,8 +43,8 @@ const Auditable = Schema.Struct({
 })
 
 const Timestamped = Schema.Struct({
-  publishedAt: Schema.Optional(Schema.Date),
-  expiresAt: Schema.Optional(Schema.Date),
+  publishedAt: Schema.Optional(Schema.DateFromString),
+  expiresAt: Schema.Optional(Schema.DateFromString),
 })
 
 // ============================================
@@ -65,16 +65,13 @@ type Article = typeof Article.Type
 // 3. Merge with Schema.extend for complex cases
 // ============================================
 
-const AuditableEntity = Schema.extend(BaseEntity, Auditable)
+const AuditableEntity = Schema.Struct({ ...BaseEntity.fields, ...Auditable.fields })
 
-const Article2 = Schema.extend(
-  AuditableEntity,
-  Schema.Struct({
+const Article2 = Schema.Struct({ ...AuditableEntity.fields,
     title: Schema.String,
     content: Schema.String,
     tags: Schema.Array(Schema.String),
   })
-)
 
 type Article2 = typeof Article2.Type
 
@@ -89,7 +86,7 @@ const ApiRequest = Schema.Struct({
     update: "update",
     delete: "delete",
   }),
-  timestamp: Schema.Date,
+  timestamp: Schema.DateFromString,
 })
 
 const BusinessRules = Schema.Struct({
@@ -104,7 +101,7 @@ const BusinessRules = Schema.Struct({
   }),
 })
 
-const FullRequest = Schema.extend(ApiRequest, BusinessRules)
+const FullRequest = Schema.Struct({ ...ApiRequest.fields, ...BusinessRules.fields })
 
 type FullRequest = typeof FullRequest.Type
 
@@ -118,23 +115,17 @@ const Document = Schema.Struct({
   content: Schema.String,
 })
 
-const PublicDocument = Schema.extend(
-  Document,
-  Schema.Struct({
+const PublicDocument = Schema.Struct({ ...Document.fields,
     visibility: Schema.Literal("public"),
-    publishedAt: Schema.Date,
+    publishedAt: Schema.DateFromString,
     author: Schema.String,
   })
-)
 
-const PrivateDocument = Schema.extend(
-  Document,
-  Schema.Struct({
+const PrivateDocument = Schema.Struct({ ...Document.fields,
     visibility: Schema.Literal("private"),
     owner: Schema.String,
     permissions: Schema.Array(Schema.String),
   })
-)
 
 type PublicDocument = typeof PublicDocument.Type
 type PrivateDocument = typeof PrivateDocument.Type
@@ -145,13 +136,13 @@ type PrivateDocument = typeof PrivateDocument.Type
 
 const parseArticle = (raw: unknown): Effect.Effect<Article, Error> =>
   Effect.tryPromise({
-    try: () => Schema.decodeUnknown(Article)(raw),
+    try: () => Schema.decodeUnknownEffect(Article)(raw),
     catch: (error) => new Error(String(error)),
   })
 
 const parseFullRequest = (raw: unknown): Effect.Effect<FullRequest, Error> =>
   Effect.tryPromise({
-    try: () => Schema.decodeUnknown(FullRequest)(raw),
+    try: () => Schema.decodeUnknownEffect(FullRequest)(raw),
     catch: (error) => new Error(String(error)),
   })
 
@@ -210,7 +201,7 @@ const appLogic = Effect.gen(function* () {
   }
 
   const publicDoc = yield* Effect.tryPromise({
-    try: () => Schema.decodeUnknown(PublicDocument)(publicDocData),
+    try: () => Schema.decodeUnknownEffect(PublicDocument)(publicDocData),
     catch: (error) => new Error(String(error)),
   })
 
@@ -228,7 +219,7 @@ const appLogic = Effect.gen(function* () {
   }
 
   const privateDoc = yield* Effect.tryPromise({
-    try: () => Schema.decodeUnknown(PrivateDocument)(privateDocData),
+    try: () => Schema.decodeUnknownEffect(PrivateDocument)(privateDocData),
     catch: (error) => new Error(String(error)),
   })
 

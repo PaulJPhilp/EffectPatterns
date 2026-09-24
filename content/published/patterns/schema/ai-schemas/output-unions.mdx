@@ -34,9 +34,9 @@ const SuccessResponse = Schema.Struct({
     id: Schema.String,
     name: Schema.String,
     email: Schema.String.pipe(
-      Schema.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)
+      Schema.check(Schema.isPattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/))
     ),
-    score: Schema.Number.pipe(Schema.between(0, 100)),
+    score: Schema.Number.pipe(Schema.check(Schema.isBetween(0, 100))),
   }),
   timestamp: Schema.String.pipe(
     Schema.description("ISO 8601 timestamp")
@@ -47,7 +47,7 @@ const SuccessResponse = Schema.Struct({
 const ErrorResponse = Schema.Struct({
   type: Schema.Literal("error"),
   error: Schema.Struct({
-    code: Schema.Literal("not_found", "invalid_input", "server_error"),
+    code: Schema.Literals(["not_found", "invalid_input", "server_error"]),
     message: Schema.String,
     details: Schema.String.pipe(Schema.optional),
   }),
@@ -65,11 +65,11 @@ const PendingResponse = Schema.Struct({
 })
 
 // 4. Create discriminated union
-const QueryResponse = Schema.Union(
+const QueryResponse = Schema.Union([
   SuccessResponse,
   ErrorResponse,
   PendingResponse
-).pipe(
+]).pipe(
   Schema.description("Response type determined by 'type' field")
 )
 

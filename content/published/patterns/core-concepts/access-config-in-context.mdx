@@ -34,15 +34,17 @@ This allows your business logic to declaratively state its dependency on a piece
 ## Good Example
 
 ```typescript
-import { Config, Effect, Layer } from "effect";
+import { Config, Effect, Layer, Context } from "effect";
 
 // Define config service
-class AppConfig extends Effect.Service<AppConfig>()("AppConfig", {
-  sync: () => ({
+class AppConfig extends Context.Service<AppConfig>()("AppConfig", {
+  make: Effect.sync(() => ({
     host: "localhost",
     port: 3000,
-  }),
-}) {}
+  })),
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 // Create program that uses config
 const program = Effect.gen(function* () {
@@ -51,7 +53,7 @@ const program = Effect.gen(function* () {
 });
 
 // Run the program with default config
-Effect.runPromise(Effect.provide(program, AppConfig.Default));
+Effect.runPromise(Effect.provide(program, AppConfig.layer));
 ```
 
 **Explanation:**  

@@ -28,7 +28,7 @@
 		"test:all": "bun scripts/test-integrated.ts all --coverage"
 	},
 	"dependencies": {
-		"effect": "3.19.19",
+		"effect": "4.0.0-rc.117",
 		"typescript": "^5.5.0"
 	}
 }

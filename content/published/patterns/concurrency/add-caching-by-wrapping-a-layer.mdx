@@ -51,17 +51,16 @@ This approach is powerful because:
 We have a `WeatherService` that makes slow API calls. We create a `WeatherService.cached` wrapper layer that adds an in-memory cache using a `Ref` and a `Map`.
 
 ```typescript
-import { Effect, Layer, Ref } from "effect";
+import { Effect, Layer, Ref, Context } from "effect";
 
 // 1. Define the service interface
-class WeatherService extends Effect.Service<WeatherService>()(
-  "WeatherService",
-  {
-    sync: () => ({
+class WeatherService extends Context.Service<WeatherService>()("WeatherService", {
+    make: Effect.sync(() => ({
       getForecast: (city: string) => Effect.succeed(`Sunny in ${city}`),
-    }),
-  }
-) {}
+    })),
+  }) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 // 2. The "Live" implementation that is slow
 const WeatherServiceLive = Layer.succeed(

@@ -1,20 +1,20 @@
 ---
-title: "Handle Your First Error with Effect.fail and catchAll"
+title: "Handle Your First Error with Effect.fail and catch"
 id: getting-started-handle-errors
 skillLevel: beginner
 applicationPatternId: getting-started
 lessonOrder: 4
 summary: >-
   Learn how to create Effects that can fail and how to recover from those
-  failures using Effect.fail and Effect.catchAll.
+  failures using Effect.fail and Effect.catch.
 tags:
   - getting-started
   - error-handling
   - fail
-  - catchAll
+  - catch
   - beginner
 rule:
-  description: Handle errors with Effect.fail and catchAll.
+  description: Handle errors with Effect.fail and catch.
 related:
   - getting-started-hello-world
   - combinator-error-handling
@@ -22,12 +22,12 @@ related:
 author: Paul Philp
 ---
 
-# Handle Your First Error with Effect.fail and catchAll
+# Handle Your First Error with Effect.fail and catch
 
 ## Guideline
 
 Use `Effect.fail` to create an Effect that fails with an error, and
-`Effect.catchAll` to recover from that failure.
+`Effect.catch` to recover from that failure.
 
 ## Rationale
 
@@ -66,7 +66,7 @@ const unsafeResult = divide(10, 0);
 // With error handling - recover with a default value
 const safeResult = pipe(
   divide(10, 0),
-  Effect.catchAll((error) => {
+  Effect.catch((error) => {
     console.log(`Caught error: ${error}`);
     return Effect.succeed(0); // Return 0 as fallback
   })
@@ -100,7 +100,7 @@ const safeDivide = (a: number, b: number): Effect.Effect<number, DivisionByZero 
 // Handle all errors
 const result = pipe(
   safeDivide(-10, 2),
-  Effect.catchAll((error) => {
+  Effect.catch((error) => {
     switch (error._tag) {
       case "DivisionByZero":
         return Effect.succeed(0);
@@ -116,7 +116,7 @@ const result = pipe(
 | Function | Purpose |
 |----------|---------|
 | `Effect.fail(error)` | Create an Effect that fails |
-| `Effect.catchAll(handler)` | Catch all errors and recover |
+| `Effect.catch(handler)` | Catch all errors and recover |
 | `Effect.catchTag(tag, handler)` | Catch specific error by tag |
 | `Effect.orElse(fallback)` | Try a fallback Effect on error |
 | `Effect.orElseSucceed(value)` | Return a fallback value on error |
@@ -151,7 +151,7 @@ console.log(result); // "Hello, Guest!"
 ## Key Points
 
 1. **Effect.fail** creates a failing Effect - the error is part of the type
-2. **Effect.catchAll** handles any error and must return an Effect
+2. **Effect.catch** handles any error and must return an Effect
 3. **Tagged errors** (with `_tag`) let you handle specific errors with `catchTag`
 4. **Errors are values** - not thrown exceptions - making them composable
 

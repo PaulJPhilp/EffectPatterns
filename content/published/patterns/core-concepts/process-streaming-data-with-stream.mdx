@@ -80,7 +80,7 @@ const userStream: Stream.Stream<User, "ApiError"> = Stream.paginateEffect(
     fetchUserPage(page).pipe(
       Effect.map(
         (response) =>
-          [response.users, Option.fromNullable(response.nextPage)] as const
+          [response.users, Option.fromNullishOr(response.nextPage)] as const
       )
     )
 ).pipe(
@@ -95,7 +95,7 @@ const program = Stream.runForEach(userStream, (user: User) =>
 );
 
 const programWithErrorHandling = program.pipe(
-  Effect.catchAll((error) =>
+  Effect.catch((error) =>
     Effect.gen(function* () {
       yield* Effect.logError(`Stream processing error: ${error}`);
       return null;

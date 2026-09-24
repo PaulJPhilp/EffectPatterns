@@ -50,7 +50,7 @@ Combining these two patterns is a best practice for any interaction with an exte
 This program attempts to fetch data from a flaky API. It will retry the request up to 3 times with increasing delays if it fails. It will also give up entirely if any single attempt takes longer than 2 seconds.
 
 ```typescript
-import { Data, Duration, Effect, Schedule } from "effect";
+import { Data, Duration, Effect, Schedule, Context, Layer } from "effect";
 
 // Define domain types
 interface ApiResponse {
@@ -69,8 +69,8 @@ class TimeoutError extends Data.TaggedError("TimeoutError")<{
 }> {}
 
 // Define API service
-class ApiService extends Effect.Service<ApiService>()("ApiService", {
-  sync: () => ({
+class ApiService extends Context.Service<ApiService>()("ApiService", {
+  make: Effect.sync(() => ({
     // Flaky API call that might fail or be slow
     fetchData: (): Effect.Effect<ApiResponse, ApiError | TimeoutError> =>
       Effect.gen(function* () {
@@ -100,18 +100,15 @@ class ApiService extends Effect.Service<ApiService>()("ApiService", {
         );
         return response;
       }),
-  }),
-}) {}
+  })),
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 // Define retry policy: exponential backoff, up to 3 retries
-const retryPolicy = Schedule.exponential(Duration.millis(100)).pipe(
-  Schedule.compose(Schedule.recurs(3)),
-  Schedule.tapInput((error: ApiError | TimeoutError) =>
-    Effect.logWarning(
+const retryPolicy = Schedule.max([Schedule.exponential(Duration.millis(100)), Schedule.recurs(3)]).pipe(Schedule.tap(({ input: error }: { input: ApiError | TimeoutError }) => Effect.logWarning(
       `Retrying after error: ${error._tag} (Attempt ${error.attempt})`
-    )
-  )
-);
+    )));
 
 // Create program with proper error handling
 const program = Effect.gen(function* () {
@@ -154,7 +151,7 @@ const program = Effect.gen(function* () {
 });
 
 // Run the program
-Effect.runPromise(Effect.provide(program, ApiService.Default));
+Effect.runPromise(Effect.provide(program, ApiService.layer));
 ```
 
 ---

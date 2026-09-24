@@ -1,10 +1,10 @@
 ---
-title: Run Background Tasks with Effect.fork
+title: Run Background Tasks with Effect.forkChild
 id: run-background-tasks-with-fork
 skillLevel: advanced
 applicationPatternId: concurrency
 summary: >-
-  Use Effect.fork to start a computation in a background fiber, allowing the
+  Use Effect.forkChild to start a computation in a background fiber, allowing the
   parent fiber to continue its work without waiting.
 tags:
   - concurrency
@@ -14,7 +14,7 @@ tags:
   - asynchronous
 rule:
   description: >-
-    Use Effect.fork to start a non-blocking background process and manage its
+    Use Effect.forkChild to start a non-blocking background process and manage its
     lifecycle via its Fiber.
 related:
   - run-effects-in-parallel-with-all
@@ -25,13 +25,13 @@ lessonOrder: 7
 
 ## Guideline
 
-To start an `Effect` in the background without blocking the current execution flow, use `Effect.fork`. This immediately returns a `Fiber`, which is a handle to the running computation that you can use to manage its lifecycle (e.g., interrupt it or wait for its result).
+To start an `Effect` in the background without blocking the current execution flow, use `Effect.forkChild`. This immediately returns a `Fiber`, which is a handle to the running computation that you can use to manage its lifecycle (e.g., interrupt it or wait for its result).
 
 ---
 
 ## Rationale
 
-Unlike `Effect.all` or a direct `yield*`, which wait for the computation to complete, `Effect.fork` is a "fire and forget" operation. It starts the effect on a new, concurrent fiber and immediately returns control to the parent fiber.
+Unlike `Effect.all` or a direct `yield*`, which wait for the computation to complete, `Effect.forkChild` is a "fire and forget" operation. It starts the effect on a new, concurrent fiber and immediately returns control to the parent fiber.
 
 This is essential for managing long-running background tasks like:
 
@@ -62,10 +62,10 @@ const program = Effect.gen(function* () {
   yield* Effect.log("Forking the ticking clock into the background.");
 
   // Start the clock, but don't wait for it.
-  // Effect.fork creates a new fiber that runs concurrently with the main program
+  // Effect.forkChild creates a new fiber that runs concurrently with the main program
   // The main fiber continues immediately without waiting for the background task
   // This is essential for non-blocking background operations
-  const clockFiber = yield* Effect.fork(tickingClock);
+  const clockFiber = yield* Effect.forkChild(tickingClock);
 
   // At this point, we have two fibers running:
   // 1. The main fiber (this program)
@@ -113,7 +113,7 @@ Effect.runPromise(program);
 
 ## Anti-Pattern
 
-The anti-pattern is using `Effect.fork` when you immediately need the result of the computation. This is an overly complicated and less readable way of just running the effect directly.
+The anti-pattern is using `Effect.forkChild` when you immediately need the result of the computation. This is an overly complicated and less readable way of just running the effect directly.
 
 ```typescript
 import { Effect, Fiber } from "effect";
@@ -122,7 +122,7 @@ const someEffect = Effect.succeed(42);
 
 // ❌ WRONG: This is unnecessarily complex.
 const program = Effect.gen(function* () {
-  const fiber = yield* Effect.fork(someEffect);
+  const fiber = yield* Effect.forkChild(someEffect);
   // You immediately wait for the result, defeating the purpose of forking.
   const result = yield* Fiber.join(fiber);
   return result;

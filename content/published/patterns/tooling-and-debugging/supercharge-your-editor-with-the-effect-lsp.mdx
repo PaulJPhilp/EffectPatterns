@@ -48,19 +48,21 @@ This tool essentially makes the compiler's knowledge visible at a glance, reduci
 Imagine you have the following code. Without the LSP, hovering over `program` might show a complex, hard-to-read inferred type.
 
 ```typescript
-import { Effect } from "effect";
+import { Effect, Context, Layer } from "effect";
 
-// Define Logger service using Effect.Service pattern
-class Logger extends Effect.Service<Logger>()("Logger", {
-  sync: () => ({
+// Define Logger service using Context.Service pattern
+class Logger extends Context.Service<Logger>()("Logger", {
+  make: Effect.sync(() => ({
     log: (msg: string) => Effect.log(`LOG: ${msg}`),
-  }),
-}) {}
+  })),
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 const program = Effect.succeed(42).pipe(
   Effect.map((n) => n.toString()),
   Effect.flatMap((s) => Effect.log(s)),
-  Effect.provide(Logger.Default)
+  Effect.provide(Logger.layer)
 );
 
 // Run the program

@@ -269,7 +269,7 @@ const mergeWithErrorHandling = <A>(
     streams.map((stream) =>
       stream.pipe(
         Stream.map((value) => ({ tag: "success" as const, value })),
-        Stream.catchAll((error) =>
+        Stream.catch((error) =>
           Stream.succeed({
             tag: "error" as const,
             error: error as Error,
@@ -318,7 +318,7 @@ const roundRobinMerge = <A>(
   // Consume from queues in round-robin fashion
   return Stream.fromEffect(
     Effect.gen(function* () {
-      yield* Effect.all(forwarders.map((f) => Effect.fork(f)));
+      yield* Effect.all(forwarders.map((f) => Effect.forkChild(f)));
 
       let currentQueue = 0;
 

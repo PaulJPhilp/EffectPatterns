@@ -103,7 +103,7 @@ describe("Stream Testing", () => {
             ? Effect.fail(new Error("Failed on 2"))
             : Effect.succeed(n * 10)
         ),
-        Stream.catchAll((error) =>
+        Stream.catch((error) =>
           Stream.succeed(-1)  // Replace error with sentinel
         ),
         Stream.runCollect
@@ -205,7 +205,7 @@ describe("Stream Testing", () => {
 
     await Effect.runPromise(
       Stream.runDrain(managedStream).pipe(
-        Effect.catchAll(() => Effect.void)
+        Effect.catch(() => Effect.void)
       )
     )
 
@@ -266,7 +266,7 @@ describe("Stream Testing", () => {
 |---------|-------------|
 | Transformations | runCollect + compare array |
 | Aggregation | runFold, runCount |
-| Errors | catchAll + verify recovery |
+| Errors | catch + verify recovery |
 | Resources | Track acquire/release calls |
 | Side effects | Use tap + external tracking |
 

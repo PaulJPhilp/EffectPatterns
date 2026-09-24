@@ -31,18 +31,18 @@ const OrderMetadata = Schema.Struct({
   // Required fields
   orderId: Schema.String,
   customerId: Schema.String,
-  status: Schema.Literal(
+  status: Schema.Literals([
     "pending",
     "processing",
     "shipped",
     "delivered",
     "cancelled"
-  ),
+  ]),
 
   // Optional tracking data
   trackingNumber: Schema.String.pipe(Schema.optional),
   estimatedDelivery: Schema.String.pipe(
-    Schema.pattern(/^\d{4}-\d{2}-\d{2}$/)
+    Schema.check(Schema.isPattern(/^\d{4}-\d{2}-\d{2}$/))
   ).pipe(Schema.optional),
 
   // Nested JSONB structure
@@ -50,16 +50,16 @@ const OrderMetadata = Schema.Struct({
     Schema.Struct({
       productId: Schema.String,
       quantity: Schema.Number.pipe(
-        Schema.int(),
-        Schema.positive()
+        Schema.check(Schema.isInt()),
+        Schema.check(Schema.isGreaterThan(0))
       ),
-      price: Schema.Number.pipe(Schema.positive()),
+      price: Schema.Number.pipe(Schema.check(Schema.isGreaterThan(0))),
     })
   ).pipe(Schema.minItems(1)),
 
   // Metadata with defaults
-  source: Schema.Literal("web", "mobile", "api").pipe(
-    Schema.optionalWith({ default: () => "web" })
+  source: Schema.Literals(["web", "mobile", "api"]).pipe(
+    Schema.withDecodingDefaultKey(Effect.succeed("web"))
   ),
   notes: Schema.String.pipe(Schema.optional),
 });
@@ -69,7 +69,7 @@ type OrderMetadata = typeof OrderMetadata.Type;
 // 2. Validate JSONB before INSERT
 const validateForInsert = (data: unknown) =>
   Effect.gen(function* () {
-    const order = yield* Schema.decodeUnknown(OrderMetadata)(
+    const order = yield* Schema.decodeUnknownEffect(OrderMetadata)(
       data
     ).pipe(
       Effect.mapError((error) => ({
@@ -94,7 +94,7 @@ const validateFromPostgres = (
   jsonbData: unknown
 ) =>
   Effect.gen(function* () {
-    const order = yield* Schema.decodeUnknown(OrderMetadata)(
+    const order = yield* Schema.decodeUnknownEffect(OrderMetadata)(
       jsonbData
     ).pipe(
       Effect.mapError((error) => ({
@@ -170,7 +170,7 @@ const updateOrderStatus = (
     };
 
     // Validate before sending to DB
-    const validated = yield* Schema.decodeUnknown(
+    const validated = yield* Schema.decodeUnknownEffect(
       Schema.Struct({
         orderId: Schema.String,
         status: OrderMetadata.fields.status,

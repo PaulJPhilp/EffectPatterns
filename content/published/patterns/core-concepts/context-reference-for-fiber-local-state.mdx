@@ -1,0 +1,75 @@
+---
+title: Share Fiber-Local State with Context.Reference
+id: context-reference-for-fiber-local-state
+skillLevel: intermediate
+applicationPatternId: core-concepts
+summary: >-
+  Use Context.Reference for fiber-local state in Effect v4. FiberRef was removed;
+  yield references directly and override with Effect.provideService.
+tags:
+  - context
+  - reference
+  - fiber-local
+  - v4
+rule:
+  description: >-
+    Use Context.Reference with a defaultValue for fiber-local state; read it
+    with yield* and override per-fiber with Effect.provideService.
+related:
+  - understand-layers-for-dependency-injection
+  - access-config-in-context
+author: effect_website
+lessonOrder: 30
+---
+
+# Problem
+
+You need request-scoped or fiber-local state (tenant id, log level, feature flag) without threading parameters through every function. In v4 `FiberRef` no longer exists.
+
+# Solution
+
+```typescript
+import { Context, Effect, References } from "effect"
+
+class TenantId extends Context.Reference<TenantId, string>()("TenantId", {
+  defaultValue: () => "public"
+}) {}
+
+const program = Effect.gen(function*() {
+  const before = yield* TenantId
+  yield* Effect.log(`tenant: ${before}`)
+  return before
+})
+
+// Override for a single fiber
+const scoped = program.pipe(
+  Effect.provideService(TenantId, "acme")
+)
+
+// Built-in references work the same way
+const showLevel = Effect.gen(function*() {
+  const level = yield* References.CurrentLogLevel
+  yield* Effect.log(`level: ${level.label}`)
+})
+
+Effect.runPromise(scoped.pipe(Effect.zipRight(showLevel)))
+```
+
+# Why This Works
+
+| v3 | v4 |
+|----|----|
+| `FiberRef.make` / `FiberRef.get` | `Context.Reference` with `defaultValue`, `yield* Ref` directly |
+| `FiberRef.currentLogLevel` etc. | `References.CurrentLogLevel`, `MinimumLogLevel`, `CurrentLogAnnotations`, … |
+| `Effect.locally` | `Effect.provideService` |
+
+# When to Use
+
+- Tenant / request id propagation
+- Per-fiber log level, annotations, spans
+- Feature flags with safe defaults
+
+# Related Patterns
+
+- [Understand Layers](./understand-layers-for-dependency-injection.mdx)
+- [Access Config](./access-config-in-context.mdx)

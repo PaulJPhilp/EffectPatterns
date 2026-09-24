@@ -26,7 +26,7 @@ lessonOrder: 11
 
 ## Guideline
 
-To selectively retry an operation, use `Effect.retry` with a `Schedule` that includes a predicate. The most common way is to use `Schedule.whileInput((error) => ...)`, which will continue retrying only as long as the predicate returns `true` for the error that occurred.
+To selectively retry an operation, use `Effect.retry` with a `Schedule` that includes a predicate. The most common way is to use `Schedule.while(({ input: error }) => ...)`, which will continue retrying only as long as the predicate returns `true` for the error that occurred.
 
 ---
 
@@ -78,7 +78,7 @@ const isRetryableError = (e: ServerBusyError | NotFoundError) =>
 
 // A policy that retries 3 times, but only if the error is retryable
 const selectiveRetryPolicy = Schedule.recurs(3).pipe(
-  Schedule.whileInput(isRetryableError),
+  Schedule.while((meta) => isRetryableError(meta.input)),
   Schedule.addDelay(() => "100 millis")
 );
 
@@ -94,7 +94,7 @@ const program = Effect.gen(function* () {
     return null;
   }
 }).pipe(
-  Effect.catchAll((error) =>
+  Effect.catch((error) =>
     Effect.gen(function* () {
       if (error instanceof NotFoundError) {
         yield* Effect.logInfo("Failed with NotFoundError - not retrying");
@@ -116,7 +116,7 @@ const demonstrateNotFound = Effect.gen(function* () {
 
   const result = yield* alwaysNotFound.pipe(
     Effect.retry(selectiveRetryPolicy),
-    Effect.catchAll((error) =>
+    Effect.catch((error) =>
       Effect.gen(function* () {
         yield* Effect.logInfo(`NotFoundError was not retried: ${error._tag}`);
         return null;

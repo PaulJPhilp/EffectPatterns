@@ -132,7 +132,7 @@ const program = Effect.gen(function* () {
   yield* Effect.log("=== Testing timeouts ===")
   
   const result = yield* entireOperationWithTimeout.pipe(
-    Effect.catchAll((error) =>
+    Effect.catch((error) =>
       Effect.gen(function* () {
         yield* Effect.logError(`Failed: ${error.message}`)
         return []

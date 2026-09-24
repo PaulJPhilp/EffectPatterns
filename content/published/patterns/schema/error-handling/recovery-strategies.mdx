@@ -25,7 +25,7 @@ An API call fails. Retry immediately—it works the second time. But retry too f
 # Solution
 
 ```typescript
-import { Effect, Duration, Data } from "effect"
+import { Effect, Duration, Data, Schema } from "effect"
 
 // ============================================
 // 1. Define domain errors
@@ -69,7 +69,7 @@ const retryWithBackoff = <A, E, R>(
 ): Effect.Effect<A, E, R> => {
   const attempt = (retriesLeft: number, currentDelayMs: number): Effect.Effect<A, E, R> =>
     effect.pipe(
-      Effect.catchAll((error) => {
+      Effect.catch((error) => {
         if (retriesLeft === 0) {
           return Effect.fail(error)
         }
@@ -120,7 +120,7 @@ const withFallback = <A, E, R>(
   shouldUseFallback?: (error: E) => boolean
 ): Effect.Effect<A, never, R> =>
   effect.pipe(
-    Effect.catchAll((error) => {
+    Effect.catch((error) => {
       if (shouldUseFallback && !shouldUseFallback(error)) {
         return Effect.fail(error)
       }
@@ -140,7 +140,7 @@ const withRecovery = <A, E, R>(
   }
 ): Effect.Effect<A, E, R> =>
   effect.pipe(
-    Effect.catchAll((error: E) => {
+    Effect.catch((error: E) => {
       const handler = handlers[error._tag as E["_tag"]]
       if (handler) {
         return (handler as any)(error)
@@ -263,7 +263,7 @@ class CircuitBreaker {
     }
 
     return effect.pipe(
-      Effect.catchAll((error) => {
+      Effect.catch((error) => {
         this.failureCount++
 
         if (this.failureCount >= this.failureThreshold) {
@@ -304,12 +304,12 @@ const appLogic = Effect.gen(function* () {
   for (let i = 0; i < 5; i++) {
     const result = yield* breaker.execute(
       Effect.fail(new NetworkError("Service down")).pipe(
-        Effect.either
+        Effect.result
       )
     )
 
-    if (result._tag === "Left") {
-      console.log(`Request ${i + 1}: Failed -`, result.left.message)
+    if (result._tag === "Failure") {
+      console.log(`Request ${i + 1}: Failed -`, result.failure.message)
     }
   }
 

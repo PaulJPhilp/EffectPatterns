@@ -39,7 +39,7 @@ Rate limiting protects your API:
 
 ```typescript
 import { Effect, Context, Layer, Ref, HashMap, Data, Duration } from "effect"
-import { HttpServerRequest, HttpServerResponse } from "@effect/platform"
+import { HttpServerRequest, HttpServerResponse } from "effect/http"
 
 // ============================================
 // 1. Define rate limit types
@@ -72,10 +72,9 @@ interface RateLimiter {
   }>
 }
 
-class RateLimiterService extends Context.Tag("RateLimiter")<
-  RateLimiterService,
-  RateLimiter
->() {}
+class RateLimiterService extends Context.Service<
+  RateLimiterService, RateLimiter
+>()("RateLimiter") {}
 
 // ============================================
 // 3. In-memory rate limiter implementation

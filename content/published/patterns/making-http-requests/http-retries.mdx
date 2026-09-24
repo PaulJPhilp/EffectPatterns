@@ -43,7 +43,7 @@ Proper retry logic handles these gracefully.
 
 ```typescript
 import { Effect, Schedule, Duration, Data } from "effect"
-import { HttpClient, HttpClientRequest, HttpClientResponse, HttpClientError } from "@effect/platform"
+import { HttpClient, HttpClientRequest, HttpClientResponse, HttpClientError } from "effect/http"
 
 // ============================================
 // 1. Basic retry with exponential backoff
@@ -54,11 +54,11 @@ const fetchWithRetry = (url: string) =>
     const client = yield* HttpClient.HttpClient
 
     return yield* client.get(url).pipe(
-      Effect.flatMap((response) => HttpClientResponse.json(response)),
+      Effect.flatMap((response) => response.json),
       Effect.retry(
-        Schedule.exponential("100 millis", 2).pipe(
-          Schedule.intersect(Schedule.recurs(5)),     // Max 5 retries
-          Schedule.jittered                            // Add randomness
+        Schedule.max([Schedule.exponential("100 millis", 2), Schedule.recurs(5)]).pipe(
+          // Max 5 retries
+          Schedule.jittered // Add randomness
         )
       )
     )
@@ -106,14 +106,12 @@ const fetchWithSelectiveRetry = (url: string) =>
         return Effect.succeed(response)
       }),
       Effect.retry({
-        schedule: Schedule.exponential("200 millis").pipe(
-          Schedule.intersect(Schedule.recurs(3))
-        ),
-        while: (error) => error._tag === "RetryableHttpError",
+        schedule: Schedule.max([Schedule.exponential("200 millis"), Schedule.recurs(3)]),
+        while: (error) => error._tag === "RetryableHttpError"
       })
     )
 
-    return yield* HttpClientResponse.json(response)
+    return yield* response.json
   })
 
 // ============================================
@@ -125,11 +123,10 @@ const fetchWithRetryLogging = (url: string) =>
     const client = yield* HttpClient.HttpClient
 
     return yield* client.get(url).pipe(
-      Effect.flatMap((r) => HttpClientResponse.json(r)),
+      Effect.flatMap((r) => r.json),
       Effect.retry(
-        Schedule.exponential("100 millis").pipe(
-          Schedule.intersect(Schedule.recurs(3)),
-          Schedule.tapOutput((_, output) =>
+        Schedule.max([Schedule.exponential("100 millis"), Schedule.recurs(3)]).pipe(
+          Schedule.tap(({ output }) =>
             Effect.log(`Retry attempt, waiting ${Duration.toMillis(output)}ms`)
           )
         )
@@ -142,12 +139,15 @@ const fetchWithRetryLogging = (url: string) =>
 // 4. Custom retry policy
 // ============================================
 
-const customRetryPolicy = Schedule.exponential("500 millis", 2).pipe(
-  Schedule.intersect(Schedule.recurs(5)),
-  Schedule.union(Schedule.spaced("30 seconds")),  // Also retry after 30s
-  Schedule.whileOutput((duration) => Duration.lessThanOrEqualTo(duration, "2 minutes")),
+const customRetryPolicy = Schedule.min([
+  Schedule.max([Schedule.exponential("500 millis", 2), Schedule.recurs(5)]),
+  Schedule.spaced("30 seconds") // Also retry after 30s
+]).pipe(
+  Schedule.while(({ output: duration }) =>
+    Duration.isLessThanOrEqualTo(duration, "2 minutes")
+  ),
   Schedule.jittered
-)
+);
 
 // ============================================
 // 5. Retry respecting Retry-After header
@@ -174,14 +174,18 @@ const fetchWithRetryAfter = (url: string) =>
 
     return yield* makeRequest.pipe(
       Effect.retry(
-        Schedule.recurWhile<{ _tag: "RateLimited"; delay: number }>(
-          (error) => error._tag === "RateLimited"
-        ).pipe(
-          Schedule.intersect(Schedule.recurs(3)),
-          Schedule.delayed((_, error) => Duration.millis(error.delay))
+        Schedule.max([
+          Schedule.identity<{ _tag: "RateLimited"; delay: number }>().pipe(
+            Schedule.while(({ input: error }) => error._tag === "RateLimited")
+          ),
+          Schedule.recurs(3)
+        ]).pipe(
+          Schedule.modifyDelay(({ input: error }) =>
+            Effect.succeed(Duration.millis(error.delay))
+          )
         )
       ),
-      Effect.flatMap((r) => HttpClientResponse.json(r))
+      Effect.flatMap((r) => r.json)
     )
   })
 
@@ -193,7 +197,7 @@ const program = Effect.gen(function* () {
   yield* Effect.log("Fetching with retry...")
 
   const data = yield* fetchWithRetry("https://api.example.com/data").pipe(
-    Effect.catchAll((error) => {
+    Effect.catch((error) => {
       return Effect.succeed({ error: "All retries exhausted" })
     })
   )

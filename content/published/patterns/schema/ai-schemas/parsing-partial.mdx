@@ -112,7 +112,7 @@ const parseStreamed = (json: string) =>
     }
 
     // Validate against schema
-    const parsed = yield* Schema.decodeUnknown(
+    const parsed = yield* Schema.decodeUnknownEffect(
       StreamedAnalysis
     )(data).pipe(
       Effect.mapError((error) => ({

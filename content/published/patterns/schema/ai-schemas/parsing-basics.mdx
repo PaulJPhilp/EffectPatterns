@@ -31,14 +31,14 @@ import { Anthropic } from "@anthropic-ai/sdk"
 // 1. Define expected schema
 const Analysis = Schema.Struct({
   summary: Schema.String,
-  score: Schema.Number.pipe(Schema.between(0, 100)),
+  score: Schema.Number.pipe(Schema.check(Schema.isBetween(0, 100))),
   tags: Schema.Array(Schema.String),
 })
 
 type Analysis = typeof Analysis.Type
 
 // 2. Create parser
-const parseAnalysis = Schema.decodeUnknown(Analysis)
+const parseAnalysis = Schema.decodeUnknownEffect(Analysis)
 
 // 3. Parse LLM response in pipeline
 const analyzeSafely = (llmResponse: unknown) =>
@@ -112,7 +112,7 @@ Effect.runPromise(
 
 | Concept | Explanation |
 |---------|-------------|
-| `Schema.decodeUnknown` | Returns `Effect<A, ParseError>` — no thrown exceptions |
+| `Schema.decodeUnknownEffect` | Returns `Effect<A, ParseError>` — no thrown exceptions |
 | `Effect.tryPromise` | Catches JSON parsing errors without throwing |
 | `Schema.between` | Runtime validation beyond type checking—catches out-of-range values |
 | Typed error channel | Caller must explicitly handle parse failures |

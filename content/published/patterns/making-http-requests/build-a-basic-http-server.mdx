@@ -49,7 +49,7 @@ This architecture ensures that your request handling logic is fully testable, be
 This example creates a simple server with a `Greeter` service. The server starts, creates a runtime containing the `Greeter`, and then uses that runtime to handle requests.
 
 ```typescript
-import { HttpServer, HttpServerResponse } from "@effect/platform";
+import { HttpServer, HttpServerResponse } from "effect/http";
 import { NodeHttpServer } from "@effect/platform-node";
 import { Duration, Effect, Fiber, Layer } from "effect";
 import { createServer } from "node:http";
@@ -67,7 +67,7 @@ const serverLayer = HttpServer.serve(app).pipe(Layer.provide(ServerLive));
 
 const program = Effect.gen(function* () {
   yield* Effect.logInfo("Server starting on http://localhost:3001");
-  const fiber = yield* Layer.launch(serverLayer).pipe(Effect.fork);
+  const fiber = yield* Layer.launch(serverLayer).pipe(Effect.forkChild);
   yield* Effect.sleep(Duration.seconds(2));
   yield* Fiber.interrupt(fiber);
   yield* Effect.logInfo("Server shutdown complete");

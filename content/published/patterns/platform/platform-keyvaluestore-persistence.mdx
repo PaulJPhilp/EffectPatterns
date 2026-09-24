@@ -66,7 +66,8 @@ Real-world example: Caching API responses
 This example demonstrates storing and retrieving persistent data.
 
 ```typescript
-import { KeyValueStore, Effect } from "@effect/platform";
+import { Effect } from "effect";
+import { KeyValueStore } from "effect/persistence";
 
 interface UserSession {
   readonly userId: string;

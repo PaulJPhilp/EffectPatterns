@@ -5,18 +5,18 @@ skillLevel: beginner
 applicationPatternId: error-management
 summary: >-
   Use match to handle both success and failure cases in a single, declarative
-  place for Effect, Option, and Either.
+  place for Effect, Option, and Result.
 tags:
   - match
   - pattern-matching
   - effect
   - option
-  - either
+  - result
   - error-handling
   - branching
 rule:
   description: >-
-    Use match to pattern match on the result of an Effect, Option, or Either,
+    Use match to pattern match on the result of an Effect, Option, or Result,
     handling both success and failure cases declaratively.
 related:
   - pattern-matchtag
@@ -31,7 +31,7 @@ lessonOrder: 2
 ## Guideline
 
 Use the `match` combinator to handle both success and failure cases in a single, declarative place.  
-This works for `Effect`, `Option`, and `Either`, and is the foundation for robust, readable error handling and branching.
+This works for `Effect`, `Option`, and `Result`, and is the foundation for robust, readable error handling and branching.
 
 ## Rationale
 
@@ -41,7 +41,7 @@ It avoids scattered if/else or switch statements and makes your intent explicit.
 ## Good Example
 
 ```typescript
-import { Effect, Option, Either } from "effect";
+import { Effect, Option, Result } from "effect";
 
 // Effect: Handle both success and failure
 const effect = Effect.fail("Oops!").pipe(
@@ -59,11 +59,11 @@ const option = Option.some(42).pipe(
   })
 ); // string
 
-// Either: Handle Left and Right cases
-const either = Either.left("fail").pipe(
-  Either.match({
-    onLeft: (err) => `Error: ${err}`,
-    onRight: (value) => `Value: ${value}`,
+// Result: Handle Left and Right cases
+const either = Result.fail("fail").pipe(
+  Result.match({
+    onFailure: (err) => `Error: ${err}`,
+    onSuccess: (value) => `Value: ${value}`,
   })
 ); // string
 ```
@@ -71,7 +71,7 @@ const either = Either.left("fail").pipe(
 **Explanation:**
 
 - `Effect.match` lets you handle both the error and success channels in one place.
-- `Option.match` and `Either.match` let you handle all possible cases for these types, making your code exhaustive and safe.
+- `Option.match` and `Result.match` let you handle all possible cases for these types, making your code exhaustive and safe.
 
 ## Anti-Pattern
 

@@ -49,8 +49,8 @@ What happens if a pipeline processing a file fails halfway through? In a naive i
 This example creates and writes to a temporary file. `Stream.acquireRelease` is used to acquire a readable stream from that file. The pipeline then processes the file but is designed to fail partway through. The logs demonstrate that the `release` effect (which deletes the file) is still executed, preventing any resource leaks.
 
 ```typescript
-import { Effect, Layer } from "effect";
-import { FileSystem } from "@effect/platform/FileSystem";
+import { Effect, Layer, Context } from "effect";
+import { FileSystem } from "effect/FileSystem";
 import { NodeFileSystem } from "@effect/platform-node";
 import * as path from "node:path";
 
@@ -70,8 +70,8 @@ interface FileServiceType {
   readonly readFile: (filePath: string) => Effect.Effect<string, never>;
 }
 
-export class FileService extends Effect.Service<FileService>()("FileService", {
-  sync: () => {
+export class FileService extends Context.Service<FileService>()("FileService", {
+  make: Effect.sync(() => {
     const filePath = path.join(__dirname, "temp-resource.txt");
     return {
       createTempFile: () => Effect.succeed({ filePath }),
@@ -80,8 +80,10 @@ export class FileService extends Effect.Service<FileService>()("FileService", {
       readFile: (filePath: string) =>
         Effect.succeed("data 1\ndata 2\nFAIL\ndata 4"),
     };
-  },
-}) {}
+  }),
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 // Process a single line
 const processLine = (line: string): Effect.Effect<void, ProcessError> =>
@@ -110,7 +112,7 @@ const program = Effect.gen(function* () {
       // Process each line, continuing even if some fail
       for (const line of lines) {
         yield* processLine(line).pipe(
-          Effect.catchAll((error) =>
+          Effect.catch((error) =>
             Effect.log(`⚠️  Skipped line due to error: ${error.message}`)
           )
         );
@@ -124,7 +126,7 @@ const program = Effect.gen(function* () {
 });
 
 // Run the program with FileService layer
-Effect.runPromise(Effect.provide(program, FileService.Default)).catch(
+Effect.runPromise(Effect.provide(program, FileService.layer)).catch(
   (error) => {
     Effect.runSync(Effect.logError("Unexpected error: " + error));
   }

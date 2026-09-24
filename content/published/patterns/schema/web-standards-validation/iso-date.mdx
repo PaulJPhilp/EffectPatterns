@@ -29,15 +29,15 @@ import { Schema, Effect } from "effect"
 
 // 1. ISO 8601 datetime with timezone
 const ISODateTime = Schema.String.pipe(
-  Schema.pattern(
+  Schema.check(Schema.isPattern(
     /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z?$/
-  ).pipe(
+  )).pipe(
     Schema.annotations({
       description:
         "ISO 8601 datetime (YYYY-MM-DDTHH:mm:ss[.sss][Z])",
     })
   ),
-  Schema.filter((s) => {
+  Schema.check(Schema.makeFilter((s) => {
     try {
       const date = new Date(s)
       // Check it parses to valid Date
@@ -50,7 +50,7 @@ const ISODateTime = Schema.String.pipe(
     } catch {
       return false
     }
-  }).pipe(
+  })).pipe(
     Schema.annotations({
       description: "Valid date between 1900-2100",
     })
@@ -62,15 +62,15 @@ type ISODateTime = typeof ISODateTime.Type
 
 // 2. ISO 8601 date only (no time)
 const ISODate = Schema.String.pipe(
-  Schema.pattern(/^\d{4}-\d{2}-\d{2}$/).pipe(
+  Schema.check(Schema.isPattern(/^\d{4}-\d{2}-\d{2}$/)).pipe(
     Schema.annotations({
       description: "ISO 8601 date (YYYY-MM-DD)",
     })
   ),
-  Schema.filter((s) => {
+  Schema.check(Schema.makeFilter((s) => {
     const date = new Date(s + "T00:00:00Z")
     return !isNaN(date.getTime())
-  }),
+  })),
   Schema.brand("ISODate")
 )
 
@@ -93,7 +93,7 @@ type Event = typeof Event.Type
 // 4. Validate and work with dates
 const createEvent = (input: unknown) =>
   Effect.gen(function* () {
-    const event = yield* Schema.decodeUnknown(Event)(
+    const event = yield* Schema.decodeUnknownEffect(Event)(
       input
     ).pipe(
       Effect.mapError((error) => ({

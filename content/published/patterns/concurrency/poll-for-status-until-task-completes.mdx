@@ -90,7 +90,7 @@ import { longRunningJob, repeatingPoller } from "./somewhere";
 // ❌ WRONG: Manual fiber management is complex.
 const program = Effect.gen(function* () {
   // Manually fork the poller into the background
-  const pollerFiber = yield* Effect.fork(repeatingPoller);
+  const pollerFiber = yield* Effect.forkChild(repeatingPoller);
 
   try {
     // Run the main job

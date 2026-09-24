@@ -39,7 +39,7 @@ Authentication protects your API:
 
 ```typescript
 import { Effect, Context, Layer, Data } from "effect"
-import { HttpServer, HttpServerRequest, HttpServerResponse } from "@effect/platform"
+import { HttpServer, HttpServerRequest, HttpServerResponse } from "effect/http"
 
 // ============================================
 // 1. Define authentication types
@@ -51,10 +51,9 @@ interface User {
   readonly roles: ReadonlyArray<string>
 }
 
-class AuthenticatedUser extends Context.Tag("AuthenticatedUser")<
-  AuthenticatedUser,
-  User
->() {}
+class AuthenticatedUser extends Context.Service<
+  AuthenticatedUser, User
+>()("AuthenticatedUser") {}
 
 class UnauthorizedError extends Data.TaggedError("UnauthorizedError")<{
   readonly reason: string
@@ -72,7 +71,7 @@ interface JwtService {
   readonly verify: (token: string) => Effect.Effect<User, UnauthorizedError>
 }
 
-class Jwt extends Context.Tag("Jwt")<Jwt, JwtService>() {}
+class Jwt extends Context.Service<Jwt, JwtService>()("Jwt") {}
 
 const JwtLive = Layer.succeed(Jwt, {
   verify: (token) =>

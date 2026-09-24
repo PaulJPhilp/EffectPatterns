@@ -24,7 +24,7 @@ You're using Vercel AI SDK's `generateObject` function to get structured output 
 # Solution
 
 ```typescript
-import { Schema, JSONSchema, Effect } from "effect"
+import { Schema, JSONSchema, Effect, Result } from "effect"
 import { generateObject } from "ai"
 import { openai } from "@ai-sdk/openai"
 
@@ -34,10 +34,10 @@ const ProductReview = Schema.Struct({
     Schema.description("Internal product ID")
   ),
   rating: Schema.Number.pipe(
-    Schema.between(1, 5),
+    Schema.check(Schema.isBetween(1, 5)),
     Schema.description("Rating: 1-5 stars")
   ),
-  sentiment: Schema.Literal("positive", "neutral", "negative").pipe(
+  sentiment: Schema.Literals(["positive", "neutral", "negative"]).pipe(
     Schema.description("Overall sentiment of review")
   ),
   pros: Schema.Array(Schema.String).pipe(

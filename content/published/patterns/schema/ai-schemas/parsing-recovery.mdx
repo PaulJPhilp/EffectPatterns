@@ -41,7 +41,7 @@ type Article = typeof Article.Type
 // 2. Recovery strategy 1: Provide defaults
 const parseWithDefaults = (data: unknown) =>
   Effect.gen(function* () {
-    const parseArticle = Schema.decodeUnknown(Article)
+    const parseArticle = Schema.decodeUnknownEffect(Article)
 
     const result = yield* parseArticle(data).pipe(
       Effect.catchTag("ParseError", () =>
@@ -88,7 +88,7 @@ const parseWithRetry = (
   maxRetries: number = 2
 ) =>
   Effect.gen(function* () {
-    const parseArticle = Schema.decodeUnknown(Article)
+    const parseArticle = Schema.decodeUnknownEffect(Article)
     let lastError: Error | null = null
     let data = initialData
 
@@ -123,7 +123,7 @@ const parseWithRetry = (
 // 5. Recovery strategy 4: Log and continue
 const parseWithLogging = (data: unknown, id: string) =>
   Effect.gen(function* () {
-    const parseArticle = Schema.decodeUnknown(Article)
+    const parseArticle = Schema.decodeUnknownEffect(Article)
 
     const result = yield* parseArticle(data).pipe(
       Effect.catchTag("ParseError", (error) => {
@@ -150,7 +150,7 @@ const parseWithLogging = (data: unknown, id: string) =>
 const handleResponse = (response: unknown) =>
   Effect.gen(function* () {
     // Try exact parse first
-    const exact = yield* Schema.decodeUnknown(Article)(
+    const exact = yield* Schema.decodeUnknownEffect(Article)(
       response
     ).pipe(
       Effect.catchTag("ParseError", () =>

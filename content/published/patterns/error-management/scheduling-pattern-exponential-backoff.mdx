@@ -127,14 +127,14 @@ const exponentialBackoffWithJitter = (config: BackoffConfig) => {
     let lastError: Error | undefined;
 
     for (attempt = 0; attempt < config.maxRetries; attempt++) {
-      const result = yield* effect.pipe(Effect.either);
+      const result = yield* effect.pipe(Effect.result);
 
-      if (result._tag === "Right") {
+      if (result._tag === "Success") {
         yield* Effect.log(`[SUCCESS] Succeeded on attempt ${attempt + 1}`);
-        return result.right;
+        return result.success;
       }
 
-      lastError = result.left;
+      lastError = result.failure;
 
       if (attempt < config.maxRetries - 1) {
         const delay = calculateDelay();
@@ -189,18 +189,18 @@ Output demonstrates increasing delays with jitter:
 Use Effect's `Schedule` API for declarative exponential backoff:
 
 ```typescript
-import { Effect, Schedule } from "effect";
+import { Duration, Effect, Schedule } from "effect";
 
 const exponentialBackoffSchedule = (baseDelayMs: number, maxDelayMs: number) =>
   Schedule.exponential(baseDelayMs).pipe(
     // Add jitter: ±20% randomization
-    Schedule.jittered(0.2, 0.2),
+    Schedule.jittered,
     // Cap maximum delay
-    Schedule.mapDelay((delay) => Math.min(delay, maxDelayMs)),
+    Schedule.modifyDelay((meta) =>
+      Effect.succeed(Duration.millis(Math.min(Duration.toMillis(meta.duration), maxDelayMs)))
+    ),
     // Log each retry attempt
-    Schedule.tapInput((error) =>
-      Effect.log(`[RETRY] Retrying after error: ${error.message}`)
-    )
+    Schedule.tap(({ input: error }) => Effect.log(`[RETRY] Retrying after error: ${error.message}`))
   );
 
 // Use in Effect.retry
@@ -208,7 +208,7 @@ const robustApiCall = flakyApiCall().pipe(
   Effect.retry(
     exponentialBackoffSchedule(100, 5000).pipe(
       // Max 5 retries
-      Schedule.upTo(5)
+      Schedule.upTo({ times: 5 })
     )
   ),
   Effect.tap(() => Effect.log("[SUCCESS] API call succeeded"))
@@ -237,10 +237,10 @@ const exponentialBackoffWithDeadline = (config: DeadlineConfig) =>
       Date.now() - startTime > config.deadlineMs;
 
     while (!isDeadlineExceeded() && attempt < config.maxRetries) {
-      const result = yield* flakyApiCall().pipe(Effect.either);
+      const result = yield* flakyApiCall().pipe(Effect.result);
 
-      if (result._tag === "Right") {
-        return result.right;
+      if (result._tag === "Success") {
+        return result.success;
       }
 
       if (isDeadlineExceeded()) {
@@ -323,13 +323,13 @@ const exponentialBackoffAdaptive = (config: AdaptiveBackoffConfig) =>
     let lastError: Error | undefined;
 
     while (true) {
-      const result = yield* flakyApiCall().pipe(Effect.either);
+      const result = yield* flakyApiCall().pipe(Effect.result);
 
-      if (result._tag === "Right") {
-        return result.right;
+      if (result._tag === "Success") {
+        return result.success;
       }
 
-      lastError = result.left;
+      lastError = result.failure;
       const errorType = classifyError(lastError);
 
       if (errorType === ErrorType.Permanent) {
@@ -430,9 +430,9 @@ const exponentialBackoffWithCircuitBreaker = (
       }
 
       if (state === CircuitState.Closed || state === CircuitState.HalfOpen) {
-        const result = yield* flakyApiCall().pipe(Effect.either);
+        const result = yield* flakyApiCall().pipe(Effect.result);
 
-        if (result._tag === "Right") {
+        if (result._tag === "Success") {
           if (state === CircuitState.HalfOpen) {
             successCount++;
             if (successCount >= config.successThreshold) {
@@ -443,7 +443,7 @@ const exponentialBackoffWithCircuitBreaker = (
               failureCount = 0;
             }
           }
-          return result.right;
+          return result.success;
         }
 
         failureCount++;
@@ -460,7 +460,7 @@ const exponentialBackoffWithCircuitBreaker = (
           yield* Effect.sleep(`${Math.round(delay)} millis`);
           attempt++;
         } else {
-          yield* Effect.fail(result.left);
+          yield* Effect.fail(result.failure);
         }
       }
     }
@@ -505,5 +505,5 @@ const exponentialBackoffWithCircuitBreaker = (
 
 - [Retry Effects with Configuration](./retry-effects-with-configuration.mdx) - Configure retry strategies
 - [Handle Errors with Try-Catch Pattern](./handle-errors-with-try-catch-pattern.mdx) - Error handling basics
-- [Understand Failure Handling with Either](./understand-failure-handling-with-either.mdx) - Either/Result pattern
+- [Understand Failure Handling with Result](./understand-failure-handling-with-either.mdx) - Result/Result pattern
 - [Scheduling Pattern 1: Repeat on Fixed Interval](./scheduling-pattern-repeat-effect-on-fixed-interval.mdx) - Fixed intervals

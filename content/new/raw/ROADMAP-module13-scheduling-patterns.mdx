@@ -44,7 +44,7 @@ Learn why timing is critical and how Schedule abstracts timing concerns.
 - **3. Built-in Schedule Basics** `(Intermediate)`
   - 🟣 `Schedule.recurs` for fixed repetitions
   - 🟣 `Schedule.forever` for infinite repetition
-  - 🟣 `Schedule.once` for single execution
+  - 🟣 `Schedule.duration(Duration.zero)` for single execution
 
 ---
 
@@ -72,7 +72,7 @@ Learn core patterns for repeating operations.
 ### Timed Repetition
 
 - **7. Repeat Effect While Result Satisfies Condition** `(Intermediate)`
-  - 🟣 Using `Schedule.whileOutput` for predicate-based repetition
+  - 🟣 Using `Schedule.while` with `output` metadata for predicate-based repetition
   - 🟣 Deciding when to stop based on result
   - 🟣 Exponential search patterns
 
@@ -95,7 +95,7 @@ Learn sophisticated retry and backoff patterns.
   - 🟣 Cap maximum delay to prevent extreme waits
 
 - **10. Linear Backoff with Ceiling** `(Intermediate)`
-  - 🟣 Using `Schedule.linear` for predictable delays
+  - 🟣 Building linear delays with `Schedule.forever`, `Schedule.map`, and `Schedule.modifyDelay`
   - 🟣 When linear beats exponential
   - 🟣 Composing with caps and maximums
 
@@ -108,7 +108,7 @@ Learn sophisticated retry and backoff patterns.
 
 - **12. Backoff with Maximum Total Time** `(Intermediate)`
   - 🟣 Limiting total retry duration
-  - 🟣 Using `Schedule.elapsed` to bound retries
+  - 🟣 Bounding retries with `Schedule.map` over schedule metadata (`elapsed`)
   - 🟣 Giving up after reasonable effort
 
 ---
@@ -150,12 +150,12 @@ Learn to build complex schedules from simpler pieces.
 ### Combining Schedules
 
 - **17. Combine Multiple Schedules with OR Logic** `(Intermediate)`
-  - 🟣 Using `Schedule.union` to try alternatives
+  - 🟣 Using `Schedule.min` to try alternatives (fastest delay wins)
   - 🟣 Fallback schedules
   - 🟣 Racing schedule decisions
 
 - **18. Combine Multiple Schedules with AND Logic** `(Intermediate)`
-  - 🟣 Using `Schedule.intersect` for strict requirements
+  - 🟣 Using `Schedule.max` for strict requirements (slowest delay wins)
   - 🟣 Both conditions must be satisfied
   - 🟣 Coordinating independent timing rules
 
@@ -167,7 +167,7 @@ Learn to build complex schedules from simpler pieces.
   - 🟣 Learning from outcomes
 
 - **20. Reset Schedule State Based on Events** `(Intermediate)`
-  - 🟣 Using `Schedule.resetAfter` to restart backoff
+  - 🟣 Reacquiring schedule state with `Schedule.fromStep`/`Schedule.toStep` to restart backoff
   - 🟣 Circuit breaker patterns
   - 🟣 Success-based resets
 

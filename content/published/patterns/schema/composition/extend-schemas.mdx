@@ -34,7 +34,7 @@ const BaseUser = Schema.Struct({
   id: Schema.String,
   username: Schema.String,
   email: Schema.String,
-  createdAt: Schema.Date,
+  createdAt: Schema.DateFromString,
 })
 
 type BaseUser = typeof BaseUser.Type
@@ -43,25 +43,19 @@ type BaseUser = typeof BaseUser.Type
 // 2. Extend with new fields using Schema.extend
 // ============================================
 
-const AdminUser = Schema.extend(
-  BaseUser,
-  Schema.Struct({
+const AdminUser = Schema.Struct({ ...BaseUser.fields,
     role: Schema.Literal("admin"),
     permissions: Schema.Array(Schema.String),
-    lastLogin: Schema.Date,
+    lastLogin: Schema.DateFromString,
   })
-)
 
 type AdminUser = typeof AdminUser.Type
 
-const PremiumUser = Schema.extend(
-  BaseUser,
-  Schema.Struct({
+const PremiumUser = Schema.Struct({ ...BaseUser.fields,
     tier: Schema.Enum({ gold: "gold", platinum: "platinum" }),
-    subscriptionEnd: Schema.Date,
+    subscriptionEnd: Schema.DateFromString,
     features: Schema.Array(Schema.String),
   })
-)
 
 type PremiumUser = typeof PremiumUser.Type
 
@@ -69,15 +63,12 @@ type PremiumUser = typeof PremiumUser.Type
 // 3. Extend with optional fields
 // ============================================
 
-const UserWithProfile = Schema.extend(
-  BaseUser,
-  Schema.Struct({
+const UserWithProfile = Schema.Struct({ ...BaseUser.fields,
     bio: Schema.Optional(Schema.String),
     avatar: Schema.Optional(Schema.String),
     location: Schema.Optional(Schema.String),
     website: Schema.Optional(Schema.String),
   })
-)
 
 type UserWithProfile = typeof UserWithProfile.Type
 
@@ -85,24 +76,18 @@ type UserWithProfile = typeof UserWithProfile.Type
 // 4. Multi-level extension
 // ============================================
 
-const VerifiedUser = Schema.extend(
-  UserWithProfile,
-  Schema.Struct({
+const VerifiedUser = Schema.Struct({ ...UserWithProfile.fields,
     emailVerified: Schema.Boolean,
     phoneVerified: Schema.Boolean,
-    verificationDate: Schema.Optional(Schema.Date),
+    verificationDate: Schema.Optional(Schema.DateFromString),
   })
-)
 
 type VerifiedUser = typeof VerifiedUser.Type
 
-const VerifiedAdmin = Schema.extend(
-  VerifiedUser,
-  Schema.Struct({
+const VerifiedAdmin = Schema.Struct({ ...VerifiedUser.fields,
     adminRole: Schema.String,
     adminTeam: Schema.String,
   })
-)
 
 type VerifiedAdmin = typeof VerifiedAdmin.Type
 
@@ -110,7 +95,7 @@ type VerifiedAdmin = typeof VerifiedAdmin.Type
 // 5. Union of extended schemas
 // ============================================
 
-const AnyUser = Schema.Union(BaseUser, AdminUser, PremiumUser)
+const AnyUser = Schema.Union([BaseUser, AdminUser, PremiumUser])
 
 type AnyUser = typeof AnyUser.Type
 
@@ -140,7 +125,7 @@ const parseUser = (
           : type === "premium"
             ? PremiumUser
             : BaseUser
-      return await Schema.decodeUnknown(schema)(raw)
+      return await Schema.decodeUnknownEffect(schema)(raw)
     },
     catch: (error) => {
       const msg = error instanceof Error ? error.message : String(error)
@@ -224,7 +209,7 @@ const appLogic = Effect.gen(function* () {
   }
 
   const verifiedAdmin = yield* Effect.tryPromise({
-    try: () => Schema.decodeUnknown(VerifiedAdmin)(verifiedAdminData),
+    try: () => Schema.decodeUnknownEffect(VerifiedAdmin)(verifiedAdminData),
     catch: (error) => new Error(String(error)),
   })
 

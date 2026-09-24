@@ -23,7 +23,7 @@ Not all fields are required. Some are optional (may be missing), some are nullab
 # Solution
 
 ```typescript
-import { Schema } from "effect"
+import { Schema, Effect } from "effect"
 
 // ============================================
 // OPTIONAL FIELDS (may be missing)
@@ -67,7 +67,7 @@ console.log(`✅ ${full.name}, ${full.age} years old`)
 const DatabaseRecord = Schema.Struct({
   id: Schema.String,
   // Field exists but value may be null
-  deletedAt: Schema.NullOr(Schema.Date),
+  deletedAt: Schema.NullOr(Schema.DateFromString),
   parentId: Schema.NullOr(Schema.String),
 })
 
@@ -122,9 +122,9 @@ console.log(`Nickname: ${hasNickname.nickname}`)  // "Ace"
 // ============================================
 
 const Settings = Schema.Struct({
-  theme: Schema.optionalWith(Schema.String, { default: () => "light" }),
-  pageSize: Schema.optionalWith(Schema.Number, { default: () => 20 }),
-  notifications: Schema.optionalWith(Schema.Boolean, { default: () => true }),
+  theme: Schema.String.pipe(Schema.withDecodingDefaultKey(Effect.succeed("light"))),
+  pageSize: Schema.Number.pipe(Schema.withDecodingDefaultKey(Effect.succeed(20))),
+  notifications: Schema.Boolean.pipe(Schema.withDecodingDefaultKey(Effect.succeed(true))),
 })
 
 type Settings = typeof Settings.Type
@@ -147,7 +147,7 @@ console.log(`✅ Theme: ${customSettings.theme}, Page: ${customSettings.pageSize
 | **optional(S)** | `T \| undefined` | Field may be omitted |
 | **NullOr(S)** | `T \| null` | Field present but nullable |
 | **optional(NullOr(S))** | `T \| null \| undefined` | Both patterns |
-| **optionalWith(S, {default})** | `T` | Default when missing |
+| **withDecodingDefaultKey(Effect.succeed(default))** | `T` | Default when missing |
 
 # When to Use
 

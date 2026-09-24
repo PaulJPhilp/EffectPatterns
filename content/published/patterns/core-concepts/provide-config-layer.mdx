@@ -33,13 +33,15 @@ Integrating configuration as a `Layer` plugs it directly into Effect's dependenc
 ## Good Example
 
 ```typescript
-import { Effect, Layer } from "effect";
+import { Effect, Layer, Context } from "effect";
 
-class ServerConfig extends Effect.Service<ServerConfig>()("ServerConfig", {
-  sync: () => ({
+class ServerConfig extends Context.Service<ServerConfig>()("ServerConfig", {
+  make: Effect.sync(() => ({
     port: process.env.PORT ? parseInt(process.env.PORT) : 8080,
-  }),
-}) {}
+  })),
+}) {
+  static readonly layer = Layer.effect(this, this.make)
+}
 
 const program = Effect.gen(function* () {
   const config = yield* ServerConfig;
@@ -48,9 +50,9 @@ const program = Effect.gen(function* () {
 
 const programWithErrorHandling = Effect.provide(
   program,
-  ServerConfig.Default
+  ServerConfig.layer
 ).pipe(
-  Effect.catchAll((error) =>
+  Effect.catch((error) =>
     Effect.gen(function* () {
       yield* Effect.logError(`Program error: ${error}`);
       return null;

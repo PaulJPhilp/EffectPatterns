@@ -37,7 +37,7 @@ const User = Schema.Struct({
 
 type User = typeof User.Type
 
-const parseUser = Schema.decodeUnknown(User)
+const parseUser = Schema.decodeUnknownEffect(User)
 
 // Strategy 1: Catch and provide default
 const fetchUserWithDefault = (id: number, defaultUser: User) =>
@@ -90,14 +90,14 @@ const UserV2 = Schema.Struct({
 const parseUserV1Or2 = (data: unknown) =>
   Effect.gen(function* () {
     // Try V1 first
-    const v1Result = yield* Effect.exit(Schema.decodeUnknown(UserV1)(data))
+    const v1Result = yield* Effect.exit(Schema.decodeUnknownEffect(UserV1)(data))
 
     if (Exit.isSuccess(v1Result)) {
       return v1Result.value
     }
 
     // Fall back to V2
-    const v2Result = yield* Schema.decodeUnknown(UserV2)(data)
+    const v2Result = yield* Schema.decodeUnknownEffect(UserV2)(data)
     return v2Result
   })
 
@@ -115,7 +115,7 @@ const fetchUsersStrict = (ids: number[]) =>
     // This will fail on first invalid response
     const users = yield* Effect.forEach(
       responses,
-      (response) => Schema.decodeUnknown(User)(response)
+      (response) => Schema.decodeUnknownEffect(User)(response)
     )
 
     yield* Effect.log(`Successfully decoded ${users.length} users`)

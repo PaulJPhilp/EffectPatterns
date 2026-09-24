@@ -24,7 +24,7 @@ You have a comprehensive User schema with 15 fields. For the public profile API,
 # Solution
 
 ```typescript
-import { Schema, Effect } from "effect"
+import { Schema, Effect, Struct } from "effect"
 
 // ============================================
 // 1. Comprehensive schema
@@ -38,9 +38,9 @@ const User = Schema.Struct({
   bio: Schema.Optional(Schema.String),
   avatar: Schema.Optional(Schema.String),
   role: Schema.String,
-  createdAt: Schema.Date,
-  updatedAt: Schema.Date,
-  lastLogin: Schema.Optional(Schema.Date),
+  createdAt: Schema.DateFromString,
+  updatedAt: Schema.DateFromString,
+  lastLogin: Schema.Optional(Schema.DateFromString),
   emailVerified: Schema.Boolean,
   phoneVerified: Schema.Boolean,
   twoFactorSecret: Schema.Optional(Schema.String),
@@ -59,12 +59,12 @@ type User = typeof User.Type
 // ============================================
 
 // Public profile - only certain fields
-const PublicProfile = Schema.pick(User, ["id", "username", "bio", "avatar", "createdAt"])
+const PublicProfile = Schema.Struct(Struct.pick(User.fields, ["id", "username", "bio", "avatar", "createdAt"]))
 
 type PublicProfile = typeof PublicProfile.Type
 
 // Admin view - most fields
-const AdminView = Schema.pick(User, [
+const AdminView = Schema.Struct(Struct.pick(User.fields, [
   "id",
   "username",
   "email",
@@ -74,12 +74,12 @@ const AdminView = Schema.pick(User, [
   "emailVerified",
   "phoneVerified",
   "lastLogin",
-])
+]))
 
 type AdminView = typeof AdminView.Type
 
 // API key response
-const ApiTokenResponse = Schema.pick(User, ["id", "username", "apiToken", "createdAt"])
+const ApiTokenResponse = Schema.Struct(Struct.pick(User.fields, ["id", "username", "apiToken", "createdAt"]))
 
 type ApiTokenResponse = typeof ApiTokenResponse.Type
 
@@ -88,21 +88,21 @@ type ApiTokenResponse = typeof ApiTokenResponse.Type
 // ============================================
 
 // Sanitized for export (remove sensitive data)
-const UserForExport = Schema.omit(User, [
+const UserForExport = Schema.Struct(Struct.omit(User.fields, [
   "password",
   "twoFactorSecret",
   "apiToken",
-])
+]))
 
 type UserForExport = typeof UserForExport.Type
 
 // User update input (exclude immutable fields)
-const UpdateUserInput = Schema.omit(User, [
+const UpdateUserInput = Schema.Struct(Struct.omit(User.fields, [
   "id",
   "createdAt",
   "updatedAt",
   "role",
-])
+]))
 
 type UpdateUserInput = typeof UpdateUserInput.Type
 
@@ -111,12 +111,12 @@ type UpdateUserInput = typeof UpdateUserInput.Type
 // ============================================
 
 // User with credentials for login
-const UserCredentials = Schema.pick(User, ["email", "password"])
+const UserCredentials = Schema.Struct(Struct.pick(User.fields, ["email", "password"]))
 
 type UserCredentials = typeof UserCredentials.Type
 
 // Minimal info for list views
-const UserListItem = Schema.pick(User, ["id", "username", "role", "lastLogin"])
+const UserListItem = Schema.Struct(Struct.pick(User.fields, ["id", "username", "role", "lastLogin"]))
 
 type UserListItem = typeof UserListItem.Type
 
@@ -139,7 +139,7 @@ const sanitizeForExport = (user: User): UserForExport => {
 
 const parsePublicProfile = (raw: unknown): Effect.Effect<PublicProfile, Error> =>
   Effect.tryPromise({
-    try: () => Schema.decodeUnknown(PublicProfile)(raw),
+    try: () => Schema.decodeUnknownEffect(PublicProfile)(raw),
     catch: (error) => new Error(String(error)),
   })
 
@@ -182,13 +182,13 @@ const appLogic = Effect.gen(function* () {
   console.log(`  - ${publicProfile.username}: ${publicProfile.bio}`)
 
   console.log("\n3. Admin View (picked fields):")
-  const adminView = Schema.pick(User, [
+  const adminView = Schema.Struct(Struct.pick(User.fields, [
     "id",
     "username",
     "email",
     "role",
     "emailVerified",
-  ]) as unknown as typeof AdminView
+  ])) as unknown as typeof AdminView
   const admin = (({ id, username, email, role, emailVerified }) => ({
     id,
     username,
